@@ -343,12 +343,12 @@ export default function MainLayout() {
             )}
             <Link
               to="/cart"
-              className="relative grid h-10 w-10 place-items-center border border-[#d1d5db] dark:border-[#33363d] bg-white dark:bg-[#111827] text-[#111827] dark:text-[#ece7dd] transition-colors hover:border-[#9d731e]"
+              className="relative grid h-10 w-10 place-items-center border border-[#d1d5db] dark:border-[#33363d] bg-white dark:bg-[#16181d] text-[#111827] dark:text-[#ece7dd] transition-colors hover:border-[#9d731e]"
               aria-label="Carrito"
             >
               <ShoppingBag className="h-4 w-4" />
               {cartCount > 0 && (
-                <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[#d7b46a] px-1 text-[10px] font-black text-[#111827] dark:text-[#ece7dd]">
+                <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-[#d7b46a] px-1 text-[10px] font-black text-[#111827]">
                   {cartCount}
                 </span>
               )}
