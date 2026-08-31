@@ -165,3 +165,39 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
 }
+
+/* Custom Checkbox Styles */
+input[type="checkbox"] {
+  appearance: none;
+  cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 0.25rem;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.dark input[type="checkbox"] {
+  border-color: #33363d;
+  background-color: #16181d;
+}
+
+input[type="checkbox"]:hover {
+  border-color: #9d731e;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #9d731e;
+  border-color: #9d731e;
+}
+
+input[type="checkbox"]:checked::before {
+  content: "✓";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}

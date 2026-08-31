@@ -131,7 +131,7 @@ const ProductListPage: React.FC = () => {
                     type="checkbox"
                     checked={categoryId === category.categoryId}
                     onChange={() => updateParam('categoryId', categoryId === category.categoryId ? undefined : String(category.categoryId))}
-                    className="h-4 w-4 border-[#d1d5db] dark:border-[#33363d] text-[#9d731e] focus:ring-[#9d731e]"
+                    className="h-4 w-4"
                   />
                   {category.imageUrl ? (
                     <ProductImage src={category.imageUrl} alt={category.categoryName} fallbackLabel={category.categoryName} className="h-6 w-6 rounded object-cover ring-1 ring-[#e5e7eb] dark:ring-[#26282e]" />
@@ -151,7 +151,7 @@ const ProductListPage: React.FC = () => {
                 type="checkbox"
                 checked={range.minPrice === minPrice && range.maxPrice === maxPrice}
                 onChange={() => applyPriceRange(range)}
-                className="h-4 w-4 border-[#d1d5db] dark:border-[#33363d] text-[#9d731e] focus:ring-[#9d731e]"
+                className="h-4 w-4"
               />
               {range.label}
             </label>
