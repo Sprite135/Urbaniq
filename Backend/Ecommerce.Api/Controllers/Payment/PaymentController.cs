@@ -45,12 +45,14 @@ namespace Ecommerce.Api.Controllers.Payment
         [HttpGet("config")]
         public IActionResult GetPaymentConfig()
         {
+            // Return Stripe config if available, otherwise return empty config
+            // This allows Yape/Plin to work without Stripe being configured
             if (string.IsNullOrWhiteSpace(_stripeSettings.PublishableKey) ||
                 !_stripeSettings.PublishableKey.StartsWith("pk_", StringComparison.Ordinal))
             {
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                return Ok(new PaymentConfigResponseDto
                 {
-                    message = "Stripe publishable key is not configured."
+                    PublishableKey = "" // Empty string indicates Stripe not configured
                 });
             }
 
