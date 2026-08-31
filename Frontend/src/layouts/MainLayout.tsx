@@ -46,6 +46,7 @@ export default function MainLayout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [lastSuggestions, setLastSuggestions] = useState<SearchSuggestion[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [catMenuTimeout, setCatMenuTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
@@ -145,9 +146,33 @@ export default function MainLayout() {
     setActiveIndex(-1);
   }, [debouncedQuery]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (catMenuTimeout) {
+        clearTimeout(catMenuTimeout);
+      }
+    };
+  }, [catMenuTimeout]);
+
   const handleLogout = () => {
     setIsMobileMenuOpen(false);
     dispatch(logout());
+  };
+
+  const handleCatMenuEnter = () => {
+    if (catMenuTimeout) {
+      clearTimeout(catMenuTimeout);
+      setCatMenuTimeout(null);
+    }
+    setIsCatMenuOpen(true);
+  };
+
+  const handleCatMenuLeave = () => {
+    const timeout = setTimeout(() => {
+      setIsCatMenuOpen(false);
+    }, 200); // 200ms delay before closing
+    setCatMenuTimeout(timeout);
   };
 
   return (
@@ -185,8 +210,8 @@ export default function MainLayout() {
             ))}
             <div
               className="relative"
-              onMouseEnter={() => setIsCatMenuOpen(true)}
-              onMouseLeave={() => setIsCatMenuOpen(false)}
+              onMouseEnter={handleCatMenuEnter}
+              onMouseLeave={handleCatMenuLeave}
             >
               <button
                 type="button"
