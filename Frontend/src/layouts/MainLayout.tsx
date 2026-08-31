@@ -191,7 +191,7 @@ export default function MainLayout() {
               <button
                 type="button"
                 onClick={() => setIsCatMenuOpen((o) => !o)}
-                className="flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#374151] dark:text-[#9ca3af] transition-colors hover:text-[#9d731e]"
+                className="flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#374151] dark:text-[#9ca3af] transition-colors hover:text-[#9d731e] cursor-pointer"
                 aria-expanded={isCatMenuOpen}
                 aria-haspopup="true"
               >
@@ -199,14 +199,14 @@ export default function MainLayout() {
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isCatMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {isCatMenuOpen && (
-                <div className="absolute left-0 top-full z-50 mt-3 w-[680px] bg-white dark:bg-[#16181d] border border-[#e5e7eb] dark:border-[#26282e] p-5 shadow-xl">
+                <div className="absolute left-0 top-full z-50 mt-3 w-[680px] bg-white dark:bg-[#16181d] border border-[#e5e7eb] dark:border-[#26282e] p-5 shadow-xl pointer-events-auto">
                   <div className="grid grid-cols-3 gap-2">
                     {allCategories.map((cat) => (
                       <Link
                         key={cat.categoryId}
                         to={`/catalog?categorySlug=${cat.slug}`}
                         onClick={() => setIsCatMenuOpen(false)}
-                        className={`flex items-center gap-2 rounded-sm p-2 transition-colors ${
+                        className={`flex items-center gap-2 rounded-sm p-2 transition-colors cursor-pointer ${
                           activeCatSlug === cat.slug ? 'bg-[#f3f4f6] dark:bg-[#1d2026]' : 'hover:bg-white dark:bg-[#0e0f12]'
                         }`}
                       >
