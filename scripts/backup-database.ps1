@@ -23,16 +23,9 @@ Write-Host "Server: $ServerInstance"
 Write-Host "Backup file: $BackupFile"
 
 try {
-    # Execute backup using sqlcmd
-    $BackupSql = @"
-    BACKUP DATABASE [$DatabaseName]
-    TO DISK = N'$BackupFile'
-    WITH FORMAT,
-    MEDIANAME = 'UrbaniqBackup',
-    NAME = 'Full Backup of $DatabaseName',
-    COMPRESSION;
-    "@
-
+    # Execute backup using sqlcmd (without compression for Express Edition)
+    $BackupSql = "BACKUP DATABASE [$DatabaseName] TO DISK = N'$BackupFile' WITH FORMAT, MEDIANAME = 'UrbaniqBackup', NAME = 'Full Backup of $DatabaseName';"
+    
     sqlcmd -S $ServerInstance -Q $BackupSql -E
 
     if ($LASTEXITCODE -eq 0) {

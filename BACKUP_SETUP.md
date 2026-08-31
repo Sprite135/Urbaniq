@@ -63,15 +63,19 @@ cd C:\Users\sprit\CascadeProjects\Urbaniq\scripts
    - ✅ Ejecutar con los máximos privilegios
    - ✅ Ejecutar aunque la tarea esté programada
 
-### **Método 2: Usando PowerShell (Automático)**
+### **Método 2: Usando PowerShell (Automático - Requiere Admin)**
 
 ```powershell
-# Crear tarea programada automáticamente
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File 'C:\Users\sprit\CascadeProjects\Urbaniq\scripts\backup-database.ps1'"
-$trigger = New-ScheduledTaskTrigger -Daily -At 2am
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -TaskName "Urbaniq Database Backup" -Action $action -Trigger $trigger -Settings $settings -RunLevel Highest
+# Ejecutar como Administrador:
+cd C:\Users\sprit\CascadeProjects\Urbaniq\scripts
+.\create-backup-task.ps1
 ```
+
+El script `create-backup-task.ps1` crea automáticamente la tarea programada con:
+- Nombre: "Urbaniq Database Backup"
+- Horario: 2:00 AM diario
+- Ejecución con máximos privilegios
+- Configuración para ejecutar incluso si el usuario no ha iniciado sesión
 
 ---
 
