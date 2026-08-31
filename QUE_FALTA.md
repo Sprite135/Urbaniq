@@ -316,10 +316,13 @@ El proyecto está **production-ready** pero faltan algunos componentes para ser 
 ## 🎯 **RECOMENDACIÓN INMEDIATA**
 
 ### **Para ir a producción HOY:**
-1. ✅ Configurar backup de SQL Server (automated)
-2. ✅ Configurar Sentry para error tracking
-3. ✅ Configurar uptime monitoring
-4. ✅ Revisar y probar manualmente todos los flujos
+1. ✅ Configurar backup de SQL Server (automated) - COMPLETADO
+2. ✅ Configurar Sentry para error tracking - COMPLETADO
+3. ✅ Configurar uptime monitoring - COMPLETADO
+4. ⏳ Revisar y probar manualmente todos los flujos
+5. ⏳ Crear cuenta Sentry y configurar DSN
+6. ⏳ Crear cuenta UptimeRobot y configurar monitores
+7. ⏳ Configurar tarea programada de backup en Windows
 
 ### **Para 1 mes:**
 5. Implementar CI/CD pipeline

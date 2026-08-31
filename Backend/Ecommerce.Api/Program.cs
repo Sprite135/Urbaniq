@@ -16,12 +16,31 @@ using Microsoft.AspNetCore.HttpOverrides;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.RateLimiting;
+using Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ===================== Logging =====================
 builder.Host.UseSerilog((context, config) =>
     config.ReadFrom.Configuration(context.Configuration));
+
+// ===================== Sentry Integration =====================
+var sentryDsn = builder.Configuration["Sentry:Dsn"];
+if (!string.IsNullOrWhiteSpace(sentryDsn) && sentryDsn != "SET_VIA_ENV_OR_DEVELOPMENT_CONFIG")
+{
+    builder.Web.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+        options.Debug = builder.Environment.IsDevelopment();
+        options.TracesSampleRate = 1.0;
+        options.ProfilesSampleRate = 1.0;
+        options.Environment = builder.Environment.EnvironmentName;
+        options.SendDefaultPii = false;
+        options.MaxBreadcrumbs = 50;
+        options.AttachStacktrace = true;
+        options.StackTraceHint = Sentry.StackTraceHint.Always;
+    });
+}
 
 // ===================== Settings =====================
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
