@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetProductByIdQuery } from '../catalog/catalogApiSlice';
 import { ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -55,7 +56,7 @@ const AdminProductDetailPage: React.FC = () => {
           <section className="border border-[#e1d5c2] bg-white p-5">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="aspect-[4/5] bg-[#f3ecdf]">
-                <img src={product.image} alt={product.productName} className="h-full w-full object-cover" />
+                <ProductImage src={product.image} alt={product.productName} fallbackLabel={product.productName} className="h-full w-full object-cover" />
               </div>
               <div>
                 <h3 className="text-lg font-black uppercase tracking-widest text-[#111827]">{product.productName}</h3>

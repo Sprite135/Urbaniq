@@ -5,6 +5,7 @@ import { useChangeOrderStatusMutation } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { CheckCircle, Clock, Package, Truck, XCircle, ArrowLeft, MapPin, User, Phone, Calendar } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -110,7 +111,7 @@ const AdminOrderDetailPage: React.FC = () => {
             <div className="divide-y divide-[#eee6da]">
               {order.orderItems.map((item) => (
                 <div key={item.orderItemId} className="flex gap-4 p-5">
-                  <img src={item.imageUrl} alt={item.productName} className="h-24 w-20 bg-gray-50 object-cover shrink-0" />
+                  <ProductImage src={item.imageUrl} alt={item.productName} fallbackLabel={item.productName} className="h-24 w-20 bg-gray-50 object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-[#111827] truncate">{item.productName}</h4>
                     <p className="mt-1 text-xs text-[#7c7467]">

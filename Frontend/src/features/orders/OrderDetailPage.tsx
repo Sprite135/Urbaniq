@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Package, CreditCard, CheckCircle, Circle, XCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCancelOrderMutation, useGetOrderByIdQuery } from './orderApiSlice';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const trackingSteps = ['Pendiente', 'Procesando', 'Enviado', 'Entregado'];
 
@@ -131,9 +132,10 @@ const OrderDetailPage: React.FC = () => {
           <div className="divide-y divide-gray-100">
             {order.orderItems.map((item) => (
               <div key={item.orderItemId} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                <img
+                <ProductImage
                   src={item.imageUrl || '/product-images/placeholder.svg'}
                   alt={item.productName}
+                  fallbackLabel={item.productName}
                   className="h-20 w-16 shrink-0 bg-gray-50 dark:bg-[#0e0f12] object-cover"
                 />
                 <div className="min-w-0 flex-1">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import ProductImage from './ProductImage';
 
 interface ProductGalleryProps {
   images: string[];
@@ -26,9 +27,10 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productName }) 
           transition={{ duration: 0.5, delay: index * 0.1 }}
           className="aspect-[3/4] overflow-hidden bg-gray-50 dark:bg-[#0e0f12] rounded-sm"
         >
-          <img
+          <ProductImage
             src={src}
             alt={`${productName} view ${index + 1}`}
+            fallbackLabel={productName}
             className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700 cursor-zoom-in"
           />
         </motion.div>

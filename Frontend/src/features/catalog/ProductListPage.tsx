@@ -4,6 +4,7 @@ import { useGetProductsQuery, useGetCategoriesQuery, type Category } from './cat
 import ProductCard from './components/ProductCard';
 import { Filter, SlidersHorizontal, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import ProductImage from './components/ProductImage';
 
 const flattenCategories = (categories: Category[] = []): Category[] =>
   categories.flatMap((category) => [category, ...flattenCategories(category.subCategories || [])]);
@@ -133,7 +134,7 @@ const ProductListPage: React.FC = () => {
                     className="h-4 w-4 border-[#d1d5db] dark:border-[#33363d] text-[#9d731e] focus:ring-[#9d731e]"
                   />
                   {category.imageUrl ? (
-                    <img src={category.imageUrl} alt={category.categoryName} className="h-6 w-6 rounded object-cover ring-1 ring-[#e5e7eb] dark:ring-[#26282e]" />
+                    <ProductImage src={category.imageUrl} alt={category.categoryName} fallbackLabel={category.categoryName} className="h-6 w-6 rounded object-cover ring-1 ring-[#e5e7eb] dark:ring-[#26282e]" />
                   ) : null}
                   {category.categoryName}
                 </label>

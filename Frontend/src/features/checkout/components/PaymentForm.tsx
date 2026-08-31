@@ -8,6 +8,7 @@ import type { Address } from '../addressApiSlice';
 import { toast } from 'react-toastify';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import ProductImage from '@/features/catalog/components/ProductImage';
 import { getApiErrorMessage } from '@/app/apiError';
 import { calculateShippingCost, PROVINCE_AGENCIES, resolveShippingProvider } from '../deliveryHelper';
 
@@ -624,9 +625,10 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
           </p>
           {activeMerchant.qrImageUrl && !qrBroken ? (
             <div className="mt-4 flex justify-center">
-              <img
+              <ProductImage
                 src={activeMerchant.qrImageUrl}
                 alt={`QR ${paymentMethod === 'yape' ? 'Yape' : 'Plin'}`}
+                fallbackLabel={`QR ${paymentMethod === 'yape' ? 'Yape' : 'Plin'}`}
                 onError={() => setQrBroken(true)}
                 className="h-56 w-56 rounded-md border border-gray-200 bg-white object-contain p-2 dark:border-[#26282e]"
               />

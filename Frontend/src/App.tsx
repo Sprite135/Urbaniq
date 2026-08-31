@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MainLayout from './layouts/MainLayout';
-import SeoHead from './components/SeoHead';
+// import SeoHead from './components/SeoHead'; // Temporarily disabled - React 19 compatibility issue
 import Home from './features/catalog/Home';
 import ProductListPage from './features/catalog/ProductListPage';
 import ProductDetailPage from './features/catalog/ProductDetailPage';
@@ -35,7 +35,7 @@ import AdminLoginPage from './features/admin/AdminLoginPage';
 function App() {
   return (
     <>
-      <SeoHead />
+      {/* <SeoHead /> */}
       <Routes>
         {/* Storefront Routes */}
         <Route path="/" element={<MainLayout />}>

@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 /* Make `dark:` class-based (triggered only by a `.dark` ancestor) instead of
-   Tailwind's default `prefers-color-scheme`. The app never adds `.dark`, so the
-   UI always renders in light mode regardless of the operating system theme. */
+   Tailwind's default `prefers-color-scheme`. The app adds `.dark` via main.tsx. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {

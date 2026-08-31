@@ -6,6 +6,8 @@ type ProductImageProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> 
   fallbackLabel: string;
 };
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 const ProductImage: React.FC<ProductImageProps> = ({
   src,
   alt,
@@ -15,6 +17,10 @@ const ProductImage: React.FC<ProductImageProps> = ({
   ...imageProps
 }) => {
   const [hasError, setHasError] = useState(!src);
+
+  const absoluteSrc = src && (src.startsWith('http://') || src.startsWith('https://'))
+    ? src
+    : src ? `${BACKEND_URL}${src.startsWith('/') ? '' : '/'}${src}` : src;
 
   useEffect(() => {
     setHasError(!src);
@@ -37,7 +43,7 @@ const ProductImage: React.FC<ProductImageProps> = ({
   return (
     <img
       {...imageProps}
-      src={src}
+      src={absoluteSrc}
       alt={alt}
       className={className}
       onError={(event) => {

@@ -40,12 +40,15 @@ const buildCloudinaryCardImage = (imageUrl: string, width: number) => {
   return imageUrl.replace('/image/upload/', `/image/upload/${transformation}/`);
 };
 
+const isCloudinaryUrl = (imageUrl: string) => imageUrl.includes('/image/upload/');
+
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
   const prefetchProduct = catalogApiSlice.usePrefetch('getProductBySlug');
   const discountPercent = product.price > 0 ? Math.round((product.discount / product.price) * 100) : 0;
   const effectivePrice = product.price - product.discount;
-  const cardImage = buildCloudinaryCardImage(product.image, 420);
+  const isCloudinary = isCloudinaryUrl(product.image);
+  const cardImage = isCloudinary ? buildCloudinaryCardImage(product.image, 420) : product.image;
 
   const prefetchProductDetail = () => {
     prefetchProduct(product.slug, { ifOlderThan: 60 });
@@ -81,7 +84,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="relative aspect-[3/4] overflow-hidden bg-[#f3f4f6] dark:bg-[#1a1c21]">
           <ProductImage
             src={cardImage}
-            srcSet={`${buildCloudinaryCardImage(product.image, 320)} 320w, ${cardImage} 420w, ${buildCloudinaryCardImage(product.image, 640)} 640w`}
+            srcSet={isCloudinary
+              ? `${buildCloudinaryCardImage(product.image, 320)} 320w, ${cardImage} 420w, ${buildCloudinaryCardImage(product.image, 640)} 640w`
+              : undefined}
             sizes="(min-width: 640px) 300px, 260px"
             alt={product.productName}
             fallbackLabel={product.productName}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Package, ChevronRight, MapPin, CreditCard, Banknote } from 'lucide-react';
 import { useGetUserOrdersQuery } from './orderApiSlice';
 import type { Order, OrderItem } from './orderApiSlice';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 type OrderFilter = 'all' | 'active' | 'cancelled';
 
@@ -226,9 +227,10 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
 
       {firstItem && (
         <div className="flex gap-4 border-t border-gray-50 pt-4">
-          <img
+          <ProductImage
             src={firstItem.imageUrl || '/product-images/placeholder.svg'}
             alt={firstItem.productName}
+            fallbackLabel={firstItem.productName}
             className="h-20 w-16 shrink-0 bg-gray-50 dark:bg-[#0e0f12] object-cover"
           />
           <div className="min-w-0 flex-1">

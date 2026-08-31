@@ -153,6 +153,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, address, onBack, onCo
             <span>Monto total</span>
             <span>S/ {cart.finalAmount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
+        </div>
       </div>
 
       <div className="flex gap-3">

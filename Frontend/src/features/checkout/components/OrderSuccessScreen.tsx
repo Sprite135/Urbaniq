@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Banknote, CreditCard, Package } from 'lucide-react';
 import type { CartResponse } from '@/features/cart/cartApiSlice';
 import type { Address } from '../addressApiSlice';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const REDIRECT_SECONDS = 5;
 
@@ -127,9 +128,10 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
               transition={{ delay: 0.55 + index * 0.08 }}
               className="flex gap-3 rounded-sm border border-gray-50 bg-gray-50/80 p-3"
             >
-              <img
+              <ProductImage
                 src={item.image || '/product-images/placeholder.svg'}
                 alt={item.productName}
+                fallbackLabel={item.productName}
                 className="h-16 w-14 shrink-0 object-cover"
               />
               <div className="min-w-0 flex-1 text-left">

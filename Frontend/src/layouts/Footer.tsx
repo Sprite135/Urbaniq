@@ -8,7 +8,7 @@ const paymentMethods = ['Visa', 'Mastercard', 'Yape', 'Plin', 'PagoEfectivo'];
 
 export default function Footer() {
   return (
-    <footer className="mt-10 border-t border-[#e5e7eb] bg-white text-[#6b7280]">
+    <footer className="mt-10 border-t border-[#e5e7eb] bg-white dark:bg-[#16181d] text-[#6b7280] dark:text-[#9a9388]">
       <div className="container mx-auto py-14">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}

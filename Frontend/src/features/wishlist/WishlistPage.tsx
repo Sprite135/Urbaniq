@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Trash2 } from 'lucide-react';
 import { useGetWishlistQuery, useRemoveWishlistItemMutation } from './wishlistApiSlice';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const WishlistPage: React.FC = () => {
   const { data, isLoading } = useGetWishlistQuery();
@@ -37,7 +38,7 @@ const WishlistPage: React.FC = () => {
           {items.map((item) => (
             <div key={item.wishListId} className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-4">
               <Link to={`/product/${item.slug}`} className="block overflow-hidden">
-                <img src={item.image || '/product-images/placeholder.svg'} alt={item.productName} className="aspect-[3/4] w-full object-cover transition-transform duration-500 hover:scale-105" />
+                <ProductImage src={item.image || '/product-images/placeholder.svg'} alt={item.productName} fallbackLabel={item.productName} className="aspect-[3/4] w-full object-cover transition-transform duration-500 hover:scale-105" />
               </Link>
               <div className="mt-4 flex items-start justify-between gap-4">
                 <div>

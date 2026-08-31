@@ -4,6 +4,7 @@ import { useDeleteProductMutation, useGetProductsQuery } from '../catalog/catalo
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '@/app/apiError';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -130,13 +131,11 @@ const ProductManagementPage = () => {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-4">
                             <Link to={`/admin/products/${product.id}`}>
-                              <img
+                              <ProductImage
                                 src={product.image}
                                 alt={product.productName}
+                                fallbackLabel={product.productName}
                                 className="h-16 w-12 object-cover bg-[#efe7da]"
-                                onError={(event) => {
-                                  event.currentTarget.src = 'https://placehold.co/96x128?text=No+Image';
-                                }}
                               />
                             </Link>
                             <div className="min-w-0">

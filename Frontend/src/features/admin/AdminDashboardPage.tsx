@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGetDashboardStatsQuery, useGetLowStockProductsQuery, useGetAllOrdersQuery } from './adminApiSlice';
 import { Activity, ArrowUpRight, CheckCircle2, Package, ReceiptText, TrendingUp, Users, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ProductImage from '@/features/catalog/components/ProductImage';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -213,7 +214,7 @@ const AdminDashboardPage = () => {
             ) : lowStockProducts?.length ? (
               lowStockProducts.map((product) => (
                 <Link to={`/admin/products/${product.id}`} key={product.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                  <img src={product.image} alt="" className="h-14 w-12 object-cover bg-[#efe7da]" />
+                  <ProductImage src={product.image} alt="" fallbackLabel={product.productName} className="h-14 w-12 object-cover bg-[#efe7da]" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[#111827]">{product.productName}</p>
                     <p className="mt-1 font-mono text-[11px] text-[#7c7467]">{product.sku}</p>
