@@ -69,7 +69,7 @@ namespace Ecommerce.Api.Controllers.Seo
 
             // Categories
             var categories = await _categoryRepo.Query()
-                .Where(c => !c.IsDeleted)
+                .Where(c => c.IsActive)
                 .Select(c => new { c.Slug })
                 .ToListAsync();
 
