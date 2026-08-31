@@ -1,4 +1,5 @@
 using Ecommerce.Application.DTOs.Category;
+using Microsoft.AspNetCore.Http;
 
 namespace Ecommerce.Application.Interfaces.Catalog
 {
@@ -50,5 +51,10 @@ namespace Ecommerce.Application.Interfaces.Catalog
         /// Deletes a category by its ID.
         /// </summary>
         Task DeleteCategoryAsync(int categoryId);
+
+        /// <summary>
+        /// Uploads an image for a category and returns its URL.
+        /// </summary>
+        Task<string> UploadCategoryImageAsync(int categoryId, IFormFile file);
     }
 }

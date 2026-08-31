@@ -9,9 +9,9 @@ namespace Ecommerce.Application.Interfaces.Identity
     public interface IAuthService
     {
         Task<UserResponseDto> RegisterAsync(RegisterRequestDto registerDto, string role = "User");
-        Task<AuthResponseDto> LoginAsync(LoginRequestDto loginDto);
+        Task<AuthResponseDto> LoginAsync(LoginRequestDto loginDto, string? sessionId = null);
         Task RequestPhoneOtpAsync(RequestPhoneOtpRequestDto dto);
-        Task<AuthResponseDto> VerifyPhoneOtpAsync(VerifyPhoneOtpRequestDto dto);
+        Task<AuthResponseDto> VerifyPhoneOtpAsync(VerifyPhoneOtpRequestDto dto, string? sessionId = null);
         Task SendEmailVerificationAsync(Guid userId, SendEmailVerificationRequestDto dto);
         Task VerifyEmailAsync(VerifyEmailRequestDto dto);
         Task<AuthResponseDto> RefreshTokenAsync(string refreshToken);

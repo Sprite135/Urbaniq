@@ -14,6 +14,6 @@ namespace Ecommerce.Application.DTOs.Cart
         public string Image { get; set; } = null!;
         public string Size { get; set; } = null!;
         public string Color { get; set; } = null!;
-        public string? DeliveryPincode { get; set; }
+        public string? DeliveryCode { get; set; }
     }
 }

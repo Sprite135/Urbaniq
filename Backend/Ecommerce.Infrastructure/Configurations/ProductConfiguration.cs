@@ -54,7 +54,7 @@ namespace Ecommerce.Infrastructure.Configurations
                 .IsRequired()
                 .HasMaxLength(500);
 
-            builder.Property(p => p.DeliverablePincodes)
+            builder.Property(p => p.DeliverableZones)
                 .IsRequired()
                 .HasMaxLength(2000);
 

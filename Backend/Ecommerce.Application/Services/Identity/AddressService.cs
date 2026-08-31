@@ -1,5 +1,6 @@
 using AutoMapper;
 using Ecommerce.Application.DTOs.Address;
+using Ecommerce.Application.Helpers;
 using Ecommerce.Application.Interfaces.Identity;
 using Ecommerce.Domain.Common;
 using Ecommerce.Domain.Entities;
@@ -37,11 +38,16 @@ namespace Ecommerce.Application.Services.Identity
             {
                 UserId = userId,
                 FullName = newAddress.FullName,
-                PhoneNumber = newAddress.PhoneNumber,
-                Pincode = newAddress.Pincode,
+                PhoneNumber = NormalizePeruPhone(newAddress.PhoneNumber),
+                PostalCode = newAddress.PostalCode,
+                Department = newAddress.Department,
+                Province = newAddress.Province,
+                District = newAddress.District,
+                DeliveryZone = newAddress.DeliveryZone
+                    ?? DeliveryHelper.ResolveZone(newAddress.Department, newAddress.Province),
                 HouseName = newAddress.HouseName,
                 Place = newAddress.Place,
-                PostOffice = newAddress.PostOffice,
+                Reference = newAddress.Reference,
                 LandMark = newAddress.LandMark,
             };
 
@@ -86,16 +92,37 @@ namespace Ecommerce.Application.Services.Identity
                 throw new KeyNotFoundException("Address not found");
 
             address.FullName = addressDto.FullName;
-            address.PhoneNumber = addressDto.PhoneNumber;
-            address.Pincode = addressDto.Pincode;
+            address.PhoneNumber = NormalizePeruPhone(addressDto.PhoneNumber);
+            address.PostalCode = addressDto.PostalCode;
+            address.Department = addressDto.Department;
+            address.Province = addressDto.Province;
+            address.District = addressDto.District;
+            address.DeliveryZone = addressDto.DeliveryZone
+                ?? DeliveryHelper.ResolveZone(addressDto.Department, addressDto.Province);
             address.HouseName = addressDto.HouseName;
             address.Place = addressDto.Place;
-            address.PostOffice = addressDto.PostOffice;
+            address.Reference = addressDto.Reference;
             address.LandMark = addressDto.LandMark;
 
             _addressRepo.Update(address);
             await _unitOfWork.SaveChangesAsync();
             return _mapper.Map<AddressResponseDto>(address);
+        }
+
+        private static string NormalizePeruPhone(string phoneNumber)
+        {
+            var digits = new string(phoneNumber.Where(char.IsDigit).ToArray());
+            if (digits.Length == 9)
+            {
+                return "+51" + digits;
+            }
+
+            if (digits.Length == 11 && digits.StartsWith("51"))
+            {
+                return "+" + digits;
+            }
+
+            return phoneNumber;
         }
 
         public async Task<bool> DeleteAddressAsync(Guid userId, Guid addressId)

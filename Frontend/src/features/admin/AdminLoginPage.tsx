@@ -42,14 +42,14 @@ const AdminLoginPage: React.FC = () => {
       const response = await login({ email, password }).unwrap();
 
       if (response.user.role !== 'Admin') {
-        setError('This login is only for admin users.');
+        setError('Este inicio de sesión es solo para usuarios administradores.');
         return;
       }
 
       dispatch(setCredentials(response));
       navigate('/admin', { replace: true });
     } catch (loginError) {
-      setError(getApiError(loginError, 'Invalid admin credentials.'));
+      setError(getApiError(loginError, 'Credenciales de administrador inválidas.'));
     }
   };
 
@@ -61,12 +61,12 @@ const AdminLoginPage: React.FC = () => {
             <LockKeyhole className="h-6 w-6" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#d7b46a]">Urbaniq</p>
-          <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.1em]">Admin Console</h1>
+          <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.1em]">Consola de administración</h1>
         </div>
 
         <div className="space-y-4">
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#9ba4b5]">Admin Email</span>
+            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#9ba4b5]">Correo de administrador</span>
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -78,7 +78,7 @@ const AdminLoginPage: React.FC = () => {
           </label>
 
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#9ba4b5]">Password</span>
+            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#9ba4b5]">Contraseña</span>
             <div className="relative mt-2">
               <input
                 value={password}
@@ -106,7 +106,7 @@ const AdminLoginPage: React.FC = () => {
           disabled={isLoading}
           className="mt-6 flex h-12 w-full items-center justify-center gap-2 bg-[#d7b46a] text-xs font-black uppercase tracking-[0.22em] text-[#111827] disabled:opacity-60"
         >
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign in'}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Iniciar sesión'}
         </button>
       </form>
     </div>

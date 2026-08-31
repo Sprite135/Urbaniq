@@ -1,4 +1,3 @@
-using Ecommerce.Application.Common.ProductOptions;
 using Ecommerce.Application.DTOs.Catalog;
 using FluentValidation;
 
@@ -26,9 +25,8 @@ namespace Ecommerce.Application.Validators.Catalog
             RuleFor(p => p.Quantity)
                 .GreaterThanOrEqualTo(0).WithMessage("Quantity cannot be negative.");
 
-            RuleFor(p => p.DeliverablePincodes)
-                .Must(value => ProductOptionParser.ParsePincodeList(value).Count > 0)
-                .WithMessage("At least one deliverable pincode is required.");
+            RuleFor(p => p.DeliverableZones)
+                .MaximumLength(500).WithMessage("Deliverable zones must not exceed 500 characters.");
 
             RuleFor(p => p.Variants)
                 .NotEmpty().WithMessage("At least one product variant is required.")

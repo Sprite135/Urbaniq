@@ -26,7 +26,7 @@ const sampleProduct: Product = {
   color: 'Black',
   availableSizes: ['M'],
   availableColors: ['Black'],
-  deliverablePincodes: ['673001'],
+  deliverableZones: ['673001'],
   variants: [],
   categoryId: 1,
   categoryName: 'Shirts',
@@ -45,7 +45,7 @@ describe('cartSlice', () => {
         productVariantId: 'variant-1',
         selectedSize: 'M',
         selectedColor: 'Black',
-        deliveryPincode: '673001',
+        deliveryCode: '673001',
       })
     );
 

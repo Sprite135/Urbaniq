@@ -1,5 +1,6 @@
 using Ecommerce.Application.DTOs.Orders;
 using Ecommerce.Application.Interfaces.Orders;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -15,36 +16,36 @@ namespace Ecommerce.Api.Controllers.Orders
         private readonly IOrderService _orderService;
         public OrderController(IOrderService orderService) => _orderService = orderService;
 
-        private Guid GetUserId()
+        private Guid? GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (claim == null || !Guid.TryParse(claim.Value, out var userId))
-                throw new UnauthorizedAccessException("User id not found in token");
-            return userId;
+            return claim != null && Guid.TryParse(claim.Value, out var userId) ? userId : null;
         }
 
         private bool IsAdmin() => User.IsInRole("Admin");
 
         [HttpPost("place-order")]
-        [Authorize(Roles = "User")]
         public async Task<IActionResult> PlaceOrder([FromBody] CreateOrderRequestDto dto)
         {
-            var result = await _orderService.CreateOrderAsync(GetUserId(), dto);
-            return result ? Ok(new { message = "Order placed successfully" }) : BadRequest(new { message = "Failed to place order" });
+            var userId = GetUserId();
+            var orderId = await _orderService.CreateOrderAsync(userId, dto);
+            if (orderId == Guid.Empty)
+                return BadRequest(new { message = "Failed to place order" });
+            return Ok(new { message = "Order placed successfully", orderId });
         }
 
         [HttpGet("validate-delivery/{addressId:guid}")]
-        [Authorize(Roles = "User")]
         public async Task<IActionResult> ValidateDelivery(Guid addressId)
         {
-            var canDeliver = await _orderService.CanDeliverCartToAddressAsync(GetUserId(), addressId);
+            var userId = GetUserId();
+            var canDeliver = await _orderService.CanDeliverCartToAddressAsync(userId, addressId);
             return Ok(new { canDeliver });
         }
 
         [HttpGet("user-orders")]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> GetUserOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-            => Ok(await _orderService.GetOrdersByUserIdAsync(GetUserId(), pageNumber, pageSize));
+            => Ok(await _orderService.GetOrdersByUserIdAsync(GetUserId()!.Value, pageNumber, pageSize));
 
         [HttpGet("all-orders")]
         [Authorize(Roles = "Admin")]
@@ -70,13 +71,49 @@ namespace Ecommerce.Api.Controllers.Orders
         [Authorize(Roles = "User")]
         public async Task<IActionResult> CancelOrder(Guid orderId, [FromBody] OrderActionRequestDto dto)
         {
-            var result = await _orderService.CancelOrderAsync(GetUserId(), orderId, dto.Reason);
+            var result = await _orderService.CancelOrderAsync(GetUserId()!.Value, orderId, dto.Reason);
             return result.Message.Contains("successfully", StringComparison.OrdinalIgnoreCase)
                 ? Ok(result)
                 : BadRequest(result);
         }
 
+        [HttpPost("{orderId:guid}/voucher")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> AttachVoucher(Guid orderId, [FromBody] AttachVoucherRequestDto dto)
+        {
+            try
+            {
+                await _orderService.AttachVoucherAsync(orderId, GetUserId()!.Value, IsAdmin(), dto.Url, dto.ApprovalCode);
+                return Ok(new { message = "Voucher attached successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
+        [HttpPost("{orderId:guid}/mark-paid")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkPaid(Guid orderId)
+        {
+            try
+            {
+                await _orderService.MarkOrderPaidByStaffAsync(orderId);
+                return Ok(new { message = "Order marked as paid" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
 
         [HttpGet("revenue")]
         [Authorize(Roles = "Admin")]

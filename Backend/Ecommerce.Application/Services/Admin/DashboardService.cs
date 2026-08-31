@@ -34,7 +34,7 @@ namespace Ecommerce.Application.Services.Admin
         {
             var totalRevenue = await _orderRepo.Query()
                 .Where(o => 
-                    (o.PaymentMethod == "card" && o.OrderStatus != OrderStatus.Cancelled) ||
+                    (new[] { "card", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo" }.Contains(o.PaymentMethod) && o.OrderStatus != OrderStatus.Cancelled) ||
                     (o.PaymentMethod == "cod" && o.OrderStatus == OrderStatus.Delivered))
                 .SumAsync(o => o.TotalPrice);
             

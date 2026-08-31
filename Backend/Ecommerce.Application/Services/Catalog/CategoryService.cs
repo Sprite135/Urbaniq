@@ -4,6 +4,7 @@ using Ecommerce.Application.Extensions;
 using Ecommerce.Application.Interfaces.Catalog;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.RegularExpressions;
@@ -21,14 +22,16 @@ namespace Ecommerce.Application.Services.Catalog
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IDistributedCache _cache;
+        private readonly ICloudImageService _cloudImageService;
         private const string CATEGORY_TREE_CACHE_KEY = "category_tree_active";
 
-        public CategoryService(IRepository<Category> categoryRepo, IUnitOfWork unitOfWork, IMapper mapper, IDistributedCache cache)
+        public CategoryService(IRepository<Category> categoryRepo, IUnitOfWork unitOfWork, IMapper mapper, IDistributedCache cache, ICloudImageService cloudImageService)
         {
             _categoryRepo = categoryRepo;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _cache = cache;
+            _cloudImageService = cloudImageService;
         }
 
         /// <inheritdoc />
@@ -206,6 +209,24 @@ namespace Ecommerce.Application.Services.Catalog
             {
                 // Category writes should not fail just because Redis is temporarily unavailable.
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<string> UploadCategoryImageAsync(int categoryId, IFormFile file)
+        {
+            var category = await _categoryRepo.Query()
+                .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+
+            if (category == null)
+                throw new ArgumentException($"Category with ID {categoryId} not found.");
+
+            var imageUrl = await _cloudImageService.UploadImageAsync(file);
+            category.ImageUrl = imageUrl;
+            _categoryRepo.Update(category);
+            await _unitOfWork.SaveChangesAsync();
+            await InvalidateCategoryCachesAsync();
+
+            return imageUrl;
         }
     }
 }

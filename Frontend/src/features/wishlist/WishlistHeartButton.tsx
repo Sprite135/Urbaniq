@@ -33,7 +33,7 @@ const WishlistHeartButton: React.FC<WishlistHeartButtonProps> = ({
       type="button"
       onClick={handleClick}
       disabled={isToggling}
-      aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+      aria-label={isWishlisted ? 'Quitar de la lista de deseos' : 'Agregar a la lista de deseos'}
       aria-pressed={isWishlisted}
       className={`transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${className} ${
         isWishlisted ? 'text-red-500 hover:text-red-600' : ''

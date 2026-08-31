@@ -361,6 +361,8 @@ MigrationBackup/
 
 # Local development secrets (never commit)
 **/appsettings.Development.json
+# Docker compose local secrets (root .env)
+/.env
 # Frontend local secrets (repo tracks Frontend/ on feature branches)
 Frontend/.env
 Frontend/.env.*

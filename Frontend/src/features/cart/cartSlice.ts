@@ -8,7 +8,7 @@ export interface LocalCartItem extends Product {
   cartQuantity: number;
   selectedSize: string;
   selectedColor: string;
-  deliveryPincode?: string;
+  deliveryCode?: string;
 }
 
 interface CartState {
@@ -25,8 +25,8 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addToCart: (state, action: PayloadAction<{ product: Product; productVariantId: string; selectedSize: string; selectedColor: string; deliveryPincode?: string; quantity?: number }>) => {
-      const { product, productVariantId, selectedSize, selectedColor, deliveryPincode, quantity = 1 } = action.payload;
+    addToCart: (state, action: PayloadAction<{ product: Product; productVariantId: string; selectedSize: string; selectedColor: string; deliveryCode?: string; quantity?: number }>) => {
+      const { product, productVariantId, selectedSize, selectedColor, deliveryCode, quantity = 1 } = action.payload;
       const cartItemKey = `${product.id}:${productVariantId}`;
       const existingItem = state.items.find((item) => item.cartItemKey === cartItemKey);
       if (existingItem) {
@@ -39,7 +39,7 @@ const cartSlice = createSlice({
           cartQuantity: quantity,
           selectedSize,
           selectedColor,
-          deliveryPincode,
+          deliveryCode,
         });
       }
       localStorage.setItem('cart', JSON.stringify(state.items));

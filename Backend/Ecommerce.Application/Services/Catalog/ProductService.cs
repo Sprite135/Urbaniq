@@ -78,7 +78,7 @@ namespace Ecommerce.Application.Services.Catalog
             product.Id = Guid.NewGuid();
             product.AvailableSizes = string.Join(", ", normalizedSizes);
             product.AvailableColors = string.Join(", ", normalizedColors);
-            product.DeliverablePincodes = ProductOptionParser.NormalizePincodeCsv(productDto.DeliverablePincodes);
+            product.DeliverableZones = ProductOptionParser.NormalizeDeliveryCodes(productDto.DeliverableZones);
             product.Quantity = normalizedVariants.Sum(v => v.Quantity);
             product.Size = normalizedSizes[0];
             product.Color = normalizedColors[0];
@@ -142,7 +142,7 @@ namespace Ecommerce.Application.Services.Catalog
             _mapper.Map(productDto, product);
             product.AvailableSizes = string.Join(", ", normalizedSizes);
             product.AvailableColors = string.Join(", ", normalizedColors);
-            product.DeliverablePincodes = ProductOptionParser.NormalizePincodeCsv(productDto.DeliverablePincodes);
+            product.DeliverableZones = ProductOptionParser.NormalizeDeliveryCodes(productDto.DeliverableZones);
             product.Quantity = normalizedVariants.Sum(v => v.Quantity);
             product.Size = normalizedSizes[0];
             product.Color = normalizedColors[0];

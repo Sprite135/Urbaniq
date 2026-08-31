@@ -7,6 +7,7 @@ import { useGetCartQuery } from '@/features/cart/cartApiSlice';
 import { useGetAddressesQuery, useDeleteAddressMutation } from './addressApiSlice';
 import type { Address } from './addressApiSlice';
 import AddressForm from './components/AddressForm';
+import { estimateText } from './deliveryHelper';
 import OrderSummary from './components/OrderSummary';
 import PaymentForm from './components/PaymentForm';
 import OrderSuccessScreen from './components/OrderSuccessScreen';
@@ -17,9 +18,9 @@ import type { RootState } from '@/app/store';
 type Step = 'address' | 'summary' | 'payment';
 
 const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
-  { key: 'address', label: 'Address', icon: MapPin },
-  { key: 'summary', label: 'Order Summary', icon: Package },
-  { key: 'payment', label: 'Payment', icon: CreditCard },
+  { key: 'address', label: 'Dirección', icon: MapPin },
+  { key: 'summary', label: 'Resumen del pedido', icon: Package },
+  { key: 'payment', label: 'Pago', icon: CreditCard },
 ];
 
 const CheckoutPage: React.FC = () => {
@@ -32,9 +33,9 @@ const CheckoutPage: React.FC = () => {
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState<OrderSuccessDetails | null>(null);
 
-  const { data: addresses, isLoading: addressesLoading, refetch: refetchAddresses } = useGetAddressesQuery(undefined, { skip: !token });
+  const { data: addresses, isLoading: addressesLoading, refetch: refetchAddresses } = useGetAddressesQuery(undefined);
   const [deleteAddress] = useDeleteAddressMutation();
-  const { data: cart, isLoading: cartLoading } = useGetCartQuery(undefined, { skip: !token });
+  const { data: cart, isLoading: cartLoading } = useGetCartQuery(undefined);
   const [validateDelivery, { isFetching: isValidatingDelivery }] = useLazyValidateDeliveryQuery();
 
   useEffect(() => {
@@ -43,22 +44,14 @@ const CheckoutPage: React.FC = () => {
     }
   }, [addresses, selectedAddress, showAddressForm]);
 
-  useEffect(() => {
-    if (!token) {
-      navigate('/?auth=login&redirectTo=%2Fcheckout');
-    }
-  }, [navigate, token]);
+  // Sin token (checkout invitado) no redirigimos — el backend maneja carritos anónimos
 
   const currentStepIndex = STEPS.findIndex((step) => step.key === currentStep);
-
-  if (!token) {
-    return null;
-  }
 
   if (cartLoading || addressesLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#111827] border-t-transparent" />
       </div>
     );
   }
@@ -70,7 +63,7 @@ const CheckoutPage: React.FC = () => {
 
   if (orderSuccess) {
     return (
-      <div className="min-h-dvh bg-gray-50">
+      <div className="min-h-dvh bg-gray-50 dark:bg-[#0e0f12]">
         <div className="container mx-auto max-w-3xl px-4 py-8">
           <OrderSuccessScreen
             cart={orderSuccess.cart}
@@ -88,7 +81,7 @@ const CheckoutPage: React.FC = () => {
     try {
       const response = await validateDelivery(address.addressId).unwrap();
       if (!response.canDeliver) {
-        const message = 'Delivery not available for this pincode';
+        const message = 'Entrega no disponible para este código postal';
         setDeliveryError(message);
         toast.error(message);
         return false;
@@ -97,7 +90,7 @@ const CheckoutPage: React.FC = () => {
       return true;
     } catch (error: unknown) {
       const apiError = error as { data?: { message?: string } };
-      const message = apiError?.data?.message || 'Delivery not available for this pincode';
+      const message = apiError?.data?.message || 'Entrega no disponible para este código postal';
       setDeliveryError(message);
       toast.error(message);
       return false;
@@ -115,7 +108,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-gray-50 dark:bg-[#0e0f12]">
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-10 flex items-center justify-center">
           {STEPS.map((step, index) => (
@@ -123,29 +116,29 @@ const CheckoutPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <div
                   className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-colors ${
-                    index <= currentStepIndex ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-400'
+                    index <= currentStepIndex ? 'bg-[#111827] text-white' : 'bg-gray-200 text-gray-400'
                   }`}
                 >
                   {index < currentStepIndex ? <Check className="h-4 w-4" /> : index + 1}
                 </div>
                 <span
                   className={`hidden text-xs font-bold uppercase tracking-wider sm:block ${
-                    index <= currentStepIndex ? 'text-teal-600' : 'text-gray-400'
+                    index <= currentStepIndex ? 'text-[#9d731e]' : 'text-gray-400'
                   }`}
                 >
                   {step.label}
                 </span>
               </div>
               {index < STEPS.length - 1 && (
-                <div className={`mx-2 h-0.5 w-16 sm:w-24 ${index < currentStepIndex ? 'bg-teal-600' : 'bg-gray-200'}`} />
+                <div className={`mx-2 h-0.5 w-16 sm:w-24 ${index < currentStepIndex ? 'bg-[#111827]' : 'bg-gray-200'}`} />
               )}
             </React.Fragment>
           ))}
         </div>
 
         {currentStep === 'address' && (
-          <div className="border border-gray-100 bg-white p-6 sm:p-8">
-            <h2 className="mb-6 text-lg font-black uppercase tracking-tight text-gray-900">Select Delivery Address</h2>
+          <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6 sm:p-8">
+            <h2 className="mb-6 text-lg font-black uppercase tracking-tight text-gray-900 dark:text-[#ece7dd]">Selecciona la dirección de entrega</h2>
 
             {addresses && addresses.length > 0 && !showAddressForm && (
               <div className="mb-6 space-y-3">
@@ -154,7 +147,7 @@ const CheckoutPage: React.FC = () => {
                     key={address.addressId}
                     className={`flex items-start justify-between border p-4 transition-colors ${
                       selectedAddress?.addressId === address.addressId
-                        ? 'border-teal-600 bg-teal-50/30'
+                        ? 'border-[#111827] bg-[#f3ecdf]/60'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -170,13 +163,16 @@ const CheckoutPage: React.FC = () => {
                         className="mt-1 accent-teal-600"
                       />
                       <div className="text-sm">
-                        <p className="font-bold text-gray-900">{address.fullName}</p>
-                        <p className="mt-1 text-gray-600">
-                          {address.houseName}, {address.place}, {address.postOffice}
+                        <p className="font-bold text-gray-900 dark:text-[#ece7dd]">{address.fullName}</p>
+                        <p className="mt-1 text-gray-600 dark:text-[#9ca3af]">
+                          {address.houseName}
                         </p>
-                        <p className="text-gray-600">{address.landMark}</p>
-                        <p className="text-gray-600">Pincode: <strong>{address.pincode}</strong></p>
-                        <p className="text-gray-600">Phone: {address.phoneNumber}</p>
+                        <p className="text-gray-600 dark:text-[#9ca3af]">{address.district}, {address.province} — {address.department}</p>
+                        <p className="text-gray-600 dark:text-[#9ca3af]">{address.landMark}</p>
+                        <p className="mt-1 text-xs font-medium text-[#9d731e]">
+                          {estimateText(address.deliveryZone)}
+                        </p>
+                        <p className="text-gray-600 dark:text-[#9ca3af]">Teléfono: {address.phoneNumber}</p>
                       </div>
                     </label>
                     <div className="flex flex-col gap-2 ml-4">
@@ -188,8 +184,8 @@ const CheckoutPage: React.FC = () => {
                           setShowAddressForm(true);
                           setDeliveryError(null);
                         }}
-                        className="text-gray-500 hover:text-teal-600 p-1 transition-colors"
-                        title="Edit Address"
+                        className="text-gray-500 dark:text-[#9a9388] hover:text-[#9d731e] p-1 transition-colors"
+                         title="Editar dirección"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
@@ -197,22 +193,22 @@ const CheckoutPage: React.FC = () => {
                         type="button"
                         onClick={async (e) => {
                           e.stopPropagation();
-                          if (window.confirm('Are you sure you want to delete this address?')) {
-                            try {
-                              await deleteAddress(address.addressId).unwrap();
-                              toast.success('Address deleted successfully');
-                              if (selectedAddress?.addressId === address.addressId) {
-                                setSelectedAddress(null);
-                                setDeliveryError(null);
-                              }
-                              await refetchAddresses();
-                            } catch {
-                              toast.error('Failed to delete address');
-                            }
+                          if (window.confirm('¿Estás seguro de que quieres eliminar esta dirección?')) {
+                             try {
+                               await deleteAddress(address.addressId).unwrap();
+                               toast.success('Dirección eliminada exitosamente');
+                               if (selectedAddress?.addressId === address.addressId) {
+                                 setSelectedAddress(null);
+                                 setDeliveryError(null);
+                               }
+                               await refetchAddresses();
+                             } catch {
+                               toast.error('No se pudo eliminar la dirección');
+                             }
                           }
                         }}
-                        className="text-gray-500 hover:text-red-600 p-1 transition-colors"
-                        title="Delete Address"
+                        className="text-gray-500 dark:text-[#9a9388] hover:text-red-600 p-1 transition-colors"
+                         title="Eliminar dirección"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -246,9 +242,9 @@ const CheckoutPage: React.FC = () => {
                   setEditingAddress(null);
                   setShowAddressForm(true);
                 }}
-                className="w-full border-2 border-dashed border-gray-300 py-3 text-sm font-bold uppercase tracking-wider text-teal-600 transition-colors hover:border-teal-600"
+                className="w-full border-2 border-dashed border-gray-300 py-3 text-sm font-bold uppercase tracking-wider text-[#9d731e] transition-colors hover:border-[#111827]"
               >
-                + Add New Address
+                + Agregar nueva dirección
               </button>
             )}
 
@@ -260,9 +256,9 @@ const CheckoutPage: React.FC = () => {
               <button
                 onClick={handleContinueFromAddress}
                 disabled={isValidatingDelivery}
-                className="mt-6 w-full bg-teal-600 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
+                className="mt-6 w-full bg-[#111827] py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#1f2740] disabled:opacity-60"
               >
-                {isValidatingDelivery ? 'Checking delivery...' : 'Continue to Order Summary'}
+                {isValidatingDelivery ? 'Verificando entrega...' : 'Continuar al resumen del pedido'}
               </button>
             )}
           </div>

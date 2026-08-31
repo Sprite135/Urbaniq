@@ -22,12 +22,15 @@ namespace Ecommerce.Application.DTOs.Catalog
         public string Color { get; set; } = null!;
         public List<string> AvailableSizes { get; set; } = new();
         public List<string> AvailableColors { get; set; } = new();
-        public List<string> DeliverablePincodes { get; set; } = new();
+        public List<string> DeliverableZones { get; set; } = new();
+        public bool RequiresConfiguration { get; set; }
         public List<ProductVariantResponseDto> Variants { get; set; } = new();
         public string? Material { get; set; }
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = null!;
         public int? SubCategoryId { get; set; }
         public string? SubCategoryName { get; set; }
+        public decimal? AverageRating { get; set; }
+        public int TotalReviews { get; set; }
     }
 }

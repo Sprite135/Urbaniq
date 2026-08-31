@@ -10,6 +10,12 @@ namespace Ecommerce.Application.Interfaces.Payment
     public interface IPaymentGatewayService
     {
         /// <summary>
+        /// Indicates whether the gateway is properly configured with valid credentials.
+        /// When false, card payments cannot be processed/verified.
+        /// </summary>
+        bool IsConfigured { get; }
+
+        /// <summary>
         /// Creates a payment intent with the specified amount.
         /// Amount must be in decimal (currency major units like USD/INR), which the gateway 
         /// will convert to the smallest unit (e.g., cents/paise) internally.

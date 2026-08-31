@@ -11,7 +11,7 @@ namespace Ecommerce.Infrastructure.Configurations
             builder.HasKey(ci => ci.Id);
             builder.Property(ci => ci.SelectedSize).IsRequired().HasMaxLength(20);
             builder.Property(ci => ci.SelectedColor).IsRequired().HasMaxLength(50);
-            builder.Property(ci => ci.DeliveryPincode).HasMaxLength(10);
+            builder.Property(ci => ci.DeliveryCode).HasMaxLength(10);
             builder.HasIndex(ci => new { ci.CartId, ci.ProductVariantId }).IsUnique();
             builder.HasOne(ci => ci.Cart).WithMany(c => c.CartItems).HasForeignKey(ci => ci.CartId);
             builder.HasOne(ci => ci.Product).WithMany(p => p.CartItems).HasForeignKey(ci => ci.ProductId);

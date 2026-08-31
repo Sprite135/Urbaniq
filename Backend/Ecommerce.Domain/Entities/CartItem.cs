@@ -9,7 +9,7 @@ namespace Ecommerce.Domain.Entities
         public int Quantity { get; set; }
         public string SelectedSize { get; set; } = null!;
         public string SelectedColor { get; set; } = null!;
-        public string? DeliveryPincode { get; set; }
+        public string? DeliveryCode { get; set; }
 
         // Navigation Properties
         public Cart Cart { get; set; } = null!;

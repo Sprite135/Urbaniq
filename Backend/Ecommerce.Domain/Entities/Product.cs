@@ -47,6 +47,12 @@ namespace Ecommerce.Domain.Entities
         /// </summary>
         public int TotalSold { get; set; } = 0;
 
+        /// <summary>
+        /// Whether the product needs configuration/assembly before shipping
+        /// (e.g., a custom PC build). Affects delivery ETA (24-48h instead of next-day).
+        /// </summary>
+        public bool RequiresConfiguration { get; set; } = false;
+
         public string Description { get; set; } = null!;
 
         /// <summary>
@@ -77,9 +83,10 @@ namespace Ecommerce.Domain.Entities
         public string AvailableColors { get; set; } = null!;
 
         /// <summary>
-        /// Comma-separated six-digit pincodes where this product can be delivered.
+        /// Códigos de zona de entrega (opcional). El envío real se determina por la zona
+        /// de la dirección (Lima Metropolitana / Provincias) al estilo Memory Kings.
         /// </summary>
-        public string DeliverablePincodes { get; set; } = null!;
+        public string DeliverableZones { get; set; } = null!;
 
         /// <summary>
         /// Fabric composition (e.g., "100% Cotton", "Cotton-Polyester Blend").
@@ -114,5 +121,7 @@ namespace Ecommerce.Domain.Entities
         public List<CartItem> CartItems { get; set; } = new();
         public List<ProductImage> ProductImages { get; set; } = new();
         public List<ProductVariant> Variants { get; set; } = new();
+        public List<PcSpecification> Specifications { get; set; } = new();
+        public List<Review> Reviews { get; set; } = new();
     }
 }

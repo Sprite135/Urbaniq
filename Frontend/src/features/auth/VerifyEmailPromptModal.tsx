@@ -46,13 +46,13 @@ const VerifyEmailPromptModal: React.FC = () => {
     setMessage(null);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Enter a valid email address.');
+      setError('Ingresa una dirección de correo válida.');
       return;
     }
 
     try {
       await sendEmailVerification({ email }).unwrap();
-      setMessage('Verification link sent. Open the link from your email to verify it.');
+      setMessage('Enlace de verificación enviado. Abre el enlace desde tu correo para verificarlo.');
       // Optional: close after a delay
       setTimeout(() => {
         handleClose();
@@ -60,7 +60,7 @@ const VerifyEmailPromptModal: React.FC = () => {
     } catch (sendError) {
       // Inline simple fallback since getApiError might not be in utils yet
       const apiError = sendError as { data?: { message?: string; title?: string } };
-      setError(apiError.data?.message || apiError.data?.title || 'Unable to send verification link.');
+      setError(apiError.data?.message || apiError.data?.title || 'No se pudo enviar el enlace de verificación.');
     }
   };
 
@@ -70,7 +70,7 @@ const VerifyEmailPromptModal: React.FC = () => {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/55 px-4 py-8 backdrop-blur-[2px]">
       <div className="mx-auto flex min-h-full max-w-2xl items-center justify-center">
         <div
-          className="relative w-full max-w-[560px] overflow-hidden rounded-[18px] bg-white px-8 pb-8 pt-12 shadow-2xl shadow-black/35 sm:px-12"
+          className="relative w-full max-w-[560px] overflow-hidden rounded-[18px] bg-white dark:bg-[#16181d] px-8 pb-8 pt-12 shadow-2xl shadow-black/35 sm:px-12"
           role="dialog"
           aria-modal="true"
         >
@@ -78,16 +78,16 @@ const VerifyEmailPromptModal: React.FC = () => {
             type="button"
             onClick={handleClose}
             className="absolute right-4 top-4 grid h-8 w-8 place-items-center text-black transition hover:bg-stone-100 rounded-full"
-            aria-label="Close"
+            aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
           </button>
 
           <form onSubmit={handleSendEmailLink} className="mx-auto max-w-[560px]">
-            <h1 className="font-heading text-2xl font-semibold text-black">Please Verify Your Email Address</h1>
+            <h1 className="font-heading text-2xl font-semibold text-black">Verifica tu dirección de correo</h1>
             <div className="mt-4 border-t border-stone-200 pt-4">
               <p className="text-[15px] leading-6 text-stone-600">
-                Verify your email for an uninterrupted shopping experience. Please enter your email and click verify.
+                Verifica tu correo para una experiencia de compra sin interrupciones. Ingresa tu correo y haz clic en verificar.
               </p>
               <div className="mt-5 flex h-[56px] items-center border border-stone-400 px-4 focus-within:border-black">
                 <Mail className="mr-3 h-5 w-5 text-stone-500" />
@@ -111,14 +111,14 @@ const VerifyEmailPromptModal: React.FC = () => {
                 disabled={isSendingEmail}
                 className="h-[52px] bg-black font-bold uppercase text-[#d4a72c] transition hover:bg-stone-900 disabled:bg-stone-300 disabled:text-white"
               >
-                {isSendingEmail ? 'Sending...' : 'Verify'}
+                {isSendingEmail ? 'Enviando...' : 'Verificar'}
               </button>
               <button
                 type="button"
                 onClick={handleClose}
-                className="h-[52px] border border-stone-300 bg-white font-bold uppercase text-stone-700 transition hover:bg-stone-50"
+                className="h-[52px] border border-stone-300 bg-white dark:bg-[#16181d] font-bold uppercase text-stone-700 transition hover:bg-stone-50"
               >
-                Cancel
+                Cancelar
               </button>
             </div>
           </form>

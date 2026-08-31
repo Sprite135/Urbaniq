@@ -13,7 +13,7 @@ export interface CartItem {
   quantity: number;
   totalPrice: number;
   slug?: string;
-  deliveryPincode?: string;
+  deliveryCode?: string;
 }
 
 export interface CartResponse {
@@ -23,13 +23,15 @@ export interface CartResponse {
   totalDiscount: number;
   totalCount: number;
   finalAmount: number;
+  couponCode?: string;
+  couponDiscount?: number;
 }
 
 interface AddToCartRequest {
   productId: string;
   productVariantId: string;
   quantity: number;
-  deliveryPincode: string;
+  deliveryCode: string;
 }
 
 export const cartApiSlice = apiSlice.injectEndpoints({

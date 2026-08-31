@@ -1,0 +1,16 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#F3EBDD"/>
+  <rect x="220" y="280" width="460" height="320" rx="22" fill="#202631"/>
+  <rect x="252" y="312" width="396" height="256" rx="12" fill="#141923"/>
+  <circle cx="450" cy="440" r="96" fill="#28313F"/>
+  <circle cx="450" cy="440" r="70" fill="#10141B"/>
+  <circle cx="450" cy="440" r="18" fill="#C8A24A"/>
+  <g stroke="#475467" stroke-width="12" stroke-linecap="round">
+    <path d="M450 372v136M382 440h136"/>
+  </g>
+  <rect x="270" y="640" width="360" height="26" rx="6" fill="#9D731E"/>
+  <rect x="270" y="676" width="360" height="26" rx="6" fill="#9D731E"/>
+  <text x="450" y="800" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="8" fill="#9D731E">URBANIQ PC</text>
+  <text x="450" y="860" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" fill="#111827">PSU</text>
+  <text x="450" y="908" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="4" fill="#514B43">FUENTE DE PODER</text>
+</svg>

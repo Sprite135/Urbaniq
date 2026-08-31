@@ -1,12 +1,22 @@
 using Ecommerce.Application.Interfaces.Cart;
 using Ecommerce.Application.Interfaces.Catalog;
+using Ecommerce.Application.Interfaces.Cache;
+using Ecommerce.Application.Interfaces.Coupons;
 using Ecommerce.Application.Interfaces.Identity;
+using Ecommerce.Application.Interfaces.Inventory;
+using Ecommerce.Application.Interfaces.Notifications;
 using Ecommerce.Application.Interfaces.Orders;
+using Ecommerce.Application.Interfaces.Reviews;
 using Ecommerce.Application.Interfaces.Wishlist;
 using Ecommerce.Application.Services.Cart;
 using Ecommerce.Application.Services.Catalog;
+using Ecommerce.Application.Services.Cache;
+using Ecommerce.Application.Services.Coupons;
 using Ecommerce.Application.Services.Identity;
+using Ecommerce.Application.Services.Inventory;
+using Ecommerce.Application.Services.Notifications;
 using Ecommerce.Application.Services.Orders;
+using Ecommerce.Application.Services.Reviews;
 using Ecommerce.Application.Services.Wishlist;
 using Ecommerce.Application.Validators.Identity;
 using FluentValidation;
@@ -39,6 +49,22 @@ namespace Ecommerce.Application
 
             // Wishlist Services
             services.AddScoped<IWishListService, WishListService>();
+
+            // Review Services
+            services.AddScoped<IReviewService, ReviewService>();
+
+            // Coupon Services
+            services.AddScoped<ICouponService, CouponService>();
+            services.AddScoped<IAutoCouponService, AutoCouponService>();
+
+            // Notification Services
+            services.AddScoped<INotificationService, NotificationService>();
+
+            // Inventory Services
+            services.AddScoped<IInventoryService, InventoryService>();
+
+            // Cache Services
+            services.AddScoped<ICacheService, CacheService>();
 
             // FluentValidation — auto-discover all validators in this assembly
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();

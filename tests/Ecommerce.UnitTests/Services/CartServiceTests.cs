@@ -49,7 +49,7 @@ public class CartServiceTests
         Price = 999,
         Quantity = 25,
         Image = "https://test.com/image.jpg",
-        DeliverablePincodes = "673001",
+        DeliverableZones = "150106",
         Variants =
         [
             new ProductVariant
@@ -71,7 +71,7 @@ public class CartServiceTests
         var userId = Guid.NewGuid();
         var product = CreateProduct();
         var variant = product.Variants[0];
-        var dto = new AddToCartRequestDto { ProductId = product.Id, ProductVariantId = variant.Id, Quantity = 1, DeliveryPincode = "673001" };
+        var dto = new AddToCartRequestDto { ProductId = product.Id, ProductVariantId = variant.Id, Quantity = 1, DeliveryCode = "150106" };
         var cartResponse = new CartResponseDto { CartId = Guid.NewGuid(), Items = new List<CartItemResponseDto>() };
 
         _productRepoMock.Setup(r => r.Query()).Returns(new List<Product> { product }.AsQueryable().BuildMock());
@@ -112,7 +112,7 @@ public class CartServiceTests
             Quantity = 2,
             Product = product,
             ProductVariant = variant,
-            DeliveryPincode = "673001"
+            DeliveryCode = "150106"
         };
         var existingCart = new Domain.Entities.Cart
         {
@@ -127,7 +127,7 @@ public class CartServiceTests
             .Returns(new CartResponseDto());
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        var dto = new AddToCartRequestDto { ProductId = productId, ProductVariantId = variant.Id, Quantity = 3, DeliveryPincode = "673001" };
+        var dto = new AddToCartRequestDto { ProductId = productId, ProductVariantId = variant.Id, Quantity = 3, DeliveryCode = "150106" };
 
         // Act
         await _sut.AddToCartAsync(userId, dto);
@@ -152,7 +152,7 @@ public class CartServiceTests
             Quantity = 8,
             Product = product,
             ProductVariant = variant,
-            DeliveryPincode = "673001"
+            DeliveryCode = "150106"
         };
         var existingCart = new Domain.Entities.Cart
         {
@@ -167,7 +167,7 @@ public class CartServiceTests
             .Returns(new CartResponseDto());
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
-        var dto = new AddToCartRequestDto { ProductId = productId, ProductVariantId = variant.Id, Quantity = 5, DeliveryPincode = "673001" };
+        var dto = new AddToCartRequestDto { ProductId = productId, ProductVariantId = variant.Id, Quantity = 5, DeliveryCode = "150106" };
 
         // Act
         await _sut.AddToCartAsync(userId, dto);
@@ -193,7 +193,7 @@ public class CartServiceTests
         // Arrange — product doesn't exist
         _productRepoMock.Setup(r => r.Query()).Returns(new List<Product>().AsQueryable().BuildMock());
 
-        var dto = new AddToCartRequestDto { ProductId = Guid.NewGuid(), ProductVariantId = Guid.NewGuid(), Quantity = 1, DeliveryPincode = "673001" };
+        var dto = new AddToCartRequestDto { ProductId = Guid.NewGuid(), ProductVariantId = Guid.NewGuid(), Quantity = 1, DeliveryCode = "150106" };
 
         // Act & Assert
         var act = () => _sut.AddToCartAsync(Guid.NewGuid(), dto);

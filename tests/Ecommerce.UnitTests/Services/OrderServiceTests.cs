@@ -68,7 +68,7 @@ public class OrderServiceTests
         {
             Id = Guid.NewGuid(), ProductName = "Test Shirt", Price = 500, Quantity = 10,
             Image = "https://test.com/img.jpg",
-            DeliverablePincodes = "673001"
+            DeliverableZones = "150106"
         };
         var variant = new ProductVariant
         {
@@ -81,7 +81,7 @@ public class OrderServiceTests
         };
         product.Variants = new List<ProductVariant> { variant };
 
-        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, Pincode = "673001" };
+        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, PostalCode = "150106" };
         var cartItem = new CartItem
         {
             Id = Guid.NewGuid(),
@@ -182,7 +182,7 @@ public class OrderServiceTests
         var emptyOrders = new List<Order>().AsQueryable().BuildMock();
         _orderRepoMock.Setup(r => r.Query()).Returns(emptyOrders);
 
-        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, Pincode = "673001" };
+        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, PostalCode = "150106" };
         var addresses = new List<Address> { address }.AsQueryable().BuildMock();
         _addressRepoMock.Setup(r => r.Query()).Returns(addresses);
 
@@ -207,7 +207,7 @@ public class OrderServiceTests
         var product = new Product
         {
             Id = Guid.NewGuid(), ProductName = "Low Stock Shirt", Price = 500,
-            Quantity = 1, Image = "img.jpg", DeliverablePincodes = "673001" // Only 1 available
+            Quantity = 1, Image = "img.jpg", DeliverableZones = "150106" // Only 1 available
         };
         var variant = new ProductVariant
         {
@@ -220,7 +220,7 @@ public class OrderServiceTests
         };
         product.Variants = new List<ProductVariant> { variant };
 
-        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, Pincode = "673001" };
+        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, PostalCode = "150106" };
         var cartItem = new CartItem
         {
             Id = Guid.NewGuid(),
@@ -350,7 +350,7 @@ public class OrderServiceTests
     // ==================== Delivery Check Tests ====================
 
     [Fact]
-    public async Task CanDeliverCartToAddressAsync_ValidPincode_ReturnsTrue()
+    public async Task CanDeliverCartToAddressAsync_ValidPostalCode_ReturnsTrue()
     {
         var (userId, addressId, _) = SetupValidOrderScenario();
 
@@ -360,19 +360,20 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task CanDeliverCartToAddressAsync_UnsupportedPincode_ReturnsFalse()
+    public async Task CanDeliverCartToAddressAsync_AnyAddress_ReturnsTrue()
     {
         var userId = Guid.NewGuid();
         var addressId = Guid.NewGuid();
         var product = new Product
         {
             Id = Guid.NewGuid(), ProductName = "Shirt", Price = 500, Quantity = 5,
-            DeliverablePincodes = "673001"
+            DeliverableZones = "150101"
         };
         var variant = new ProductVariant { Id = Guid.NewGuid(), ProductId = product.Id, Product = product, Quantity = 5 };
         product.Variants = new List<ProductVariant> { variant };
 
-        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, Pincode = "560001" };
+        // Delivery is zone-based (Lima Metropolitana / Provincias) and available nationwide (Memory Kings style).
+        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, Department = "Arequipa", Province = "Arequipa", District = "Cercado" };
         var cartItem = new CartItem
         {
             Id = Guid.NewGuid(), ProductId = product.Id, ProductVariantId = variant.Id,
@@ -385,7 +386,7 @@ public class OrderServiceTests
 
         var result = await _sut.CanDeliverCartToAddressAsync(userId, addressId);
 
-        result.Should().BeFalse();
+        result.Should().BeTrue();
     }
 
     [Fact]
@@ -405,7 +406,7 @@ public class OrderServiceTests
     {
         var userId = Guid.NewGuid();
         var addressId = Guid.NewGuid();
-        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, Pincode = "673001" };
+        var address = new Address { AddressId = addressId, UserId = userId, IsDeleted = false, PostalCode = "150106" };
         var cart = new Domain.Entities.Cart { CartId = Guid.NewGuid(), UserId = userId, CartItems = new List<CartItem>() };
 
         _addressRepoMock.Setup(r => r.Query()).Returns(new List<Address> { address }.AsQueryable().BuildMock());

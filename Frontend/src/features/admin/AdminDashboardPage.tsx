@@ -4,10 +4,11 @@ import { Activity, ArrowUpRight, CheckCircle2, Package, ReceiptText, TrendingUp,
 import { Link } from 'react-router-dom';
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
+  new Intl.NumberFormat('es-PE', {
     style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
+    currency: 'PEN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 
 const AdminDashboardPage = () => {
@@ -21,58 +22,58 @@ const AdminDashboardPage = () => {
   if (isError) {
     return (
       <div className="border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">
-        <p>Failed to load dashboard statistics.</p>
-        {statsError && <p>Stats Error: {JSON.stringify(statsError)}</p>}
-        {productsError && <p>Products Error: {JSON.stringify(productsError)}</p>}
-        {ordersError && <p>Orders Error: {JSON.stringify(ordersError)}</p>}
+        <p>No se pudieron cargar las estadísticas del panel.</p>
+        {statsError && <p>Error de estadísticas: {JSON.stringify(statsError)}</p>}
+        {productsError && <p>Error de productos: {JSON.stringify(productsError)}</p>}
+        {ordersError && <p>Error de pedidos: {JSON.stringify(ordersError)}</p>}
       </div>
     );
   }
 
   const kpis = [
     {
-      label: 'Total Revenue',
+      label: 'Ingresos totales',
       value: statsData ? formatCurrency(statsData.totalRevenue) : formatCurrency(0),
-      detail: 'Confirmed order item revenue',
+      detail: 'Ingresos de artículos de pedidos confirmados',
       icon: TrendingUp,
       tone: 'gold',
     },
     {
-      label: 'Items Delivered',
+      label: 'Artículos entregados',
       value: (statsData?.totalItemsDelivered ?? 0).toLocaleString('en-IN'),
-      detail: 'Units successfully delivered',
+      detail: 'Unidades entregadas con éxito',
       icon: Package,
       tone: 'emerald',
       href: '/admin/orders?status=Delivered'
     },
     {
-      label: 'Items Cancelled',
+      label: 'Artículos cancelados',
       value: (statsData?.totalItemsCancelled ?? 0).toLocaleString('en-IN'),
-      detail: 'Units from cancelled orders',
+      detail: 'Unidades de pedidos cancelados',
       icon: Package,
       tone: 'red',
       href: '/admin/orders?status=Cancelled'
     },
     {
-      label: 'Processing Orders',
+      label: 'Pedidos en proceso',
       value: (statsData?.totalProcessingOrders ?? 0).toLocaleString('en-IN'),
-      detail: 'Need fulfilment review',
+      detail: 'Requieren revisión de envío',
       icon: ReceiptText,
       tone: 'amber',
       href: '/admin/orders?status=Processing'
     },
     {
-      label: 'Shipped Orders',
+      label: 'Pedidos enviados',
       value: (statsData?.totalShippedOrders ?? 0).toLocaleString('en-IN'),
-      detail: 'On the way to customers',
+      detail: 'En camino a los clientes',
       icon: Truck,
       tone: 'indigo',
       href: '/admin/orders?status=Shipped'
     },
     {
-      label: 'Customers',
+      label: 'Clientes',
       value: (statsData?.totalCustomers ?? 0).toLocaleString('en-IN'),
-      detail: 'Registered customer accounts',
+      detail: 'Cuentas de clientes registradas',
       icon: Users,
       tone: 'green',
       href: '/admin/users'
@@ -84,22 +85,22 @@ const AdminDashboardPage = () => {
       <section className="overflow-hidden bg-[#111827] text-[#f8f5ee]">
         <div className="grid gap-6 p-6 lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.35em] text-[#d7b46a]">Executive overview</p>
-            <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] sm:text-4xl">Store command center</h2>
+            <p className="text-[11px] font-black uppercase tracking-[0.35em] text-[#d7b46a]">Resumen ejecutivo</p>
+            <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] sm:text-4xl">Centro de control de la tienda</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-[#d8d2c8]">
-              Monitor revenue, fulfilment pressure, inventory exposure, and customer activity from one operational view.
+              Supervisa ingresos, presión de envío, exposición de inventario y actividad de clientes desde una vista operativa.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="border border-[#263044] bg-[#172033] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">System health</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">Estado del sistema</p>
               <div className="mt-4 flex items-center gap-3">
                 <CheckCircle2 className="h-6 w-6 text-emerald-400" />
-                <span className="text-2xl font-black uppercase">Online</span>
+                <span className="text-2xl font-black uppercase">En línea</span>
               </div>
             </div>
             <div className="border border-[#263044] bg-[#172033] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">Low stock styles</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">Estilos con stock bajo</p>
               <div className="mt-4 flex items-center gap-3">
                 <Activity className="h-6 w-6 text-amber-300" />
                 <span className="text-2xl font-black">{statsData?.lowStockCount || 0}</span>
@@ -151,13 +152,13 @@ const AdminDashboardPage = () => {
           <div className="flex items-center justify-between border-b border-[#eee6da] px-5 py-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#9d731e]">Fulfilment</p>
-              <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Recent Orders</h3>
+              <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Pedidos recientes</h3>
             </div>
             <ArrowUpRight className="h-5 w-5 text-[#9d731e]" />
           </div>
           <div className="divide-y divide-[#eee6da]">
             {isOrdersLoading ? (
-              <div className="px-5 py-8 text-sm text-[#7c7467]">Loading orders...</div>
+              <div className="px-5 py-8 text-sm text-[#7c7467]">Cargando pedidos...</div>
             ) : ordersData?.items.length ? (
               ordersData.items.map((order) => (
                 <Link to={`/admin/orders/${order.orderId}`} key={order.orderId} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center hover:bg-gray-50 transition-colors">
@@ -172,14 +173,14 @@ const AdminDashboardPage = () => {
                 </Link>
               ))
             ) : (
-              <div className="px-5 py-8 text-sm text-[#7c7467]">No orders yet.</div>
+              <div className="px-5 py-8 text-sm text-[#7c7467]">Aún no hay pedidos.</div>
             )}
           </div>
           {ordersData && ordersData.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-[#eee6da] bg-[#fbfaf7] px-5 py-3">
               <p className="text-xs text-[#6f6659]">
-                Page <span className="font-bold text-[#111827]">{ordersData.pageNumber}</span> of{' '}
-                <span className="font-bold text-[#111827]">{ordersData.totalPages}</span>
+               Página <span className="font-bold text-[#111827]">{ordersData.pageNumber}</span> de{' '}
+               <span className="font-bold text-[#111827]">{ordersData.totalPages}</span>
               </p>
               <div className="flex gap-2">
                 <button
@@ -187,14 +188,14 @@ const AdminDashboardPage = () => {
                   onClick={() => setPage((value) => value - 1)}
                   className="h-7 border border-[#d8cdbb] bg-white px-3 text-[10px] font-bold uppercase tracking-[0.16em] disabled:opacity-40"
                 >
-                  Prev
+                  Ant
                 </button>
                 <button
                   disabled={page === ordersData.totalPages}
                   onClick={() => setPage((value) => value + 1)}
                   className="h-7 border border-[#d8cdbb] bg-white px-3 text-[10px] font-bold uppercase tracking-[0.16em] disabled:opacity-40"
                 >
-                  Next
+                  Siguiente
                 </button>
               </div>
             </div>
@@ -204,11 +205,11 @@ const AdminDashboardPage = () => {
         <div className="border border-[#e1d5c2] bg-white">
           <div className="border-b border-[#eee6da] px-5 py-4">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#9d731e]">Inventory</p>
-            <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Stock Watchlist</h3>
+            <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Lista de seguimiento de stock</h3>
           </div>
           <div className="divide-y divide-[#eee6da]">
             {isProductsLoading ? (
-              <div className="px-5 py-8 text-sm text-[#7c7467]">Loading stock watchlist...</div>
+              <div className="px-5 py-8 text-sm text-[#7c7467]">Cargando lista de stock...</div>
             ) : lowStockProducts?.length ? (
               lowStockProducts.map((product) => (
                 <Link to={`/admin/products/${product.id}`} key={product.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
@@ -225,7 +226,7 @@ const AdminDashboardPage = () => {
                 </Link>
               ))
             ) : (
-              <div className="px-5 py-8 text-sm text-[#7c7467]">No products found.</div>
+              <div className="px-5 py-8 text-sm text-[#7c7467]">No se encontraron productos.</div>
             )}
           </div>
         </div>

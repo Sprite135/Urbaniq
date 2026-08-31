@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MainLayout from './layouts/MainLayout';
+import SeoHead from './components/SeoHead';
 import Home from './features/catalog/Home';
 import ProductListPage from './features/catalog/ProductListPage';
 import ProductDetailPage from './features/catalog/ProductDetailPage';
@@ -26,12 +27,15 @@ import AdminProductDetailPage from './features/admin/AdminProductDetailPage';
 import OrderManagementPage from './features/admin/OrderManagementPage';
 import AdminOrderDetailPage from './features/admin/AdminOrderDetailPage';
 import CategoryManagementPage from './features/admin/CategoryManagementPage';
+import CouponManagementPage from './features/admin/CouponManagementPage';
+import CouponAnalyticsPage from './features/admin/CouponAnalyticsPage';
 import UserManagementPage from './features/admin/UserManagementPage';
 import AdminLoginPage from './features/admin/AdminLoginPage';
 
 function App() {
   return (
     <>
+      <SeoHead />
       <Routes>
         {/* Storefront Routes */}
         <Route path="/" element={<MainLayout />}>
@@ -67,6 +71,8 @@ function App() {
             <Route path="orders" element={<OrderManagementPage />} />
             <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
             <Route path="categories" element={<CategoryManagementPage />} />
+            <Route path="coupons" element={<CouponManagementPage />} />
+            <Route path="coupons/analytics" element={<CouponAnalyticsPage />} />
             <Route path="users" element={<UserManagementPage />} />
           </Route>
         </Route>

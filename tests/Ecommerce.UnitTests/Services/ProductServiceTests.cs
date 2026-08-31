@@ -54,7 +54,7 @@ public class ProductServiceTests
         Discount = 0,
         Quantity = 25,
         Description = "Premium cotton tee",
-        DeliverablePincodes = "673001, 673002",
+        DeliverableZones = "150106, 673002",
         Variants =
         [
             new ProductVariantRequestDto

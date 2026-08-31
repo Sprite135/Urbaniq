@@ -11,6 +11,9 @@ namespace Ecommerce.Application.DTOs.Orders
         public string TransactionId { get; set; } = null!;
         public string? UserEmail { get; set; }
         public string PaymentMethod { get; set; } = null!;
+        public bool IsPaid { get; set; }
+        public string? PaymentReceiptUrl { get; set; }
+        public string? PaymentApprovalCode { get; set; }
         public string? CancellationReason { get; set; }
         public string? ReturnReason { get; set; }
         public string? ReplacementReason { get; set; }

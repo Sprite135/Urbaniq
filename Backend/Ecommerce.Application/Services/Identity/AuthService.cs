@@ -3,11 +3,14 @@ using Ecommerce.Application.DTOs.Identity;
 using Ecommerce.Application.Interfaces.Email;
 using Ecommerce.Application.Interfaces.Identity;
 using Ecommerce.Application.Interfaces.Sms;
+using Ecommerce.Application.Interfaces.Cart;
+using Ecommerce.Application.Interfaces.Notifications;
 using Ecommerce.Application.Common.Settings;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Enums;
 using Ecommerce.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -34,6 +37,9 @@ namespace Ecommerce.Application.Services.Identity
         private readonly EmailSettings _emailSettings;
         private readonly ISmsSender _smsSender;
         private readonly ILogger<AuthService> _logger;
+        private readonly IHostEnvironment _environment;
+        private readonly ICartService _cartService;
+        private readonly INotificationService _notificationService;
 
         public AuthService(
             IRepository<User> userRepo,
@@ -44,7 +50,10 @@ namespace Ecommerce.Application.Services.Identity
             IEmailSender emailSender,
             IOptions<EmailSettings> emailSettings,
             ISmsSender smsSender,
-            ILogger<AuthService> logger)
+            ILogger<AuthService> logger,
+            IHostEnvironment environment,
+            ICartService cartService,
+            INotificationService notificationService)
         {
             _userRepo = userRepo;
             _refreshTokenRepo = refreshTokenRepo;
@@ -55,6 +64,9 @@ namespace Ecommerce.Application.Services.Identity
             _emailSettings = emailSettings.Value;
             _smsSender = smsSender;
             _logger = logger;
+            _environment = environment;
+            _cartService = cartService;
+            _notificationService = notificationService;
         }
 
         public async Task<UserResponseDto> RegisterAsync(RegisterRequestDto registerDto, string role = "User")
@@ -76,12 +88,31 @@ namespace Ecommerce.Application.Services.Identity
             user.UserId = Guid.NewGuid();
             user.Role = parsedRole;
 
+            // Generate an email verification token so the new account can confirm its address.
+            var verificationToken = CreateUrlSafeToken();
+            user.IsEmailVerified = false;
+            user.EmailVerificationTokenHash = ComputeSha256Hash(verificationToken);
+            user.EmailVerificationTokenExpiresUtc = DateTime.UtcNow.AddHours(24);
+
             await _userRepo.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
+
+            // Best-effort transactional emails: a failure to send must not roll back the registration.
+            try
+            {
+                var verifyUrl = BuildEmailVerificationUrl(user.Email, verificationToken);
+                await _notificationService.SendEmailVerificationEmailAsync(user.Email, user.Name, verifyUrl);
+                await _notificationService.SendWelcomeEmailAsync(user.Email, user.Name);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[Auth] Failed to send welcome/verification email to {Email}", user.Email);
+            }
+
             return _mapper.Map<UserResponseDto>(user);
         }
 
-        public async Task<AuthResponseDto> LoginAsync(LoginRequestDto loginDto)
+        public async Task<AuthResponseDto> LoginAsync(LoginRequestDto loginDto, string? sessionId = null)
         {
             var user = await _userRepo.Query().FirstOrDefaultAsync(u => u.Email == loginDto.Email.ToLower());
             if (user == null)
@@ -93,7 +124,11 @@ namespace Ecommerce.Application.Services.Identity
             if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                 throw new ArgumentException("Invalid email or password");
 
-            return await GenerateAuthResponseAsync(user);
+            // Enforce email verification in production (kept permissive in Development so local testing is not blocked).
+            if (!_environment.IsDevelopment() && !user.IsEmailVerified)
+                throw new UnauthorizedAccessException("Please verify your email address before logging in.");
+
+            return await GenerateAuthResponseAsync(user, sessionId: sessionId);
         }
 
         public async Task RequestPhoneOtpAsync(RequestPhoneOtpRequestDto dto)
@@ -119,7 +154,7 @@ namespace Ecommerce.Application.Services.Identity
             await _smsSender.SendSmsAsync(phoneNumber, $"Your Urbaniq OTP is: {otpCode}. It is valid for {PhoneOtpExpiryMinutes} minutes.");
         }
 
-        public async Task<AuthResponseDto> VerifyPhoneOtpAsync(VerifyPhoneOtpRequestDto dto)
+        public async Task<AuthResponseDto> VerifyPhoneOtpAsync(VerifyPhoneOtpRequestDto dto, string? sessionId = null)
         {
             var phoneNumber = NormalizePhoneNumber(dto.PhoneNumber);
             var normalizedEmail = NormalizeOptionalEmail(dto.Email);
@@ -168,7 +203,7 @@ namespace Ecommerce.Application.Services.Identity
             _userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
-            return await GenerateAuthResponseAsync(user);
+            return await GenerateAuthResponseAsync(user, sessionId: sessionId);
         }
 
         public async Task SendEmailVerificationAsync(Guid userId, SendEmailVerificationRequestDto dto)
@@ -250,11 +285,10 @@ namespace Ecommerce.Application.Services.Identity
             _userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
-            // Build a professional HTML email body with the 6-digit code
-            var htmlBody = BuildOtpEmailHtml(user.Name, otpCode);
-
-            await _emailSender.SendAsync(email, "Reset Your Urbaniq Password", htmlBody);
-            _logger.LogInformation("[Auth] 6-digit OTP sent to {Email}", email);
+            // Use the new notification service
+            var resetLink = $"https://urbaniq.com/reset-password?email={email}&code={otpCode}";
+            await _notificationService.SendPasswordResetEmailAsync(email, user.Name, resetLink);
+            _logger.LogInformation("[Auth] Password reset email sent to {Email}", email);
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -441,11 +475,24 @@ namespace Ecommerce.Application.Services.Identity
             await _unitOfWork.SaveChangesAsync();
         }
 
-        private async Task<AuthResponseDto> GenerateAuthResponseAsync(User user, Guid? existingFamily = null)
+        private async Task<AuthResponseDto> GenerateAuthResponseAsync(User user, Guid? existingFamily = null, string? sessionId = null)
         {
             var tokenFamily = existingFamily ?? Guid.NewGuid();
             var accessToken = CreateAccessToken(user);
             var refreshToken = await CreateRefreshTokenAsync(user.UserId, tokenFamily);
+
+            // Merge guest cart into user cart after successful login
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                try
+                {
+                    await _cartService.MergeCartAsync(sessionId, user.UserId);
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the login if cart merge fails
+                }
+            }
 
             return new AuthResponseDto
             {
@@ -564,6 +611,32 @@ namespace Ecommerce.Application.Services.Identity
             </div>";
         }
 
+        private string BuildWelcomeEmailHtml(string userName)
+        {
+            var frontendUrl = string.IsNullOrWhiteSpace(_emailSettings.FrontendUrl)
+                ? "http://localhost:5173"
+                : _emailSettings.FrontendUrl.TrimEnd('/');
+            return $@"
+            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;'>
+                <div style='background: linear-gradient(135deg, #d7b46a 0%, #9d731e 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 28px;'>Welcome to Urbaniq</h1>
+                </div>
+                <div style='background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;'>
+                    <p style='color: #374151; font-size: 16px; line-height: 1.6;'>Hi <strong>{userName}</strong>,</p>
+                    <p style='color: #374151; font-size: 16px; line-height: 1.6;'>
+                        Thanks for joining Urbaniq! Your account is ready. Discover the latest tech, exclusive deals
+                        and a premium shopping experience crafted for you.
+                    </p>
+                    <p style='margin: 28px 0;'>
+                        <a href='{frontendUrl}' style='background: #111827; color: #d7b46a; padding: 14px 28px; text-decoration: none; font-weight: 700; display: inline-block;'>
+                            Start shopping
+                        </a>
+                    </p>
+                    <p style='color: #6b7280; font-size: 13px;'>If you have any questions, just reply to this email.</p>
+                </div>
+            </div>";
+        }
+
         /// <summary>
         /// Normalizes a phone number to E.164 format (+91XXXXXXXXXX).
         /// Accepts raw 10-digit input or numbers already prefixed with country code.
@@ -572,13 +645,13 @@ namespace Ecommerce.Application.Services.Identity
         {
             var digitsOnly = new string(phoneNumber.Where(char.IsDigit).ToArray());
 
-            // If already includes country code (e.g., 917561867594), ensure + prefix
-            if (digitsOnly.Length == 12 && digitsOnly.StartsWith("91"))
+            // If already includes country code (e.g., 519876543210), ensure + prefix
+            if (digitsOnly.Length == 12 && digitsOnly.StartsWith("51"))
                 return $"+{digitsOnly}";
 
-            // Standard 10-digit Indian mobile number — prepend +91
-            if (digitsOnly.Length == 10)
-                return $"+91{digitsOnly}";
+            // Standard 9/10-digit Peruvian mobile number — prepend +51
+            if (digitsOnly.Length == 9 || digitsOnly.Length == 10)
+                return $"+51{digitsOnly}";
 
             // Fallback: return with + prefix for any other international format
             return $"+{digitsOnly}";

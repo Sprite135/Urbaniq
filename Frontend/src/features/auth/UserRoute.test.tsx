@@ -5,10 +5,10 @@ import UserRoute from './UserRoute';
 import { renderWithProviders } from '@/test/test-utils';
 
 describe('UserRoute', () => {
-  it('redirects guests to storefront auth modal with return path', () => {
+  it('redirects guests to the login page with return path', () => {
     renderWithProviders(
       <Routes>
-        <Route path="/" element={<div>Login Modal Host</div>} />
+        <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/orders" element={<UserRoute />}>
           <Route index element={<div>Orders Page</div>} />
         </Route>
@@ -16,7 +16,7 @@ describe('UserRoute', () => {
       { routerProps: { initialEntries: ['/orders'] } }
     );
 
-    expect(screen.getByText('Login Modal Host')).toBeInTheDocument();
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
   });
 
   it('redirects admin users to admin dashboard', () => {

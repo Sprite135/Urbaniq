@@ -83,7 +83,7 @@ import { setCredentials } from './authSlice';export const authApiSlice = apiSlic
           if (token && data?.data) {
             dispatch(setCredentials({ user: data.data, accessToken: token, refreshToken: refreshToken || '' }));
           }
-        } catch (err) {
+        } catch {
           // Ignore
         }
       },

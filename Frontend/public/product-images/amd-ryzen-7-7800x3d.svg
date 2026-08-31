@@ -1,0 +1,14 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#F3EBDD"/>
+  <rect x="236" y="228" width="428" height="428" rx="32" fill="#B65A2B"/>
+  <rect x="272" y="264" width="356" height="356" rx="22" fill="#242A34"/>
+  <rect x="312" y="304" width="276" height="276" rx="12" fill="#111827"/>
+  <path d="M178 312h48M178 380h48M178 448h48M178 516h48M178 584h48M674 312h48M674 380h48M674 448h48M674 516h48M674 584h48" stroke="#9D731E" stroke-width="22" stroke-linecap="round"/>
+  <path d="M314 170v48M382 170v48M450 170v48M518 170v48M586 170v48M314 666v48M382 666v48M450 666v48M518 666v48M586 666v48" stroke="#9D731E" stroke-width="22" stroke-linecap="round"/>
+  <path d="M360 418c28-54 85-82 146-68 59 14 100 65 100 125" stroke="#D7B46A" stroke-width="20" stroke-linecap="round"/>
+  <path d="M540 484c-28 54-85 82-146 68-59-14-100-65-100-125" stroke="#D7B46A" stroke-width="20" stroke-linecap="round"/>
+  <text x="450" y="453" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="800" fill="#F8F5EE">X3D</text>
+  <text x="450" y="866" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="8" fill="#9D731E">URBANIQ PC</text>
+  <text x="450" y="925" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#111827">RYZEN 7 7800X3D</text>
+  <text x="450" y="975" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="4" fill="#514B43">8-CORE 3D V-CACHE PROCESSOR</text>
+</svg>

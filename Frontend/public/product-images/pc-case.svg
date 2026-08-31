@@ -1,0 +1,18 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#F3EBDD"/>
+  <rect x="300" y="240" width="300" height="560" rx="24" fill="#202631"/>
+  <rect x="330" y="272" width="240" height="496" rx="14" fill="#141923"/>
+  <g fill="#28313F">
+    <rect x="356" y="300" width="188" height="120" rx="8"/>
+    <rect x="356" y="440" width="188" height="120" rx="8"/>
+    <rect x="356" y="580" width="188" height="120" rx="8"/>
+  </g>
+  <g stroke="#C8A24A" stroke-width="10" stroke-linecap="round">
+    <path d="M356 540h188M356 680h188"/>
+  </g>
+  <circle cx="450" cy="528" r="14" fill="#C8A24A"/>
+  <circle cx="450" cy="668" r="14" fill="#C8A24A"/>
+  <text x="450" y="860" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="8" fill="#9D731E">URBANIQ PC</text>
+  <text x="450" y="918" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#111827">GABINETE</text>
+  <text x="450" y="960" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="4" fill="#514B43">PC CASE</text>
+</svg>

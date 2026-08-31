@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useChangeOrderStatusMutation, useGetAllOrdersQuery } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { CheckCircle, Clock, Package, Search, Truck, XCircle } from 'lucide-react';
+import { getApiErrorMessage } from '@/app/apiError';
 
 const getAvailableStatuses = (currentStatus: string) => {
   const normalized = currentStatus.toLowerCase();
@@ -13,10 +14,11 @@ const getAvailableStatuses = (currentStatus: string) => {
 };
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
+  new Intl.NumberFormat('es-PE', {
     style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
+    currency: 'PEN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 
 const statusStyles: Record<string, string> = {
@@ -63,20 +65,20 @@ const OrderManagementPage = () => {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       await changeStatus({ orderId, status: newStatus }).unwrap();
-      toast.success('Order status updated');
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to update order status');
+      toast.success('Estado del pedido actualizado');
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'No se pudo actualizar el estado del pedido'));
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Fulfilment desk</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Gestión de pedidos</p>
         <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">
-          {statusParam ? `${statusParam} Orders` : 'Orders'}
+          {statusParam ? `${statusParam} pedidos` : 'Pedidos'}
         </h2>
-        <p className="mt-2 text-sm text-[#6f6659]">Track payment references, customer delivery details, and shipment status changes.</p>
+        <p className="mt-2 text-sm text-[#6f6659]">Rastrea referencias de pago, detalles de entrega del cliente y cambios de estado de envío.</p>
       </div>
 
       <section className="border border-[#e1d5c2] bg-white">
@@ -85,14 +87,14 @@ const OrderManagementPage = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8174]" />
             <input
               type="search"
-              placeholder="Search order ID, transaction ID, customer name, or email..."
+              placeholder="Buscar ID de pedido, ID de transacción, nombre de cliente o correo..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="h-11 w-full border border-[#d8cdbb] bg-white pl-10 pr-3 text-sm outline-none focus:border-[#9d731e]"
             />
           </label>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7c7467]">
-            {data?.totalCount || 0} orders
+            {data?.totalCount || 0} pedidos
           </p>
         </div>
 
@@ -107,11 +109,11 @@ const OrderManagementPage = () => {
               <table className="w-full text-left">
                 <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
                   <tr>
-                    <th className="px-5 py-4">Order</th>
-                    <th className="px-5 py-4">Customer</th>
+                    <th className="px-5 py-4">Pedido</th>
+                    <th className="px-5 py-4">Cliente</th>
                     <th className="px-5 py-4">Total</th>
-                    <th className="px-5 py-4">Status</th>
-                    <th className="px-5 py-4">Update</th>
+                    <th className="px-5 py-4">Estado</th>
+                    <th className="px-5 py-4">Actualizar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6da]">
@@ -128,12 +130,12 @@ const OrderManagementPage = () => {
                             </Link>
                           </td>
                           <td className="px-5 py-4">
-                            <p className="text-sm font-bold text-[#111827]">{order.address?.fullName || 'Customer'}</p>
-                            <p className="mt-1 text-xs text-[#7c7467]">{order.userEmail || 'Email unavailable'}</p>
+                                <p className="text-sm font-bold text-[#111827]">{order.address?.fullName || 'Cliente'}</p>
+                                <p className="mt-1 text-xs text-[#7c7467]">{order.userEmail || 'Correo no disponible'}</p>
                           </td>
                           <td className="px-5 py-4">
                             <p className="text-sm font-black text-[#111827]">{formatCurrency(order.totalPrice)}</p>
-                            <p className="mt-1 text-xs text-[#7c7467]">{order.orderItems?.length || 0} items</p>
+                             <p className="mt-1 text-xs text-[#7c7467]">{order.orderItems?.length || 0} artículos</p>
                           </td>
                           <td className="px-5 py-4">
                             <span className={`inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${statusStyles[normalizedStatus] || 'bg-gray-100 text-gray-700'}`}>
@@ -158,7 +160,7 @@ const OrderManagementPage = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#7c7467]">No orders found.</td>
+                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron pedidos.</td>
                     </tr>
                   )}
                 </tbody>
@@ -204,7 +206,7 @@ const OrderManagementPage = () => {
                   );
                 })
               ) : (
-                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No orders found.</div>
+                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron pedidos.</div>
               )}
             </div>
           </>
@@ -213,8 +215,8 @@ const OrderManagementPage = () => {
         {data && data.totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-[#eee6da] bg-[#fbfaf7] px-5 py-4">
             <p className="text-sm text-[#6f6659]">
-              Page <span className="font-bold text-[#111827]">{data.pageNumber}</span> of{' '}
-              <span className="font-bold text-[#111827]">{data.totalPages}</span>
+               Página <span className="font-bold text-[#111827]">{data.pageNumber}</span> de{' '}
+               <span className="font-bold text-[#111827]">{data.totalPages}</span>
             </p>
             <div className="flex gap-2">
               <button
@@ -222,14 +224,14 @@ const OrderManagementPage = () => {
                 onClick={() => setPage((value) => value - 1)}
                 className="h-9 border border-[#d8cdbb] bg-white px-4 text-xs font-bold uppercase tracking-[0.16em] disabled:opacity-40"
               >
-                Previous
+                 Anterior
               </button>
               <button
                 disabled={page === data.totalPages}
                 onClick={() => setPage((value) => value + 1)}
                 className="h-9 border border-[#d8cdbb] bg-white px-4 text-xs font-bold uppercase tracking-[0.16em] disabled:opacity-40"
               >
-                Next
+                 Siguiente
               </button>
             </div>
           </div>

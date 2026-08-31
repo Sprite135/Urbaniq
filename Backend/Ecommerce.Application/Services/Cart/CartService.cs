@@ -35,9 +35,60 @@ namespace Ecommerce.Application.Services.Cart
             _logger = logger;
         }
 
-        public async Task<CartResponseDto> AddToCartAsync(Guid userId, AddToCartRequestDto dto)
+        private async Task<Domain.Entities.Cart> GetOrCreateCartAsync(Guid? userId, string? sessionId)
         {
-            if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId), "Invalid user id");
+            Domain.Entities.Cart cart = null;
+
+            if (userId.HasValue)
+            {
+                cart = await _cartRepo.Query()
+                    .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
+                    .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
+                    .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+            }
+            else if (!string.IsNullOrEmpty(sessionId))
+            {
+                cart = await _cartRepo.Query()
+                    .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
+                    .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
+                    .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+            }
+
+            if (cart == null)
+            {
+                cart = new Domain.Entities.Cart
+                {
+                    CartId = Guid.NewGuid(),
+                    UserId = userId,
+                    SessionId = sessionId
+                };
+                await _cartRepo.AddAsync(cart);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            return cart;
+        }
+
+        public async Task<CartResponseDto> GetCartAsync(Guid? userId = null, string? sessionId = null)
+        {
+            if (!userId.HasValue && string.IsNullOrEmpty(sessionId))
+            {
+                return new CartResponseDto
+                {
+                    CartId = Guid.Empty,
+                    Items = new List<CartItemResponseDto>()
+                };
+            }
+
+            var cart = await GetOrCreateCartAsync(userId, sessionId);
+            return _mapper.Map<CartResponseDto>(cart);
+        }
+
+        public async Task<CartResponseDto> AddToCartAsync(Guid? userId, string? sessionId, AddToCartRequestDto dto)
+        {
+            if (!userId.HasValue && string.IsNullOrEmpty(sessionId))
+                throw new ArgumentException("Either userId or sessionId must be provided");
+
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
             var product = await _productRepo.Query()
@@ -48,21 +99,17 @@ namespace Ecommerce.Application.Services.Cart
             var variant = product.Variants.FirstOrDefault(v => v.Id == dto.ProductVariantId);
             if (variant == null) throw new ArgumentException("Selected product variant was not found.", nameof(dto.ProductVariantId));
 
-            ValidateSelection(product, dto.DeliveryPincode);
-
-            var cart = await _cartRepo.Query()
-                .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
-                .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null)
+            if (!string.IsNullOrWhiteSpace(dto.DeliveryCode))
             {
-                cart = new Domain.Entities.Cart { CartId = Guid.NewGuid(), UserId = userId };
-                await _cartRepo.AddAsync(cart);
+                ValidateSelection(product, dto.DeliveryCode);
             }
 
+            var cart = await GetOrCreateCartAsync(userId, sessionId);
+
             var requestedQuantity = Math.Max(1, dto.Quantity);
-            var normalizedPincode = dto.DeliveryPincode.Trim();
+            var normalizedCode = string.IsNullOrWhiteSpace(dto.DeliveryCode)
+                ? string.Empty
+                : dto.DeliveryCode.Trim();
             var existing = cart.CartItems.FirstOrDefault(ci => ci.ProductVariantId == dto.ProductVariantId);
 
             var currentVariantQuantityInCart = cart.CartItems
@@ -85,22 +132,24 @@ namespace Ecommerce.Application.Services.Cart
                     Quantity = Math.Min(requestedQuantity, MaxQuantity),
                     SelectedSize = variant.Size,
                     SelectedColor = variant.Color,
-                    DeliveryPincode = normalizedPincode
+                    DeliveryCode = normalizedCode
                 };
                 await _cartItemRepo.AddAsync(newItem);
             }
             else
             {
                 existing.Quantity = Math.Min(existing.Quantity + requestedQuantity, MaxQuantity);
-                existing.DeliveryPincode = normalizedPincode;
+                existing.DeliveryCode = normalizedCode;
             }
 
             try
             {
                 await _unitOfWork.SaveChangesAsync();
                 _logger.LogInformation(
-                    "User {UserId} added product {ProductId} variant {VariantId} ({Size}/{Color}) to cart",
-                    userId,
+                    "Cart {CartId} (User: {UserId}, Session: {SessionId}) added product {ProductId} variant {VariantId} ({Size}/{Color})",
+                    cart.CartId,
+                    userId?.ToString() ?? "anonymous",
+                    sessionId ?? "none",
                     dto.ProductId,
                     dto.ProductVariantId,
                     variant.Size,
@@ -108,40 +157,16 @@ namespace Ecommerce.Application.Services.Cart
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                _logger.LogError(ex, "Concurrency exception when saving cart for user {UserId}. CartItem Id: {CartItemId}", userId, existing?.Id);
+                _logger.LogError(ex, "Concurrency exception when saving cart {CartId}", cart.CartId);
                 throw;
             }
 
-            return await GetUserCartAsync(userId);
+            return await GetCartAsync(userId, sessionId);
         }
 
-        public async Task<CartResponseDto> GetUserCartAsync(Guid userId)
+        public async Task<bool> RemoveFromCartAsync(Guid? userId, string? sessionId, Guid cartItemId)
         {
-            var cart = await _cartRepo.Query()
-                .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
-                .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null)
-            {
-                return new CartResponseDto
-                {
-                    CartId = Guid.Empty,
-                    Items = new List<CartItemResponseDto>()
-                };
-            }
-
-            return _mapper.Map<CartResponseDto>(cart);
-        }
-
-        public async Task<bool> RemoveFromCartAsync(Guid userId, Guid cartItemId)
-        {
-            var cart = await _cartRepo.Query()
-                .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null) return false;
-
+            var cart = await GetOrCreateCartAsync(userId, sessionId);
             var item = cart.CartItems.FirstOrDefault(ci => ci.Id == cartItemId);
             if (item == null) return false;
 
@@ -150,15 +175,9 @@ namespace Ecommerce.Application.Services.Cart
             return true;
         }
 
-        public async Task<bool> IncreaseQuantityAsync(Guid userId, Guid cartItemId, int delta = 1)
+        public async Task<bool> IncreaseQuantityAsync(Guid? userId, string? sessionId, Guid cartItemId, int delta = 1)
         {
-            var cart = await _cartRepo.Query()
-                .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
-                .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null) return false;
-
+            var cart = await GetOrCreateCartAsync(userId, sessionId);
             var item = cart.CartItems.FirstOrDefault(ci => ci.Id == cartItemId);
             if (item == null || item.Quantity >= MaxQuantity) return false;
 
@@ -176,14 +195,9 @@ namespace Ecommerce.Application.Services.Cart
             return true;
         }
 
-        public async Task<bool> DecreaseQuantityAsync(Guid userId, Guid cartItemId, int delta = 1)
+        public async Task<bool> DecreaseQuantityAsync(Guid? userId, string? sessionId, Guid cartItemId, int delta = 1)
         {
-            var cart = await _cartRepo.Query()
-                .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null) return false;
-
+            var cart = await GetOrCreateCartAsync(userId, sessionId);
             var item = cart.CartItems.FirstOrDefault(ci => ci.Id == cartItemId);
             if (item == null) return false;
 
@@ -197,12 +211,77 @@ namespace Ecommerce.Application.Services.Cart
             return true;
         }
 
-        private static void ValidateSelection(Product product, string deliveryPincode)
+        public async Task MergeCartAsync(string sessionId, Guid userId)
         {
-            var deliverablePincodes = ProductOptionParser.ParsePincodeList(product.DeliverablePincodes);
-            if (!deliverablePincodes.Contains(deliveryPincode.Trim(), StringComparer.Ordinal))
+            if (string.IsNullOrEmpty(sessionId) || userId == Guid.Empty)
+                return;
+
+            var guestCart = await _cartRepo.Query()
+                .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
+                .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
+                .FirstOrDefaultAsync(c => c.SessionId == sessionId && !c.UserId.HasValue);
+
+            if (guestCart == null || guestCart.CartItems == null || !guestCart.CartItems.Any())
+                return;
+
+            var userCart = await _cartRepo.Query()
+                .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
+                .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (userCart == null)
             {
-                throw new ArgumentException("This product cannot be delivered to the selected pincode.");
+                guestCart.UserId = userId;
+                guestCart.SessionId = null;
+                _cartRepo.Update(guestCart);
+            }
+            else
+            {
+                foreach (var guestItem in guestCart.CartItems)
+                {
+                    var existing = userCart.CartItems.FirstOrDefault(ci => ci.ProductVariantId == guestItem.ProductVariantId);
+                    var totalForVariant = userCart.CartItems
+                        .Where(ci => ci.ProductVariantId == guestItem.ProductVariantId)
+                        .Sum(ci => ci.Quantity);
+
+                    if (existing == null)
+                    {
+                        var newItem = new CartItem
+                        {
+                            Id = Guid.NewGuid(),
+                            CartId = userCart.CartId,
+                            ProductId = guestItem.ProductId,
+                            ProductVariantId = guestItem.ProductVariantId,
+                            Quantity = guestItem.Quantity,
+                            SelectedSize = guestItem.SelectedSize,
+                            SelectedColor = guestItem.SelectedColor,
+                            DeliveryCode = guestItem.DeliveryCode
+                        };
+                        await _cartItemRepo.AddAsync(newItem);
+                    }
+                    else
+                    {
+                        var newQuantity = Math.Min(existing.Quantity + guestItem.Quantity, MaxQuantity);
+                        if (guestItem.ProductVariant.Quantity >= totalForVariant + guestItem.Quantity)
+                        {
+                            existing.Quantity = newQuantity;
+                        }
+                    }
+                }
+                _cartItemRepo.RemoveRange(guestCart.CartItems);
+                _cartRepo.Remove(guestCart);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Merged guest cart {SessionId} into user cart {UserId}", sessionId, userId);
+        }
+
+        private static void ValidateSelection(Product product, string deliveryCode)
+        {
+            var deliverableCodes = ProductOptionParser.ParseDeliveryCodes(product.DeliverableZones);
+            if (!deliverableCodes.Contains(deliveryCode.Trim(), StringComparer.Ordinal))
+            {
+                throw new ArgumentException("Este producto no se puede enviar a la zona seleccionada.");
             }
         }
     }

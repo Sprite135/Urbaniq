@@ -32,13 +32,16 @@ export interface Product {
   color: string;
   availableSizes: string[];
   availableColors: string[];
-  deliverablePincodes: string[];
+  deliverableZones: string[];
+  requiresConfiguration?: boolean;
   variants: ProductVariant[];
   material?: string;
   categoryId: number;
   categoryName?: string;
   subCategoryId?: number;
   subCategoryName?: string;
+  averageRating?: number | null;
+  totalReviews?: number;
 }
 
 export interface Category {
@@ -59,6 +62,25 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
   totalCount: number;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export interface ReviewResponseDto {
+  reviewId: number;
+  productId: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  title: string;
+  comment: string;
+  isVerifiedPurchase: boolean;
+  createdAt: string;
 }
 
 /// Lightweight suggestion returned by the SearchSuggestions endpoint.
@@ -198,6 +220,24 @@ export const catalogApiSlice = apiSlice.injectEndpoints({
       providesTags: [{ type: 'Product', id: 'LIST' }],
     }),
 
+    // Reviews
+    getReviews: builder.query<PagedResult<ReviewResponseDto>, { productId: string; pageNumber?: number; pageSize?: number }>({
+      query: ({ productId, ...params }) => ({
+        url: `/Reviews/product/${productId}`,
+        params,
+      }),
+      providesTags: (result, error, { productId }) => [{ type: 'Review', id: productId }],
+    }),
+
+    createReview: builder.mutation<ReviewResponseDto, { productId: string; rating: number; title: string; comment: string }>({
+      query: ({ productId, ...body }) => ({
+        url: `/Reviews/${productId}`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { productId }) => [{ type: 'Review', id: productId }],
+    }),
+
     // Lightweight search suggestions — debounced autocomplete dropdown
     // Uses projection-only backend query for maximum speed
     searchSuggestions: builder.query<SearchSuggestion[], { query: string; limit?: number }>({
@@ -225,4 +265,6 @@ export const {
   useGetHomeProductCardsQuery,
   useGetProductsBySubCategoryQuery,
   useSearchSuggestionsQuery,
+  useGetReviewsQuery,
+  useCreateReviewMutation,
 } = catalogApiSlice;

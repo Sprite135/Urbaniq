@@ -1,0 +1,16 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#F3EBDD"/>
+  <rect x="96" y="240" width="708" height="360" rx="24" fill="#202631"/>
+  <rect x="132" y="276" width="636" height="288" rx="16" fill="#141923"/>
+  <circle cx="318" cy="420" r="104" fill="#28313F"/>
+  <circle cx="318" cy="420" r="78" fill="#10141B"/>
+  <circle cx="318" cy="420" r="18" fill="#C8A24A"/>
+  <circle cx="582" cy="420" r="104" fill="#28313F"/>
+  <circle cx="582" cy="420" r="78" fill="#10141B"/>
+  <circle cx="582" cy="420" r="18" fill="#C8A24A"/>
+  <rect x="150" y="640" width="600" height="40" rx="8" fill="#C8A24A"/>
+  <rect x="158" y="648" width="584" height="24" rx="5" fill="#A78024"/>
+  <text x="450" y="760" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="8" fill="#9D731E">URBANIQ PC</text>
+  <text x="450" y="820" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" fill="#111827">GPU</text>
+  <text x="450" y="870" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="4" fill="#514B43">TARJETA DE VIDEO</text>
+</svg>

@@ -6,20 +6,28 @@ export interface Address {
   addressId: string;
   fullName: string;
   phoneNumber: string;
-  pincode: string;
+  postalCode?: string | null;
+  department?: string | null;
+  province?: string | null;
+  district?: string | null;
+  deliveryZone?: string | null;
   houseName: string;
   place: string;
-  postOffice: string;
+  reference: string;
   landMark: string;
 }
 
 export interface CreateAddressRequest {
   fullName: string;
   phoneNumber: string;
-  pincode: string;
+  postalCode?: string | null;
+  department?: string | null;
+  province?: string | null;
+  district?: string | null;
+  deliveryZone?: string | null;
   houseName: string;
   place: string;
-  postOffice: string;
+  reference: string;
   landMark: string;
 }
 

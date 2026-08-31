@@ -15,21 +15,30 @@ namespace Ecommerce.Infrastructure.Services
     /// </summary>
     public class StripeGatewayService : IPaymentGatewayService
     {
+        public bool IsConfigured { get; }
+
         public StripeGatewayService(IConfiguration configuration)
         {
             var secretKey = configuration["StripeSettings:SecretKey"];
-            
-            if (string.IsNullOrWhiteSpace(secretKey) ||
-                !secretKey.StartsWith("sk_", StringComparison.Ordinal))
+            IsConfigured = !string.IsNullOrWhiteSpace(secretKey) &&
+                           secretKey.StartsWith("sk_", StringComparison.Ordinal);
+            if (IsConfigured)
             {
-                throw new InvalidOperationException("Stripe secret key is missing or invalid.");
+                StripeConfiguration.ApiKey = secretKey;
             }
-
-            StripeConfiguration.ApiKey = secretKey;
         }
 
         public async Task<ApiResponse<PaymentIntentResponseDto>> CreatePaymentIntentAsync(decimal amount)
         {
+            if (!IsConfigured)
+            {
+                return new ApiResponse<PaymentIntentResponseDto>
+                {
+                    StatusCode = 503,
+                    Message = "Stripe is not configured."
+                };
+            }
+
             try
             {
                 // Stripe expects amounts in the smallest currency unit (e.g., cents or paise)
@@ -38,7 +47,7 @@ namespace Ecommerce.Infrastructure.Services
                 var options = new PaymentIntentCreateOptions
                 {
                     Amount = amountInSmallestUnit,
-                    Currency = "inr", // Assuming INR based on previous Razorpay config. Change if needed.
+                    Currency = "pen",
                     AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
                     {
                         Enabled = true,
@@ -79,6 +88,15 @@ namespace Ecommerce.Infrastructure.Services
 
         public async Task<ApiResponse<PaymentVerificationResponseDto>> VerifyPaymentAsync(string paymentIntentId)
         {
+            if (!IsConfigured)
+            {
+                return new ApiResponse<PaymentVerificationResponseDto>
+                {
+                    StatusCode = 503,
+                    Message = "Stripe is not configured."
+                };
+            }
+
             try
             {
                 var service = new PaymentIntentService();

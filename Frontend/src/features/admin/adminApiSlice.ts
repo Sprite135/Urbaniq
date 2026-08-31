@@ -1,5 +1,6 @@
 import { apiSlice } from '@/app/apiSlice';
 import type { User } from '@/features/auth/authSlice';
+import type { Order } from '@/features/orders/orderApiSlice';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -13,16 +14,9 @@ interface AdminUser extends User {
   isBlocked: boolean;
 }
 
-interface OrderDetails {
-  orderId: string;
-  orderDate: string;
-  totalPrice: number;
-  orderStatus: string;
-  transactionId: string;
+type OrderDetails = Order & {
   userEmail?: string;
-  address: any; // Simplified for now
-  orderItems: any[]; // Simplified for now
-}
+};
 
 interface DashboardStats {
   totalRevenue: number;
@@ -32,6 +26,103 @@ interface DashboardStats {
   totalShippedOrders: number;
   totalCustomers: number;
   lowStockCount: number;
+}
+
+interface LowStockProduct {
+  id: string;
+  productName: string;
+  sku: string;
+  image: string;
+  quantity: number;
+}
+
+interface Coupon {
+  couponId: number;
+  code: string;
+  discountType: number;
+  value: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  maxUsesPerUser?: number;
+  usesCount: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  createdAt: string;
+  applicableCategoryIds: number[];
+  applicableProductIds: string[];
+  isValid: boolean;
+}
+
+interface CouponAnalytics {
+  couponId: number;
+  code: string;
+  totalDiscountGiven: number;
+  totalUses: number;
+  uniqueUsers: number;
+  averageOrderValue: number;
+  totalRevenueGenerated: number;
+  conversionRate: number;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+interface UserCouponHistory {
+  couponCode: string;
+  discountAmount: number;
+  usedAt: string;
+  orderId: string;
+}
+
+interface AvailableCouponSuggestion {
+  code: string;
+  description: string;
+  discountType: number;
+  value: number;
+  minOrderAmount?: number;
+  validUntil: string;
+}
+
+interface CouponUsageByPeriod {
+  period: string;
+  usesCount: number;
+  totalDiscount: number;
+}
+
+interface CouponPerformance {
+  topPerformingCoupons: CouponAnalytics[];
+  usageByDay: CouponUsageByPeriod[];
+  usageByWeek: CouponUsageByPeriod[];
+  usageByMonth: CouponUsageByPeriod[];
+  totalDiscountGivenAllTime: number;
+  totalCouponsActive: number;
+  totalCouponsUsed: number;
+}
+
+interface CreateCouponRequest {
+  code: string;
+  discountType: number;
+  value: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  maxUsesPerUser?: number;
+  startDate?: string;
+  endDate?: string;
+  applicableCategoryIds?: number[];
+  applicableProductIds?: string[];
+}
+
+interface UpdateCouponRequest {
+  discountType?: number;
+  value?: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  maxUsesPerUser?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+  applicableCategoryIds?: number[];
+  applicableProductIds?: string[];
 }
 
 export const adminApiSlice = apiSlice.injectEndpoints({
@@ -84,7 +175,7 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       query: () => '/Admin/dashboard-stats',
       providesTags: ['Order', 'User', 'Product'],
     }),
-    getLowStockProducts: builder.query<any[], void>({
+    getLowStockProducts: builder.query<LowStockProduct[], void>({
       query: () => '/Admin/low-stock-products?threshold=10&limit=5',
       providesTags: ['Product'],
     }),
@@ -105,6 +196,58 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Category'],
     }),
+
+    // Coupon Management
+    getAllCoupons: builder.query<PaginatedResponse<Coupon>, { pageNumber: number; pageSize: number; isActive?: boolean }>({
+      query: (params) => ({
+        url: '/Coupons',
+        params,
+      }),
+      providesTags: ['Coupon'],
+    }),
+    createCoupon: builder.mutation<Coupon, CreateCouponRequest>({
+      query: (body) => ({
+        url: '/Coupons',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Coupon'],
+    }),
+    updateCoupon: builder.mutation<Coupon, { couponId: number; data: UpdateCouponRequest }>({
+      query: ({ couponId, data }) => ({
+        url: `/Coupons/${couponId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Coupon'],
+    }),
+    deleteCoupon: builder.mutation<{ message: string }, number>({
+      query: (couponId) => ({
+        url: `/Coupons/${couponId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Coupon'],
+    }),
+
+    // Coupon Analytics
+    getCouponPerformance: builder.query<CouponPerformance, void>({
+      query: () => '/Coupons/analytics/performance',
+      providesTags: ['Coupon'],
+    }),
+    getCouponAnalytics: builder.query<CouponAnalytics, number>({
+      query: (couponId) => `/Coupons/${couponId}/analytics`,
+      providesTags: ['Coupon'],
+    }),
+
+    // User-facing coupon endpoints
+    getAvailableCoupons: builder.query<Coupon[], { cartTotal: number }>({
+      query: ({ cartTotal }) => `/Coupons/available?cartTotal=${cartTotal}`,
+      providesTags: ['Coupon'],
+    }),
+    getUserCouponHistory: builder.query<UserCouponHistory[], void>({
+      query: () => '/Coupons/history',
+      providesTags: ['Coupon'],
+    }),
   }),
 });
 
@@ -118,4 +261,12 @@ export const {
   useGetLowStockProductsQuery,
   useToggleCategoryStatusMutation,
   useDeleteCategoryMutation,
+  useGetAllCouponsQuery,
+  useCreateCouponMutation,
+  useUpdateCouponMutation,
+  useDeleteCouponMutation,
+  useGetCouponPerformanceQuery,
+  useGetCouponAnalyticsQuery,
+  useGetAvailableCouponsQuery,
+  useGetUserCouponHistoryQuery,
 } = adminApiSlice;

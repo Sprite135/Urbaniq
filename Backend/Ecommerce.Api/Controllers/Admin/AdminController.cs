@@ -5,6 +5,7 @@ using Ecommerce.Application.Interfaces.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Http;
 
 namespace Ecommerce.Api.Controllers.Admin
 {
@@ -133,6 +134,33 @@ namespace Ecommerce.Api.Controllers.Admin
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Uploads an image for a category and returns its URL.
+        /// </summary>
+        [HttpPost("categories/{categoryId}/image")]
+        public async Task<IActionResult> UploadCategoryImage(int categoryId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file provided." });
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!new[] { ".png", ".jpg", ".jpeg", ".webp" }.Contains(ext))
+                return BadRequest(new { message = "Unsupported file type. Use png, jpg, jpeg or webp." });
+
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new { message = "File too large (max 5 MB)." });
+
+            try
+            {
+                var imageUrl = await _categoryService.UploadCategoryImageAsync(categoryId, file);
+                return Ok(new { imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Failed to upload image: {ex.Message}" });
             }
         }
     }

@@ -9,6 +9,7 @@ import {
 import { useCreateCategoryMutation } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Image as ImageIcon, Plus, Trash2, Upload, X } from 'lucide-react';
+import { getApiErrorMessage } from '@/app/apiError';
 
 type VariantDraft = {
   clientId: string;
@@ -61,7 +62,7 @@ const ProductFormPage = () => {
     categoryId: '',
     subCategoryId: '',
     description: '',
-    deliverablePincodes: '',
+    deliverableZones: '',
     material: 'Cotton',
   });
   const [variants, setVariants] = useState<VariantDraft[]>([emptyVariant()]);
@@ -96,7 +97,7 @@ const ProductFormPage = () => {
         categoryId: productData.categoryId.toString(),
         subCategoryId: productData.subCategoryId?.toString() || '',
         description: productData.description,
-        deliverablePincodes: productData.deliverablePincodes.join(', '),
+        deliverableZones: productData.deliverableZones.join(', '),
         material: productData.material || 'Cotton',
       });
       setVariants(
@@ -199,7 +200,7 @@ const ProductFormPage = () => {
 
   const handleAddCategory = async (parentId?: number) => {
     if (!newCategoryName.trim()) {
-      toast.error('Category name is required');
+      toast.error('El nombre de la categoría es obligatorio');
       return;
     }
     try {
@@ -208,17 +209,17 @@ const ProductFormPage = () => {
         description: '',
         parentCategoryId: parentId,
       }).unwrap();
-      toast.success(parentId ? 'Sub-category added' : 'Category added');
+      toast.success(parentId ? 'Subcategoría agregada' : 'Categoría agregada');
       setNewCategoryName('');
       setShowAddCategory(false);
       setShowAddSubCategory(false);
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to add category');
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'No se pudo agregar la categoría'));
     }
   };
 
   const validateAdminFields = () => {
-    const pincodeValues = formData.deliverablePincodes.split(',').map((value) => value.trim()).filter(Boolean);
+    const zoneValues = formData.deliverableZones.split(',').map((value) => value.trim()).filter(Boolean);
     const validVariants = variants
       .map((variant) => ({
         size: variant.size.trim(),
@@ -228,23 +229,23 @@ const ProductFormPage = () => {
       .filter((variant) => variant.size && variant.color);
 
     if (!validVariants.length) {
-      toast.error('Add at least one size and color variant');
+      toast.error('Agrega al menos una variante de versión y color');
       return false;
     }
 
     if (validVariants.some((variant) => Number.isNaN(variant.quantity) || variant.quantity < 0)) {
-      toast.error('Variant stock must be zero or more');
+      toast.error('El stock de la variante debe ser cero o más');
       return false;
     }
 
     const uniqueKeys = new Set(validVariants.map((variant) => `${variant.size.toLowerCase()}|${variant.color.toLowerCase()}`));
     if (uniqueKeys.size !== validVariants.length) {
-      toast.error('Each size and color combination must be unique');
+      toast.error('Cada combinación de versión y color debe ser única');
       return false;
     }
 
-    if (pincodeValues.length === 0 || pincodeValues.some((value) => !/^\d{6}$/.test(value))) {
-      toast.error('Add valid 6-digit deliverable pincodes separated by commas');
+    if (zoneValues.some((value) => !/^\d{6}$/.test(value))) {
+      toast.error('Los códigos postales deben tener 6 dígitos');
       return false;
     }
 
@@ -252,7 +253,7 @@ const ProductFormPage = () => {
       (productImage) => productImage.color && !validVariants.some((variant) => variant.color.toLowerCase() === productImage.color.toLowerCase())
     );
     if (invalidImageColor) {
-      toast.error(`Image colour "${invalidImageColor.color}" does not match any current variant colour`);
+      toast.error(`El color de imagen "${invalidImageColor.color}" no coincide con ningún color de variante actual`);
       return false;
     }
 
@@ -267,7 +268,7 @@ const ProductFormPage = () => {
     }
 
     if (!productImages.length) {
-      toast.error('At least one product image is required');
+      toast.error('Se requiere al menos una imagen del producto');
       return;
     }
 
@@ -289,7 +290,7 @@ const ProductFormPage = () => {
       data.append('subCategoryId', formData.subCategoryId);
     }
     data.append('description', formData.description);
-    data.append('deliverablePincodes', formData.deliverablePincodes);
+    data.append('deliverableZones', formData.deliverableZones);
     data.append('material', formData.material);
 
     validVariants.forEach((variant, index) => {
@@ -314,14 +315,14 @@ const ProductFormPage = () => {
     try {
       if (isEditMode) {
         await updateProduct({ id: id!, formData: data }).unwrap();
-        toast.success('Product updated successfully');
+        toast.success('Producto actualizado correctamente');
       } else {
         await addProduct(data).unwrap();
-        toast.success('Product added successfully');
+        toast.success('Producto agregado correctamente');
       }
       navigate('/admin/products');
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to save product');
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'No se pudo guardar el producto'));
     }
   };
 
@@ -340,14 +341,14 @@ const ProductFormPage = () => {
           type="button"
           onClick={() => navigate('/admin/products')}
           className="grid h-11 w-11 place-items-center border border-[#d8cdbb] bg-white text-[#111827] hover:border-[#9d731e]"
-          aria-label="Back to products"
+          aria-label="Volver a productos"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Catalog publishing</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Publicación de catálogo</p>
           <h2 className="mt-1 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">
-            {isEditMode ? 'Edit Product' : 'Add Product'}
+            {isEditMode ? 'Editar producto' : 'Agregar producto'}
           </h2>
         </div>
       </div>
@@ -356,11 +357,11 @@ const ProductFormPage = () => {
         <div className="space-y-6">
           <section className="border border-[#e1d5c2] bg-white p-5">
             <h3 className="border-b border-[#eee6da] pb-4 text-[12px] font-black uppercase tracking-[0.24em] text-[#111827]">
-              Basic information
+              Información básica
             </h3>
             <div className="mt-5 grid gap-5 md:grid-cols-2">
               <label className="block md:col-span-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Product name</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Nombre del producto</span>
                 <input
                   required
                   type="text"
@@ -368,19 +369,19 @@ const ProductFormPage = () => {
                   value={formData.productName}
                   onChange={handleChange}
                   className="mt-2 h-11 w-full border border-[#d8cdbb] px-3 text-sm outline-none focus:border-[#9d731e]"
-                  placeholder="e.g. Tailored Oxford Shirt"
+                  placeholder="ej. Camisa Oxford a medida"
                 />
               </label>
               <div className="block">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Category</span>
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Categoría</span>
                   {!showAddCategory && (
                     <button
                       type="button"
                       onClick={() => setShowAddCategory(true)}
                       className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9d731e] hover:underline"
                     >
-                      + Add New
+                      + Agregar
                     </button>
                   )}
                 </div>
@@ -390,7 +391,7 @@ const ProductFormPage = () => {
                       type="text"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="New category name"
+                      placeholder="Nuevo nombre de categoría"
                       className="h-11 flex-1 border border-[#d8cdbb] px-3 text-sm outline-none focus:border-[#9d731e]"
                       autoFocus
                     />
@@ -400,7 +401,7 @@ const ProductFormPage = () => {
                       disabled={isCreatingCategory}
                       className="h-11 bg-[#111827] px-4 text-xs font-black uppercase text-white disabled:opacity-50"
                     >
-                      Save
+                      Guardar
                     </button>
                     <button
                       type="button"
@@ -418,7 +419,7 @@ const ProductFormPage = () => {
                     onChange={handleChange}
                     className="mt-2 h-11 w-full border border-[#d8cdbb] bg-white px-3 text-sm outline-none focus:border-[#9d731e]"
                   >
-                    <option value="">Select category</option>
+                      <option value="">Selecciona una categoría</option>
                     {categories?.map((category) => (
                       <option key={category.categoryId} value={category.categoryId}>{category.categoryName}</option>
                     ))}
@@ -428,7 +429,7 @@ const ProductFormPage = () => {
               {selectedCategory && (
                 <div className="block">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Sub Category</span>
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Subcategoría</span>
                     {!showAddSubCategory && (
                       <button
                         type="button"
@@ -445,7 +446,7 @@ const ProductFormPage = () => {
                         type="text"
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
-                        placeholder="New sub-category"
+                        placeholder="Nueva subcategoría"
                         className="h-11 flex-1 border border-[#d8cdbb] px-3 text-sm outline-none focus:border-[#9d731e]"
                         autoFocus
                       />
@@ -455,7 +456,7 @@ const ProductFormPage = () => {
                         disabled={isCreatingCategory}
                         className="h-11 bg-[#111827] px-4 text-xs font-black uppercase text-white disabled:opacity-50"
                       >
-                        Save
+                        Guardar
                       </button>
                       <button
                         type="button"
@@ -472,7 +473,7 @@ const ProductFormPage = () => {
                       onChange={handleChange}
                       className="mt-2 h-11 w-full border border-[#d8cdbb] bg-white px-3 text-sm outline-none focus:border-[#9d731e]"
                     >
-                      <option value="">Select sub-category</option>
+                      <option value="">Selecciona una subcategoría</option>
                       {selectedCategory.subCategories.map((sub) => (
                         <option key={sub.categoryId} value={sub.categoryId}>{sub.categoryName}</option>
                       ))}
@@ -481,7 +482,7 @@ const ProductFormPage = () => {
                 </div>
               )}
               <div className="block">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Total stock</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Stock total</span>
                 <div className="mt-2 flex h-11 items-center border border-[#d8cdbb] bg-[#fbfaf7] px-3 text-sm font-semibold text-[#111827]">
                   {totalQuantity}
                 </div>
@@ -491,11 +492,11 @@ const ProductFormPage = () => {
 
           <section className="border border-[#e1d5c2] bg-white p-5">
             <h3 className="border-b border-[#eee6da] pb-4 text-[12px] font-black uppercase tracking-[0.24em] text-[#111827]">
-              Pricing and delivery
+              Precios y envío
             </h3>
             <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               <label className="block">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Price</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Precio</span>
                 <input
                   required
                   type="number"
@@ -509,7 +510,7 @@ const ProductFormPage = () => {
                 />
               </label>
               <label className="block">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Discount amount</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Monto de descuento</span>
                 <input
                   type="number"
                   min="0"
@@ -528,21 +529,20 @@ const ProductFormPage = () => {
                   value={formData.material}
                   onChange={handleChange}
                   className="mt-2 h-11 w-full border border-[#d8cdbb] px-3 text-sm outline-none focus:border-[#9d731e]"
-                  placeholder="Premium cotton"
+                  placeholder="Ej. Aluminio, Plástico"
                 />
               </label>
               <label className="block md:col-span-2 lg:col-span-3">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Deliverable pincodes</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Códigos de zona de entrega (opcional)</span>
                 <textarea
-                  required
-                  name="deliverablePincodes"
-                  value={formData.deliverablePincodes}
+                  name="deliverableZones"
+                  value={formData.deliverableZones}
                   onChange={handleChange}
                   rows={4}
                   className="mt-2 w-full resize-none border border-[#d8cdbb] px-3 py-2 text-sm outline-none focus:border-[#9d731e]"
-                  placeholder="560001, 560002, 560003"
+                  placeholder="150101, 150102, 150103"
                 />
-                <p className="mt-2 text-xs text-[#7c7467]">Only these 6-digit pincodes will be allowed on the product page and at checkout.</p>
+                <p className="mt-2 text-xs text-[#7c7467]">Opcional. El envío se determina por zona: Lima Metropolitana (24h) y resto del Perú vía Shalom/Marvisur contra entrega.</p>
               </label>
             </div>
           </section>
@@ -550,7 +550,7 @@ const ProductFormPage = () => {
           <section className="border border-[#e1d5c2] bg-white p-5">
             <div className="flex items-center justify-between gap-4 border-b border-[#eee6da] pb-4">
               <h3 className="text-[12px] font-black uppercase tracking-[0.24em] text-[#111827]">
-                Variant inventory
+                Inventario de variantes
               </h3>
               <button
                 type="button"
@@ -558,14 +558,14 @@ const ProductFormPage = () => {
                 className="inline-flex h-10 items-center gap-2 border border-[#111827] px-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827]"
               >
                 <Plus className="h-4 w-4" />
-                Add variant
+                Agregar variante
               </button>
             </div>
             <div className="mt-5 space-y-4">
               {variants.map((variant, index) => (
                 <div key={variant.clientId} className="grid gap-4 border border-[#eee6da] p-4 md:grid-cols-[1fr_1fr_140px_auto]">
                   <label className="block">
-                    <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Size</span>
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Versión</span>
                     <input
                       required
                       type="text"
@@ -597,7 +597,7 @@ const ProductFormPage = () => {
                       value={variant.color}
                       onChange={(event) => handleVariantChange(index, 'color', event.target.value)}
                       className="mt-2 h-11 w-full border border-[#d8cdbb] px-3 text-sm outline-none focus:border-[#9d731e]"
-                      placeholder="Black"
+                      placeholder="Negro"
                     />
                     <div className="mt-2 flex flex-wrap gap-1">
                       {quickColors.map((color) => (
@@ -631,7 +631,7 @@ const ProductFormPage = () => {
                       type="button"
                       onClick={() => removeVariantRow(index)}
                       className="grid h-11 w-11 place-items-center border border-[#d8cdbb] text-[#7c7467] hover:border-red-500 hover:text-red-500"
-                      aria-label={`Remove variant ${index + 1}`}
+                      aria-label={`Eliminar variante ${index + 1}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -639,23 +639,23 @@ const ProductFormPage = () => {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs text-[#7c7467]">Each size and colour row keeps its own stock. Customers can only buy rows that still have stock.</p>
+            <p className="mt-3 text-xs text-[#7c7467]">Cada fila de versión y color mantiene su propio stock. Los clientes solo pueden comprar filas que aún tengan stock.</p>
           </section>
 
           <section className="border border-[#e1d5c2] bg-white p-5">
             <h3 className="border-b border-[#eee6da] pb-4 text-[12px] font-black uppercase tracking-[0.24em] text-[#111827]">
-              Product story
+              Historia del producto
             </h3>
             <label className="mt-5 block">
-              <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Description</span>
-              <textarea
-                required
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={7}
-                className="mt-2 w-full resize-none border border-[#d8cdbb] px-3 py-2 text-sm outline-none focus:border-[#9d731e]"
-                placeholder="Describe fit, fabric, finish, occasion, and care notes..."
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Descripción</span>
+                <textarea
+                  required
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={7}
+                  className="mt-2 w-full resize-none border border-[#d8cdbb] px-3 py-2 text-sm outline-none focus:border-[#9d731e]"
+                  placeholder="Describe procesador, memoria, almacenamiento, gráficos y conectividad..."
               />
             </label>
           </section>
@@ -664,7 +664,7 @@ const ProductFormPage = () => {
         <aside className="space-y-6">
           <section className="border border-[#e1d5c2] bg-white p-5">
             <h3 className="border-b border-[#eee6da] pb-4 text-[12px] font-black uppercase tracking-[0.24em] text-[#111827]">
-              Product images
+              Imágenes del producto
             </h3>
             <div className="mt-5 grid min-h-80 place-items-center border-2 border-dashed border-[#d8cdbb] bg-[#fbfaf7] p-5 text-center">
               {productImages.length ? (
@@ -672,10 +672,10 @@ const ProductFormPage = () => {
                   <div className="grid gap-3 sm:grid-cols-2">
                     {productImages.map((productImage, index) => (
                       <div key={productImage.clientId} className="group relative overflow-hidden bg-white shadow-sm">
-                        <img src={productImage.previewUrl} alt={`Preview ${index + 1}`} className="h-48 w-full object-cover" />
+                         <img src={productImage.previewUrl} alt={`Vista previa ${index + 1}`} className="h-48 w-full object-cover" />
                         <button
                           type="button"
-                          aria-label={`Remove product image ${index + 1}`}
+                          aria-label={`Eliminar imagen del producto ${index + 1}`}
                           onClick={() => removePreviewAtIndex(index)}
                           className="absolute right-2 top-2 grid h-8 w-8 place-items-center bg-red-600 text-white opacity-95 transition hover:bg-red-700"
                         >
@@ -683,21 +683,21 @@ const ProductFormPage = () => {
                         </button>
                         {index === 0 && (
                           <span className="absolute left-2 top-2 bg-[#111827] px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
-                            Primary
+                             Principal
                           </span>
                         )}
                         <span className="absolute bottom-2 left-2 bg-white/92 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#111827]">
-                          {productImage.file ? 'New' : 'Saved'}
+                           {productImage.file ? 'Nueva' : 'Guardada'}
                         </span>
                         <div className="border-t border-[#eee6da] p-3">
                           <label className="block text-left">
-                            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#514b43]">Image colour</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#514b43]">Color de imagen</span>
                             <select
                               value={productImage.color}
                               onChange={(event) => handleImageColorChange(index, event.target.value)}
                               className="mt-2 h-10 w-full border border-[#d8cdbb] bg-white px-3 text-sm outline-none focus:border-[#9d731e]"
                             >
-                              <option value="">All colours</option>
+                              <option value="">Todos los colores</option>
                               {variantColors.map((color) => (
                                 <option key={color} value={color}>
                                   {color}
@@ -711,28 +711,28 @@ const ProductFormPage = () => {
                   </div>
                   {isEditMode && (
                     <p className="mt-3 text-xs text-[#7c7467]">
-                      Assign each image to a colour. On the storefront, selecting a colour will use that colour's gallery, while "All colours" works as shared fallback imagery.
+                       Asigna cada imagen a un color. En la tienda, al seleccionar un color se usará la galería de ese color, mientras que "Todos los colores" funciona como imagen compartida de respaldo.
                     </p>
                   )}
                 </div>
               ) : (
                 <div>
                   <ImageIcon className="mx-auto h-12 w-12 text-[#9d731e]" />
-                  <p className="mt-3 text-sm font-semibold text-[#111827]">Upload a clean product gallery</p>
-                  <p className="mt-1 text-xs text-[#7c7467]">PNG, JPG, WEBP. The first image becomes the main storefront image.</p>
+                  <p className="mt-3 text-sm font-semibold text-[#111827]">Sube una galería de producto nítida</p>
+                  <p className="mt-1 text-xs text-[#7c7467]">PNG, JPG, WEBP. La primera imagen se convierte en la imagen principal de la tienda.</p>
                 </div>
               )}
             </div>
             <label className="mt-4 flex h-11 cursor-pointer items-center justify-center border border-[#111827] text-[11px] font-black uppercase tracking-[0.2em] text-[#111827] hover:bg-[#111827] hover:text-white">
-              Choose images
+              Elegir imágenes
               <input type="file" className="sr-only" accept="image/*" multiple onChange={handleImageChange} />
             </label>
           </section>
 
           <section className="border border-[#e1d5c2] bg-white p-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#9d731e]">Publish controls</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#9d731e]">Controles de publicación</p>
             <p className="mt-3 text-sm leading-6 text-[#6f6659]">
-              Review pricing, variant stock, deliverable pincodes, and imagery before publishing.
+              Revisa precios, stock de variantes, códigos postales de entrega e imágenes antes de publicar.
             </p>
             <div className="mt-5 grid gap-3">
               <button
@@ -743,12 +743,12 @@ const ProductFormPage = () => {
                 {(isAdding || isUpdating) ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Saving...
+                    Guardando...
                   </>
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    {isEditMode ? 'Save changes' : 'Publish product'}
+                    {isEditMode ? 'Guardar cambios' : 'Publicar producto'}
                   </>
                 )}
               </button>
@@ -757,7 +757,7 @@ const ProductFormPage = () => {
                 onClick={() => navigate('/admin/products')}
                 className="h-11 border border-[#d8cdbb] bg-white text-[11px] font-black uppercase tracking-[0.2em] text-[#111827]"
               >
-                Cancel
+                Cancelar
               </button>
             </div>
           </section>

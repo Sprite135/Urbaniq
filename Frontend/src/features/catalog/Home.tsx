@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom';
 import {
   useGetHomeProductCardsQuery,
   useGetTopSellingProductsQuery,
+  useGetCategoriesQuery,
   type HomeProductCard,
 } from './catalogApiSlice';
 import ProductCard from './components/ProductCard';
+import ProductImage from './components/ProductImage';
 
 type HeroSlide = {
   title: string;
@@ -29,7 +31,9 @@ const NEW_ARRIVAL_COUNT = 10;
 
 const scrollRail = (railId: string, direction: 'left' | 'right') => {
   const rail = document.getElementById(railId);
-  rail?.scrollBy({ left: direction === 'left' ? -520 : 520, behavior: 'smooth' });
+  if (!rail) return;
+  const step = rail.clientWidth - 24;
+  rail.scrollBy({ left: direction === 'left' ? -step : step, behavior: 'smooth' });
 };
 
 const Home: React.FC = () => {
@@ -43,6 +47,19 @@ const Home: React.FC = () => {
   const saleProducts = useMemo(() => products.filter((product) => product.discount > 0), [products]);
   const topSellingProducts = useMemo(() => (topSellingProductsData || []) as HomeProductCard[], [topSellingProductsData]);
 
+  const { data: categoriesData } = useGetCategoriesQuery();
+  const categoryImageById = useMemo(() => {
+    const map: Record<number, string | undefined> = {};
+    const walk = (list?: typeof categoriesData) => {
+      (list || []).forEach((c) => {
+        map[c.categoryId] = c.imageUrl;
+        walk(c.subCategories);
+      });
+    };
+    walk(categoriesData);
+    return map;
+  }, [categoriesData]);
+
 
   const heroSlides = useMemo<HeroSlide[]>(() => {
     const slideProducts = products
@@ -52,39 +69,39 @@ const Home: React.FC = () => {
     if (!slideProducts.length) {
       return [
         {
-          title: 'Formal Shirts',
-          eyebrow: 'Catalog collection',
-          copy: 'Crisp shirts and tailored essentials from your product categories, ready for office and evening dressing.',
-          image: '/src/assets/hero.png',
+          title: 'Laptops profesionales',
+          eyebrow: 'Catálogo de tecnología',
+          copy: 'Equipos impecables y esenciales según tus categorías de productos, listos para la oficina y el hogar.',
+          image: '/uploads/products/laptop-lenovo-loq-15irx9-core-i7-16gb-512gb-rtx-3050.jpg',
           href: '/catalog',
-          cta: 'Shop shirts',
+          cta: 'Comprar laptops',
         },
         {
-          title: 'Sharp Trousers',
-          eyebrow: 'Workwear edit',
-          copy: 'Clean trousers and smart pairings selected for polished everyday menswear.',
-          image: '/src/assets/hero.png',
+          title: 'Componentes elegantes',
+          eyebrow: 'Edición de trabajo',
+          copy: 'Componentes de alto rendimiento y combinaciones inteligentes seleccionados para una tecnología pulida de diario.',
+          image: '/uploads/products/tarjeta-de-video-nvidia-rtx-4060-8gb.jpg',
           href: '/catalog',
-          cta: 'Explore trousers',
+          cta: 'Explorar componentes',
         },
         {
-          title: 'Blazer Edit',
-          eyebrow: 'Occasion ready',
-          copy: 'Structured layers and refined formal pieces for important meetings, events, and celebrations.',
-          image: '/src/assets/hero.png',
+          title: 'Edición de gaming',
+          eyebrow: 'Listo para gaming',
+          copy: 'Equipos de alto rendimiento para gaming, trabajo y creatividad con estilo impecable.',
+          image: '/uploads/products/monitor-asus-rog-27-oled-2k-540hz.jpg',
           href: '/catalog',
-          cta: 'View blazers',
+          cta: 'Ver gaming',
         },
       ];
     }
 
     return slideProducts.map((product, index) => ({
       title: product.categoryName || product.productName,
-      eyebrow: index === 0 ? 'New season edit' : product.subCategoryName || 'Featured collection',
-      copy: `Premium ${product.categoryName || 'menswear'} selected from the latest Urbaniq catalog for polished everyday dressing.`,
+      eyebrow: index === 0 ? 'Novedades' : product.subCategoryName || 'Destacado',
+      copy: `Productos premium de ${product.categoryName || 'tecnología'} seleccionados del catálogo de Urbaniq para un equipo pensado para el día a día.`,
       image: getProductImage(product)!,
       href: `/product/${product.slug}`,
-      cta: index === 0 ? 'Shop now' : 'View product',
+      cta: index === 0 ? 'Comprar ahora' : 'Ver producto',
     }));
   }, [products]);
 
@@ -128,51 +145,59 @@ const Home: React.FC = () => {
   const isProductLoading = isHomeCardsLoading;
 
   return (
-    <div className="bg-[#fbfaf7]">
-      <section className="relative overflow-hidden bg-[#111827]">
+    <div className="bg-gradient-to-b from-white to-[#fdf3f5] dark:from-[#0e0f12] dark:to-[#150f12]">
+      <section className="relative overflow-hidden bg-[#f9fafb] dark:bg-[#0b0d11]">
         <div className="relative min-h-[560px] md:min-h-[680px]">
           {currentSlide && (
             <>
               {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
-              <img
+              <ProductImage
                 src={currentSlide.image}
                 alt=""
+                fallbackLabel={currentSlide.title}
                 aria-hidden="true"
                 className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl transition-opacity duration-500"
               />
               {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
-              <img
+              <ProductImage
                 src={currentSlide.image}
                 alt={currentSlide.title}
+                fallbackLabel={currentSlide.title}
                 className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
               />
             </>
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#111827]/95 via-[#111827]/80 to-[#111827]/30 md:to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#111827]/90 to-transparent" />
+          {/* Tech decorative glows - slate/navy/amber */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-[#cbd5e1] opacity-40 blur-3xl dark:bg-[#1f2740] dark:opacity-30" />
+            <div className="absolute right-8 bottom-0 h-80 w-80 rounded-full bg-[#d7b46a]/30 opacity-50 blur-3xl dark:bg-[#9d731e] dark:opacity-20" />
+            <div className="absolute right-1/3 top-1/4 h-60 w-60 rounded-full bg-[#94a3b8]/30 opacity-40 blur-3xl dark:bg-[#334155] dark:opacity-20" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/20 md:to-transparent dark:from-[#0e0f12]/95 dark:via-[#0e0f12]/80 dark:to-[#0e0f12]/30 md:dark:to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white/95 to-transparent dark:from-[#0e0f12]/95" />
 
           <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">
-            <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-white">
-              <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#d7b46a]">{currentSlide?.eyebrow}</p>
+            <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]">
+              <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
               <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.06em]">
                 {currentSlide?.title}
               </h1>
-              <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#f1eadf] md:mx-0">
+              <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#6b7280] dark:text-[#9ca3af] md:mx-0">
                 {currentSlide?.copy}
               </p>
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
                 <Link
                   to={currentSlide?.href || '/catalog'}
-                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] transition-colors hover:bg-[#e2c77f]"
+                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#e2c77f]"
                 >
-                  {currentSlide?.cta || 'Shop now'}
+                  {currentSlide?.cta || 'Comprar ahora'}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/catalog"
-                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-white/60 px-8 text-[11px] font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-white hover:text-[#111827]"
+                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
                 >
-                  View all products
+                  Ver todos los productos
                 </Link>
               </div>
             </div>
@@ -182,17 +207,17 @@ const Home: React.FC = () => {
             <>
               <button
                 type="button"
-                aria-label="Previous banner"
+                aria-label="Banner anterior"
                 onClick={() => setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length)}
-                className="absolute left-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] shadow-lg transition hover:bg-white"
+                className="absolute left-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
               <button
                 type="button"
-                aria-label="Next banner"
+                aria-label="Banner siguiente"
                 onClick={() => setActiveSlide((current) => (current + 1) % heroSlides.length)}
-                className="absolute right-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] shadow-lg transition hover:bg-white"
+                className="absolute right-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
               >
                 <ChevronRight className="h-6 w-6" />
               </button>
@@ -201,7 +226,7 @@ const Home: React.FC = () => {
                   <button
                     key={`${slide.title}-${index}`}
                     type="button"
-                    aria-label={`Show banner ${index + 1}`}
+                    aria-label={`Mostrar banner ${index + 1}`}
                     onClick={() => setActiveSlide(index)}
                     className={`h-1.5 rounded-full transition-all ${activeSlide === index ? 'w-12 bg-[#d7b46a]' : 'w-8 bg-white/72'}`}
                   />
@@ -214,18 +239,21 @@ const Home: React.FC = () => {
 
 
 
-      <section className="bg-[#fbfaf7] py-14 sm:py-16">
-        <div className="container mx-auto">
+      <section className="relative overflow-hidden bg-gradient-to-b from-white to-[#fdf3f5] dark:from-[#0e0f12] dark:to-[#150f12] py-14 sm:py-16">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#f7c5d0] opacity-40 blur-3xl dark:bg-[#7a3b6b] dark:opacity-20" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-[#f6e2c4] opacity-40 blur-3xl dark:bg-[#9d731e] dark:opacity-15" />
+        <div className="container relative mx-auto">
           <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.32em] text-[#9d731e]">
                 <Sparkles className="h-4 w-4" />
-                New arrivals
+                Novedades
               </p>
-              <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Just In</h2>
+              <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827] dark:text-[#ece7dd]">Recién llegado</h2>
+              <span className="mt-3 block h-[3px] w-14 bg-gradient-to-r from-[#d7b46a] via-[#f7c5d0] to-[#ecc9ec]" />
             </div>
-            <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] luxury-link">
-              Shop all new arrivals
+            <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] dark:text-[#ece7dd] luxury-link">
+              Comprar todas las novedades
             </Link>
           </div>
 
@@ -239,61 +267,75 @@ const Home: React.FC = () => {
       </section>
 
       {saleProducts.length > 0 && (
-        <section className="border-y border-[#e8e0d0] bg-white py-14 sm:py-16">
+        <section className="border-y border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] py-14 sm:py-16">
           <div className="container mx-auto">
             <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
                 <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.32em] text-[#b42318]">
-                  <Tag className="h-4 w-4" />
-                  Sale
-                </p>
-                <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Limited Offers</h2>
-              </div>
-              <Link to="/catalog?isSale=true" className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] luxury-link">
-                View sale products
-              </Link>
+                   <Tag className="h-4 w-4" />
+                   Ofertas
+                 </p>
+                  <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827] dark:text-[#ece7dd]">Ofertas limitadas</h2>
+                  <span className="mt-3 block h-[3px] w-14 bg-gradient-to-r from-[#d7b46a] via-[#f7c5d0] to-[#ecc9ec]" />
+               </div>
+               <Link to="/catalog?isSale=true" className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] dark:text-[#ece7dd] luxury-link">
+                 Ver productos en oferta
+               </Link>
             </div>
 
-            <ProductRail railId="sale-products" products={saleProducts} isLoading={isProductLoading} emptyText="Sale products will appear here when discounts are active." />
+            <ProductRail railId="sale-products" products={saleProducts} isLoading={isProductLoading} emptyText="Los productos en oferta aparecerán aquí cuando haya descuentos activos." />
           </div>
         </section>
       )}
 
       {topSellingProducts.length > 0 && (
-        <section className="border-y border-[#e8e0d0] bg-white py-14 sm:py-16">
+        <section className="border-y border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] py-14 sm:py-16">
           <div className="container mx-auto">
             <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
                 <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.32em] text-[#b42318]">
-                  <Flame className="h-4 w-4" />
-                  Trending
-                </p>
-                <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Top Selling Products</h2>
-              </div>
-              <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] luxury-link">
-                View collection
-              </Link>
+                   <Flame className="h-4 w-4" />
+                   Tendencia
+                 </p>
+                  <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827] dark:text-[#ece7dd]">Productos más vendidos</h2>
+                  <span className="mt-3 block h-[3px] w-14 bg-gradient-to-r from-[#d7b46a] via-[#f7c5d0] to-[#ecc9ec]" />
+               </div>
+               <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] dark:text-[#ece7dd] luxury-link">
+                 Ver colección
+               </Link>
             </div>
 
-            <ProductRail railId="top-selling-products" products={topSellingProducts} isLoading={isTopSellingLoading} emptyText="Trending products will appear here." />
+            <ProductRail railId="top-selling-products" products={topSellingProducts} isLoading={isTopSellingLoading} emptyText="Los productos en tendencia aparecerán aquí." />
           </div>
         </section>
       )}
 
-      <section className="bg-[#fbfaf7] py-14 sm:py-16">
-        <div className="container mx-auto space-y-16">
+      <section className="relative overflow-hidden bg-gradient-to-b from-white to-[#fdf3f5] dark:from-[#0e0f12] dark:to-[#150f12] py-14 sm:py-16">
+        <div aria-hidden="true" className="pointer-events-none absolute right-1/3 -top-24 h-72 w-72 rounded-full bg-[#ecc9ec] opacity-40 blur-3xl dark:bg-[#7a3b6b] dark:opacity-20" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-20 bottom-10 h-80 w-80 rounded-full bg-[#f7c5d0] opacity-40 blur-3xl dark:bg-[#b14a63] dark:opacity-15" />
+        <div className="container relative mx-auto space-y-16">
           {productsByCategory.map((section) => (
             <div key={section.categoryName}>
-              <div className="mb-8 flex flex-col justify-between gap-4 border-b border-[#e8e0d0] pb-5 md:flex-row md:items-end">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#9d731e]">Shop by category</p>
-                  <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">{section.categoryName}</h2>
+              <div className="mb-8 flex flex-col justify-between gap-4 border-b border-[#e5e7eb] dark:border-[#26282e] pb-5 md:flex-row md:items-end">
+                <div className="flex items-center gap-4">
+                  {categoryImageById[section.categoryId] ? (
+                    <img
+                      src={categoryImageById[section.categoryId]}
+                      alt={section.categoryName}
+                      className="h-14 w-14 rounded-lg object-cover ring-1 ring-[#e5e7eb] dark:ring-[#26282e]"
+                    />
+                  ) : null}
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#9d731e]">Comprar por categoría</p>
+                    <h2 className="mt-3 text-3xl font-black uppercase tracking-[0.08em] text-[#111827] dark:text-[#ece7dd]">{section.categoryName}</h2>
+                    <span className="mt-3 block h-[3px] w-14 bg-gradient-to-r from-[#d7b46a] via-[#f7c5d0] to-[#ecc9ec]" />
+                  </div>
                 </div>
                 <Link
                   to={buildCatalogHref(section.categoryId)}
-                  className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] luxury-link"
+                  className="text-[11px] font-black uppercase tracking-[0.24em] text-[#111827] dark:text-[#ece7dd] luxury-link"
                 >
-                  View all
+                  Ver todo
                 </Link>
               </div>
 
@@ -301,14 +343,14 @@ const Home: React.FC = () => {
                 railId={`category-${section.categoryName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`}
                 products={section.items}
                 isLoading={isProductLoading}
-                emptyText={`No ${section.categoryName} products found yet.`}
+                emptyText={`Aún no se encontraron productos de ${section.categoryName}.`}
               />
             </div>
           ))}
 
           {!productsByCategory.length && !isProductLoading && (
-            <div className="border border-[#e8e0d0] bg-white p-8 text-center">
-              <p className="text-sm font-semibold text-[#6f6659]">Products added from the admin catalog will appear on this page automatically.</p>
+            <div className="border border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] p-8 text-center">
+              <p className="text-sm font-semibold text-[#6b7280] dark:text-[#9a9388]">Los productos agregados desde el catálogo de administración aparecerán automáticamente en esta página.</p>
             </div>
           )}
         </div>
@@ -325,12 +367,12 @@ const ProductRail: React.FC<{ railId: string; products: HomeDisplayProduct[]; is
 }) => {
   if (isLoading) {
     return (
-      <div className="flex gap-6 overflow-hidden">
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="w-[260px] shrink-0 animate-pulse sm:w-[300px]">
-            <div className="aspect-[3/4] bg-[#efe7da]" />
-            <div className="mt-4 h-3 w-2/3 bg-[#efe7da]" />
-            <div className="mt-3 h-3 w-1/3 bg-[#efe7da]" />
+          <div key={index} className="animate-pulse">
+            <div className="aspect-[3/4] rounded-2xl bg-[#f3f4f6] dark:bg-[#1a1c21]" />
+            <div className="mt-4 h-3 w-2/3 bg-[#f3f4f6] dark:bg-[#1a1c21]" />
+            <div className="mt-3 h-3 w-1/3 bg-[#f3f4f6] dark:bg-[#1a1c21]" />
           </div>
         ))}
       </div>
@@ -339,23 +381,26 @@ const ProductRail: React.FC<{ railId: string; products: HomeDisplayProduct[]; is
 
   if (!products.length) {
     return (
-      <div className="border border-[#e8e0d0] bg-white px-6 py-8">
-        <p className="text-sm font-semibold text-[#6f6659]">{emptyText}</p>
+      <div className="border border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] px-6 py-8">
+        <p className="text-sm font-semibold text-[#6b7280] dark:text-[#9a9388]">{emptyText}</p>
       </div>
     );
   }
 
   return (
-    <div className="relative">
+    <div className="relative -mx-2 sm:-mx-4">
       <button
         type="button"
-        aria-label="Scroll products left"
+        aria-label="Ver productos anteriores"
         onClick={() => scrollRail(railId, 'left')}
-        className="absolute -left-3 top-[38%] z-10 hidden h-12 w-12 place-items-center rounded-full bg-white text-[#111827] shadow-lg transition hover:bg-[#f8f5ee] lg:grid"
+        className="absolute -left-1 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:border-[#9d731e] hover:text-[#9d731e] sm:grid"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-5 w-5" />
       </button>
-      <div id={railId} className="flex snap-x gap-6 overflow-x-auto scroll-smooth pb-4 [scrollbar-width:none]">
+      <div
+        id={railId}
+        className="flex snap-x items-start gap-6 overflow-x-auto scroll-smooth px-2 py-4 sm:px-4 [scrollbar-width:none]"
+      >
         {products.map((product) => (
           <div key={product.id} className="w-[260px] shrink-0 snap-start sm:w-[300px]">
             <ProductCard product={product} />
@@ -364,11 +409,11 @@ const ProductRail: React.FC<{ railId: string; products: HomeDisplayProduct[]; is
       </div>
       <button
         type="button"
-        aria-label="Scroll products right"
+        aria-label="Ver más productos"
         onClick={() => scrollRail(railId, 'right')}
-        className="absolute -right-3 top-[38%] z-10 hidden h-12 w-12 place-items-center rounded-full bg-white text-[#111827] shadow-lg transition hover:bg-[#f8f5ee] lg:grid"
+        className="absolute -right-1 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:border-[#9d731e] hover:text-[#9d731e] sm:grid"
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="h-5 w-5" />
       </button>
     </div>
   );

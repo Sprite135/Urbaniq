@@ -2,6 +2,7 @@ using Ecommerce.Application.DTOs.Identity;
 using Ecommerce.Application.Interfaces.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Asp.Versioning;
 using System.Security.Claims;
 
@@ -24,15 +25,18 @@ namespace Ecommerce.Api.Controllers.Identity
             return Ok(new { message = "Registration successful", data = user });
         }
 
+        [EnableRateLimiting("LoginPolicy")]
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
             if (dto == null) return BadRequest(new { message = "Invalid login data." });
-            var auth = await _authService.LoginAsync(dto);
+            var sessionId = Request.Cookies["guest_cart_id"] ?? Request.Headers["X-Guest-Cart-Id"].FirstOrDefault();
+            var auth = await _authService.LoginAsync(dto, sessionId);
             return Ok(auth);
         }
 
+        [EnableRateLimiting("LoginPolicy")]
         [HttpPost("phone-otp/request")]
         [AllowAnonymous]
         public async Task<IActionResult> RequestPhoneOtp([FromBody] RequestPhoneOtpRequestDto dto)
@@ -42,15 +46,18 @@ namespace Ecommerce.Api.Controllers.Identity
             return Ok(new { message = "OTP has been sent to your mobile number." });
         }
 
+        [EnableRateLimiting("LoginPolicy")]
         [HttpPost("phone-otp/verify")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyPhoneOtp([FromBody] VerifyPhoneOtpRequestDto dto)
         {
             if (dto == null) return BadRequest(new { message = "Invalid OTP data." });
-            var auth = await _authService.VerifyPhoneOtpAsync(dto);
+            var sessionId = Request.Cookies["guest_cart_id"] ?? Request.Headers["X-Guest-Cart-Id"].FirstOrDefault();
+            var auth = await _authService.VerifyPhoneOtpAsync(dto, sessionId);
             return Ok(auth);
         }
 
+        [EnableRateLimiting("LoginPolicy")]
         [HttpPost("email-verification/send")]
         [Authorize]
         public async Task<IActionResult> SendEmailVerification([FromBody] SendEmailVerificationRequestDto dto)
@@ -104,6 +111,7 @@ namespace Ecommerce.Api.Controllers.Identity
         /// Sends a 6-digit verification code if the account exists.
         /// Always returns 200 to prevent email enumeration.
         /// </summary>
+        [EnableRateLimiting("LoginPolicy")]
         [HttpPost("forgot-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
@@ -116,6 +124,7 @@ namespace Ecommerce.Api.Controllers.Identity
         /// <summary>
         /// Verifies the 6-digit OTP code before proceeding to password reset.
         /// </summary>
+        [EnableRateLimiting("LoginPolicy")]
         [HttpPost("verify-otp")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequestDto dto)

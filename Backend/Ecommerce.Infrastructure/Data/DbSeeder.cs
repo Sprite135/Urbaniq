@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 using System.Text.RegularExpressions;
 
 namespace Ecommerce.Infrastructure.Data
@@ -22,13 +23,14 @@ namespace Ecommerce.Infrastructure.Data
         /// </summary>
         private static async Task EnsureDatabaseReadyAsync(AppDbContext context)
         {
-            if (context.Database.IsRelational())
+            // Skip migration - assume migrations are already applied
+            // This avoids connection issues during startup
+            // await context.Database.MigrateAsync();
+            
+            if (!context.Database.IsRelational())
             {
-                await context.Database.MigrateAsync();
-                return;
+                await context.Database.EnsureCreatedAsync();
             }
-
-            await context.Database.EnsureCreatedAsync();
         }
 
         /// <summary>
@@ -165,6 +167,18 @@ namespace Ecommerce.Infrastructure.Data
             logger.LogInformation(
                 "Category hierarchy seeded successfully. Total categories: {Count}",
                 await context.Categories.CountAsync());
+        }
+
+        /// <summary>
+        /// Seeds PC component categories and products with specifications.
+        /// Call this method separately if you want PC components instead of clothing.
+        /// </summary>
+        public static async Task SeedPcComponentsAsync(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var env = scope.ServiceProvider.GetService<IWebHostEnvironment>();
+            await PcComponentsSeeder.SeedPcComponentsAsync(context, env?.ContentRootPath);
         }
 
         /// <summary>

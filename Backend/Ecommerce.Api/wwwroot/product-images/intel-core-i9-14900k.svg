@@ -1,0 +1,15 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#F3EBDD"/>
+  <rect x="238" y="230" width="424" height="424" rx="34" fill="#C8A24A"/>
+  <rect x="272" y="264" width="356" height="356" rx="22" fill="#222A36"/>
+  <rect x="308" y="300" width="284" height="284" rx="14" fill="#111827"/>
+  <path d="M330 335h240M330 387h240M330 439h240M330 491h240M330 543h240" stroke="#2F3A4A" stroke-width="16" stroke-linecap="round"/>
+  <path d="M170 314h54M170 382h54M170 450h54M170 518h54M170 586h54M676 314h54M676 382h54M676 450h54M676 518h54M676 586h54" stroke="#9D731E" stroke-width="22" stroke-linecap="round"/>
+  <path d="M314 170v54M382 170v54M450 170v54M518 170v54M586 170v54M314 676v54M382 676v54M450 676v54M518 676v54M586 676v54" stroke="#9D731E" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="450" cy="442" r="88" fill="#202631"/>
+  <text x="450" y="426" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="800" fill="#F8F5EE">i9</text>
+  <text x="450" y="474" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#C8A24A">14TH GEN</text>
+  <text x="450" y="866" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="8" fill="#9D731E">URBANIQ PC</text>
+  <text x="450" y="925" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#111827">CORE i9-14900K</text>
+  <text x="450" y="975" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="4" fill="#514B43">24-CORE DESKTOP PROCESSOR</text>
+</svg>

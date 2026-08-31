@@ -6,6 +6,11 @@ namespace Ecommerce.Application.Validators.Orders
 {
     public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequestDto>
     {
+        private static readonly string[] AllowedPaymentMethods = 
+        {
+            "card", "cod", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo"
+        };
+
         public CreateOrderRequestValidator()
         {
             RuleFor(x => x.AddressId).NotEmpty().WithMessage("AddressId is required");
@@ -13,8 +18,8 @@ namespace Ecommerce.Application.Validators.Orders
                 .WithMessage("TransactionId is required and must be under 100 characters");
             RuleFor(x => x.PaymentMethod)
                 .NotEmpty().WithMessage("Payment method is required")
-                .Must(method => method == "card" || method == "cod")
-                .WithMessage("Payment method must be either card or cod");
+                .Must(method => AllowedPaymentMethods.Contains(method.ToLowerInvariant()))
+                .WithMessage($"Payment method must be one of: {string.Join(", ", AllowedPaymentMethods)}");
         }
     }
 

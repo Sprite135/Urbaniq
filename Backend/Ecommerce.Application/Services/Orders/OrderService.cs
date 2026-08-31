@@ -1,9 +1,17 @@
 using AutoMapper;
 using Ecommerce.Application.Common.ProductOptions;
+using Ecommerce.Application.Common.Settings;
 using Ecommerce.Application.DTOs.Address;
 using Ecommerce.Application.DTOs.Orders;
+using Ecommerce.Application.DTOs.Coupons;
+using Ecommerce.Application.Helpers;
 using Ecommerce.Application.Interfaces.Email;
 using Ecommerce.Application.Interfaces.Orders;
+using Ecommerce.Application.Interfaces.Payment;
+using Ecommerce.Application.Interfaces.Coupons;
+using Ecommerce.Application.Interfaces.Notifications;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Ecommerce.Domain.Common;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Enums;
@@ -24,6 +32,11 @@ namespace Ecommerce.Application.Services.Orders
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IEmailJobQueue _emailJobQueue;
+        private readonly IPaymentGatewayService _paymentGateway;
+        private readonly IHostEnvironment _environment;
+        private readonly ShippingSettings _shippingSettings;
+        private readonly ICouponService _couponService;
+        private readonly INotificationService _notificationService;
 
         public OrderService(
             IRepository<Order> orderRepo,
@@ -35,7 +48,12 @@ namespace Ecommerce.Application.Services.Orders
             IRepository<User> userRepo,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            IEmailJobQueue emailJobQueue)
+            IEmailJobQueue emailJobQueue,
+            IPaymentGatewayService paymentGateway,
+            IHostEnvironment environment,
+            IOptions<ShippingSettings> shippingSettings,
+            ICouponService couponService,
+            INotificationService notificationService)
         {
             _orderRepo = orderRepo;
             _cartRepo = cartRepo;
@@ -47,6 +65,11 @@ namespace Ecommerce.Application.Services.Orders
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _emailJobQueue = emailJobQueue;
+            _paymentGateway = paymentGateway;
+            _environment = environment;
+            _shippingSettings = shippingSettings.Value;
+            _couponService = couponService;
+            _notificationService = notificationService;
         }
 
         public async Task<UpdateOrderStatusResponseDto> ChangeOrderStatusAsync(Guid orderId, string status)
@@ -82,11 +105,18 @@ namespace Ecommerce.Application.Services.Orders
             order.OrderStatus = parsedStatus;
             _orderRepo.Update(order);
             await _unitOfWork.SaveChangesAsync();
-            await QueueOrderLifecycleEmailAsync(
-                order,
-                $"Order status updated - {order.OrderId}",
-                "Order status updated",
-                $"Your order status is now <strong>{System.Net.WebUtility.HtmlEncode(parsedStatus.ToString())}</strong>.");
+            
+            // Send status update notification
+            var user = await _userRepo.Query().AsNoTracking().FirstOrDefaultAsync(u => u.UserId == order.UserId);
+            if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                await _notificationService.SendOrderStatusUpdateEmailAsync(
+                    user.Email,
+                    user.Name,
+                    order.OrderId.ToString(),
+                    parsedStatus.ToString()
+                );
+            }
 
             return new UpdateOrderStatusResponseDto
             {
@@ -95,12 +125,41 @@ namespace Ecommerce.Application.Services.Orders
             };
         }
 
-        public async Task<bool> CreateOrderAsync(Guid userId, CreateOrderRequestDto dto)
+public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto)
         {
             var paymentMethod = dto.PaymentMethod?.Trim().ToLowerInvariant();
-            if (paymentMethod is not ("card" or "cod"))
+            var allowedPaymentMethods = new[] { "card", "cod", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo" };
+            if (!allowedPaymentMethods.Contains(paymentMethod))
             {
                 throw new ArgumentException("A valid payment method is required.");
+            }
+
+            // Billing validation (SUNAT foundation): Factura requires RUC + razón social.
+            if (string.Equals(dto.InvoiceType?.Trim(), "Factura", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(dto.Ruc) || string.IsNullOrWhiteSpace(dto.RazonSocial))
+                {
+                    throw new ArgumentException("RUC y razón social son requeridos para emitir factura.");
+                }
+            }
+
+            // Server-side payment verification for card payments. Without this, a client could
+            // place an order with a fake transaction id and receive goods without paying.
+            if (paymentMethod == "card")
+            {
+                if (string.IsNullOrWhiteSpace(dto.TransactionId))
+                {
+                    throw new ArgumentException("A Stripe transaction ID is required for card payments.");
+                }
+                if (!_paymentGateway.IsConfigured)
+                {
+                    throw new InvalidOperationException("Card payments are currently unavailable. Please choose another payment method.");
+                }
+                var verification = await _paymentGateway.VerifyPaymentAsync(dto.TransactionId);
+                if (verification.Data == null || !verification.Data.IsSuccessful)
+                {
+                    throw new InvalidOperationException($"Card payment could not be verified: {verification.Message}");
+                }
             }
 
             var existingOrder = await _orderRepo.Query().AnyAsync(o => o.TransactionId == dto.TransactionId);
@@ -109,9 +168,22 @@ namespace Ecommerce.Application.Services.Orders
                 throw new ArgumentException("An order with this transaction ID already exists.");
             }
 
+            // Enforce email verification in production (permissive in Development so local testing is not blocked).
+            if (!_environment.IsDevelopment())
+            {
+                if (userId.HasValue)
+                {
+                    var buyer = await _userRepo.Query().FirstOrDefaultAsync(u => u.UserId == userId.Value);
+                    if (buyer != null && !buyer.IsEmailVerified)
+                    {
+                        throw new UnauthorizedAccessException("Please verify your email address before placing an order.");
+                    }
+                }
+            }
+
             var address = await _addressRepo.Query()
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.AddressId == dto.AddressId && s.UserId == userId && !s.IsDeleted);
+                .FirstOrDefaultAsync(s => s.AddressId == dto.AddressId && (!userId.HasValue || s.UserId == userId.Value) && !s.IsDeleted);
             if (address == null) throw new ArgumentException("Cannot find the address");
 
             var cart = await _cartRepo.Query()
@@ -119,16 +191,61 @@ namespace Ecommerce.Application.Services.Orders
                 .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
                 .ThenInclude(v => v.Product)
                 .Include(c => c.CartItems).ThenInclude(ci => ci.Product).ThenInclude(p => p.Variants)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+                .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : c.SessionId != null);
             if (cart == null || cart.CartItems == null || !cart.CartItems.Any())
             {
                 throw new ArgumentException("Your cart is empty");
             }
 
-            EnsureAddressCanReceiveCart(cart, address.Pincode.Trim());
+            EnsureAddressCanReceiveCart(cart, address.DeliveryZone);
 
             var serverTotalPrice = cart.CartItems.Sum(c => c.Quantity * (c.Product.Price - c.Product.Discount));
-            var order = CreateOrderFromCart(userId, dto, cart, serverTotalPrice);
+
+            // Apply coupon if provided
+            decimal couponDiscount = 0;
+            int? couponId = null;
+            if (!string.IsNullOrWhiteSpace(dto.CouponCode))
+            {
+                var categoryIds = cart.CartItems.Select(c => c.Product.CategoryId).Distinct().ToList();
+                var productIds = cart.CartItems.Select(c => c.ProductId).Distinct().ToList();
+
+                var couponValidation = await _couponService.ValidateCouponAsync(new ValidateCouponDto
+                {
+                    Code = dto.CouponCode,
+                    CartTotal = serverTotalPrice,
+                    CategoryIds = categoryIds,
+                    ProductIds = productIds,
+                    UserId = userId
+                });
+
+                if (!couponValidation.IsValid)
+                {
+                    throw new ArgumentException(couponValidation.ErrorMessage ?? "Cupón inválido");
+                }
+
+                couponDiscount = couponValidation.DiscountAmount;
+                couponId = couponValidation.CouponId;
+            }
+
+            // Apply coupon discount
+            var discountedTotal = serverTotalPrice - couponDiscount;
+
+            // Shipping (Peruvian model): Lima free with owned fleet; provinces contra entrega via agency.
+            var shippingProvider = DeliveryHelper.ResolveShippingProvider(address.DeliveryZone, dto.ShippingProvider);
+            var shippingCost = DeliveryHelper.CalculateShippingCost(address.DeliveryZone, discountedTotal, _shippingSettings);
+
+            var order = CreateOrderFromCart(userId, dto, cart, discountedTotal, dto.CouponCode, couponDiscount);
+
+            // Set guest contact info for guest orders
+            if (!userId.HasValue)
+            {
+                order.GuestEmail = dto.Email?.Trim().ToLower();
+                order.GuestPhone = dto.Phone?.Trim();
+            }
+
+            order.ShippingProvider = shippingProvider;
+            order.ShippingCost = shippingCost;
+            order.TotalPrice = discountedTotal + shippingCost;
 
             ValidateStockAndDeductQuantities(cart);
 
@@ -137,6 +254,12 @@ namespace Ecommerce.Application.Services.Orders
                 await _orderRepo.AddAsync(order);
                 _cartItemRepo.RemoveRange(cart.CartItems);
                 await _unitOfWork.SaveChangesAsync();
+
+                // Record coupon usage if a coupon was applied
+                if (couponId.HasValue && userId.HasValue)
+                {
+                    await _couponService.RecordCouponUsageAsync(couponId.Value, userId.Value, order.OrderId, couponDiscount);
+                }
             });
 
             try
@@ -147,14 +270,86 @@ namespace Ecommerce.Application.Services.Orders
             {
                 // Order is already committed; queue failures must not roll back a completed purchase.
             }
-            return true;
+            return order.OrderId;
         }
 
-        public async Task<bool> CanDeliverCartToAddressAsync(Guid userId, Guid addressId)
+        public async Task MarkOrderPaidAsync(string transactionId)
+        {
+            if (string.IsNullOrWhiteSpace(transactionId))
+                return;
+
+            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.TransactionId == transactionId);
+            if (order == null || order.IsPaid)
+                return;
+
+            order.IsPaid = true;
+            _orderRepo.Update(order);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task MarkOrderRefundedAsync(string transactionId)
+        {
+            if (string.IsNullOrWhiteSpace(transactionId))
+                return;
+
+            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.TransactionId == transactionId);
+            if (order == null || order.OrderStatus == OrderStatus.Refunded)
+                return;
+
+            order.OrderStatus = OrderStatus.Refunded;
+            order.RefundedAtUtc = DateTime.UtcNow;
+            _orderRepo.Update(order);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task AttachVoucherAsync(Guid orderId, Guid userId, bool isAdmin, string? url, string? approvalCode)
+        {
+            if (string.IsNullOrWhiteSpace(url) && string.IsNullOrWhiteSpace(approvalCode))
+                throw new ArgumentException("A voucher URL or approval code is required.");
+
+            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId);
+            if (order == null)
+                throw new KeyNotFoundException("Order not found.");
+
+            if (!isAdmin && order.UserId != userId)
+                throw new UnauthorizedAccessException("You can only attach proof to your own order.");
+
+            if (!string.IsNullOrWhiteSpace(url))
+                order.PaymentReceiptUrl = url.Trim();
+
+            if (!string.IsNullOrWhiteSpace(approvalCode))
+            {
+                var code = approvalCode.Trim();
+                if (!System.Text.RegularExpressions.Regex.IsMatch(code, @"^\d{4,12}$"))
+                    throw new ArgumentException("El código de aprobación debe tener entre 4 y 12 dígitos.");
+                order.PaymentApprovalCode = code;
+            }
+
+            _orderRepo.Update(order);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task MarkOrderPaidByStaffAsync(Guid orderId)
+        {
+            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId);
+            if (order == null)
+                throw new KeyNotFoundException("Order not found.");
+
+            if (!order.IsPaid)
+            {
+                order.IsPaid = true;
+                if (order.OrderStatus == OrderStatus.Pending)
+                    order.OrderStatus = OrderStatus.Processing;
+                _orderRepo.Update(order);
+                await _unitOfWork.SaveChangesAsync();
+            }
+        }
+
+public async Task<bool> CanDeliverCartToAddressAsync(Guid? userId, Guid addressId)
         {
             var address = await _addressRepo.Query()
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.AddressId == addressId && s.UserId == userId && !s.IsDeleted);
+                .FirstOrDefaultAsync(s => s.AddressId == addressId && (!userId.HasValue || s.UserId == userId.Value) && !s.IsDeleted);
             if (address == null)
             {
                 return false;
@@ -163,7 +358,7 @@ namespace Ecommerce.Application.Services.Orders
             var cart = await _cartRepo.Query()
                 .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
                 .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+                .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : c.SessionId != null);
             if (cart == null || !cart.CartItems.Any())
             {
                 return false;
@@ -171,8 +366,8 @@ namespace Ecommerce.Application.Services.Orders
 
             try
             {
-                EnsureAddressCanReceiveCart(cart, address.Pincode.Trim());
-                return true;
+                EnsureAddressCanReceiveCart(cart, address.DeliveryZone);
+return true;
             }
             catch (ArgumentException)
             {
@@ -180,7 +375,7 @@ namespace Ecommerce.Application.Services.Orders
             }
         }
 
-        private static Order CreateOrderFromCart(Guid userId, CreateOrderRequestDto dto, Domain.Entities.Cart cart, decimal serverTotalPrice)
+private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto, Domain.Entities.Cart cart, decimal serverTotalPrice, string? couponCode = null, decimal couponDiscount = 0)
         {
             return new Order
             {
@@ -192,6 +387,12 @@ namespace Ecommerce.Application.Services.Orders
                 OrderStatus = OrderStatus.Pending,
                 TransactionId = dto.TransactionId,
                 PaymentMethod = dto.PaymentMethod.Trim().ToLowerInvariant(),
+                InvoiceType = string.Equals(dto.InvoiceType?.Trim(), "Factura", StringComparison.OrdinalIgnoreCase) ? "Factura" : "Boleta",
+                Ruc = dto.InvoiceType != null && dto.InvoiceType.Trim().Equals("Factura", StringComparison.OrdinalIgnoreCase) ? dto.Ruc?.Trim() : null,
+                RazonSocial = dto.InvoiceType != null && dto.InvoiceType.Trim().Equals("Factura", StringComparison.OrdinalIgnoreCase) ? dto.RazonSocial?.Trim() : null,
+                FiscalAddress = dto.FiscalAddress?.Trim(),
+                CouponCode = dto.CouponCode?.Trim().ToUpperInvariant(),
+                CouponDiscount = couponDiscount,
                 OrderItems = cart.CartItems.Select(c => new OrderItem
                 {
                     OrderItemId = Guid.NewGuid(),
@@ -224,22 +425,36 @@ namespace Ecommerce.Application.Services.Orders
             }
         }
 
-        private static void EnsureAddressCanReceiveCart(Domain.Entities.Cart cart, string pincode)
+        private static void EnsureAddressCanReceiveCart(Domain.Entities.Cart cart, string? deliveryZone)
         {
-            foreach (var cartItem in cart.CartItems)
+            // Memory Kings delivers to Lima Metropolitana and 92% of Peru (via Shalom/Marvisur agencies).
+            // Delivery is universally available; the zone only affects ETA/cost, not eligibility.
+            // We keep this guard to fail fast if an address somehow has no resolved zone.
+            if (string.IsNullOrWhiteSpace(deliveryZone))
             {
-                var deliverablePincodes = ProductOptionParser.ParsePincodeList(cartItem.Product.DeliverablePincodes);
-                if (!deliverablePincodes.Contains(pincode, StringComparer.Ordinal))
-                {
-                    throw new ArgumentException($"'{cartItem.Product.ProductName}' is not deliverable to pincode {pincode}.");
-                }
+                return;
             }
         }
 
-        private async Task QueueOrderConfirmationEmailAsync(Guid userId, Order order)
+        private async Task QueueOrderConfirmationEmailAsync(Guid? userId, Order order)
         {
-            var user = await _userRepo.Query().AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
-            if (user == null || string.IsNullOrWhiteSpace(user.Email))
+            string? email = null;
+            string? userName = null;
+            
+            if (userId.HasValue)
+            {
+                var user = await _userRepo.Query().AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId.Value);
+                email = user?.Email;
+                userName = user?.Name;
+            }
+            else
+            {
+                // For guest orders, use the guest email stored on the order
+                email = order.GuestEmail;
+                userName = order.GuestEmail?.Split('@')[0]; // Use email prefix as name for guests
+            }
+
+            if (string.IsNullOrWhiteSpace(email))
             {
                 return;
             }
@@ -252,9 +467,9 @@ namespace Ecommerce.Application.Services.Orders
 
             if (populatedOrder == null) return;
 
-            var body = GenerateRichEmailHtml(populatedOrder, "Order Confirmed", $"Your order <strong>{populatedOrder.OrderId}</strong> has been placed successfully. Thank you for shopping with us!");
-
-            await _emailJobQueue.QueueAsync(new EmailJobMessage(user.Email, $"Order confirmed - {populatedOrder.OrderId}", body));
+            // Use the new notification service
+            var orderDto = _mapper.Map<OrderDetailsResponseDto>(populatedOrder);
+            await _notificationService.SendOrderConfirmationEmailAsync(email, userName ?? "Cliente", orderDto);
         }
 
         private async Task QueueOrderLifecycleEmailAsync(Order order, string subject, string heading, string messageHtml, string? reason = null)
@@ -287,7 +502,7 @@ namespace Ecommerce.Application.Services.Orders
                                 <td style='vertical-align:top;'>
                                     <p style='margin:0 0 4px;font-weight:600;color:#111827;font-size:16px;'>{System.Net.WebUtility.HtmlEncode(item.Product?.ProductName ?? "Product")}</p>
                                     <p style='margin:0 0 4px;color:#6b7280;font-size:14px;'>Color: {System.Net.WebUtility.HtmlEncode(item.SelectedColor)} | Size: {System.Net.WebUtility.HtmlEncode(item.SelectedSize)}</p>
-                                    <p style='margin:0;color:#374151;font-size:14px;'>Qty: {item.Quantity} × Rs. {item.UnitPrice:N0}</p>
+                                    <p style='margin:0;color:#374151;font-size:14px;'>Qty: {item.Quantity} × S/ {item.UnitPrice:N2}</p>
                                 </td>
                                 <td style='vertical-align:top;text-align:right;'>
                                     <p style='margin:0;font-weight:700;color:#111827;font-size:16px;'>Rs. {item.TotalPrice:N0}</p>
@@ -302,12 +517,23 @@ namespace Ecommerce.Application.Services.Orders
                 <div style='background-color:#f9fafb;padding:16px;border-radius:6px;margin-top:24px;border:1px solid #e5e7eb;'>
                     <h3 style='margin:0 0 12px;font-size:16px;color:#111827;border-bottom:1px solid #e5e7eb;padding-bottom:8px;'>Delivery Address</h3>
                     <p style='margin:0 0 4px;font-weight:600;color:#374151;'>{System.Net.WebUtility.HtmlEncode(address.FullName)}</p>
-                    <p style='margin:0 0 4px;color:#4b5563;font-size:14px;'>{System.Net.WebUtility.HtmlEncode(address.HouseName)}, {System.Net.WebUtility.HtmlEncode(address.Place)}</p>
-                    <p style='margin:0 0 4px;color:#4b5563;font-size:14px;'>{System.Net.WebUtility.HtmlEncode(address.PostOffice)} - {System.Net.WebUtility.HtmlEncode(address.Pincode)}</p>
+                    <p style='margin:0 0 4px;color:#4b5563;font-size:14px;'>{System.Net.WebUtility.HtmlEncode(address.HouseName)}</p>
+                    <p style='margin:0 0 4px;color:#4b5563;font-size:14px;'>{System.Net.WebUtility.HtmlEncode(address.District)}, {System.Net.WebUtility.HtmlEncode(address.Province)} — {System.Net.WebUtility.HtmlEncode(address.Department)}</p>
                     <p style='margin:0;color:#4b5563;font-size:14px;'>Phone: {System.Net.WebUtility.HtmlEncode(address.PhoneNumber)}</p>
                 </div>" : "";
 
-            var paymentMethodDisplay = string.Equals(order.PaymentMethod, "cod", StringComparison.OrdinalIgnoreCase) ? "Cash on Delivery" : "Online Payment (Card)";
+            var paymentMethodDisplay = order.PaymentMethod?.ToLowerInvariant() switch
+            {
+                "cod" => "Cash on Delivery",
+                "yape" => "Yape",
+                "plin" => "Plin",
+                "bcp" => "BCP Mobile Banking",
+                "interbank" => "Interbank App",
+                "bbva" => "BBVA App",
+                "scotiabank" => "Scotiabank App",
+                "pagoefectivo" => "PagoEfectivo",
+                _ => "Online Payment (Card)"
+            };
 
             return $@"
 <!DOCTYPE html>
@@ -352,7 +578,7 @@ namespace Ecommerce.Application.Services.Orders
                         <tr>
                             <td style='padding:16px 0 0;text-align:right;'>
                                 <p style='margin:0;font-size:16px;color:#4b5563;'>Total Amount</p>
-                                <p style='margin:4px 0 0;font-size:24px;font-weight:800;color:#111827;'>Rs. {order.TotalPrice:N0}</p>
+                                <p style='margin:4px 0 0;font-size:24px;font-weight:800;color:#111827;'>S/ {order.TotalPrice:N2}</p>
                             </td>
                         </tr>
                     </tfoot>
@@ -425,7 +651,7 @@ namespace Ecommerce.Application.Services.Orders
             };
         }
 
-        public async Task<OrderDetailsResponseDto> GetOrderByIdAsync(Guid orderId, Guid requestingUserId, bool isAdmin)
+        public async Task<OrderDetailsResponseDto> GetOrderByIdAsync(Guid orderId, Guid? requestingUserId, bool isAdmin)
         {
             var order = await _orderRepo.Query()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
@@ -514,6 +740,9 @@ namespace Ecommerce.Application.Services.Orders
                 TransactionId = order.TransactionId,
                 UserEmail = order.User?.Email,
                 PaymentMethod = order.PaymentMethod,
+                IsPaid = order.IsPaid,
+                PaymentReceiptUrl = order.PaymentReceiptUrl,
+                PaymentApprovalCode = order.PaymentApprovalCode,
                 CancellationReason = order.CancellationReason,
                 ReturnReason = order.ReturnReason,
                 ReplacementReason = order.ReplacementReason,

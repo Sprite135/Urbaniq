@@ -3,6 +3,7 @@ import { useGetCategoriesQuery, type Category } from '../catalog/catalogApiSlice
 import { useCreateCategoryMutation, useDeleteCategoryMutation } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { Plus, Tags, X, Trash2, CornerDownRight } from 'lucide-react';
+import { getApiErrorMessage } from '@/app/apiError';
 
 const flattenCategories = (categories: Category[] = [], depth = 0): Array<Category & { depth: number }> =>
   categories.flatMap((category) => [
@@ -47,10 +48,10 @@ const CategoryManagementPage = () => {
         description: newCategoryDesc.trim(),
         parentCategoryId: parentCategoryId
       }).unwrap();
-      toast.success('Category created successfully');
+      toast.success('Categoría creada correctamente');
       closeModal();
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to create category');
+    } catch (err: unknown) {
+        toast.error(getApiErrorMessage(err, 'No se pudo crear la categoría'));
     }
   };
 
@@ -60,8 +61,8 @@ const CategoryManagementPage = () => {
        const res = await deleteCategory(categoryToDelete.id).unwrap();
        toast.success(res.message);
        setCategoryToDelete(null);
-     } catch (err: any) {
-       toast.error(err?.data?.message || 'Failed to delete category');
+     } catch (err: unknown) {
+        toast.error(getApiErrorMessage(err, 'No se pudo eliminar la categoría'));
        setCategoryToDelete(null);
      }
   };
@@ -82,9 +83,9 @@ const CategoryManagementPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Merchandising</p>
-          <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Categories</h2>
-          <p className="mt-2 text-sm text-[#6f6659]">Organize storefront navigation, collection trees, and category discovery.</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Comercialización</p>
+          <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Categorías</h2>
+          <p className="mt-2 text-sm text-[#6f6659]">Organiza la navegación de la tienda, los árboles de colecciones y la búsqueda de categorías.</p>
         </div>
         <button
           type="button"
@@ -92,7 +93,7 @@ const CategoryManagementPage = () => {
           className="inline-flex h-11 items-center justify-center gap-2 bg-[#111827] px-5 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#1f2740]"
         >
           <Plus className="h-4 w-4" />
-          Add Root Category
+           Agregar categoría raíz
         </button>
       </div>
 
@@ -108,10 +109,10 @@ const CategoryManagementPage = () => {
               <table className="w-full min-w-[720px] text-left">
                 <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
                   <tr>
-                    <th className="px-5 py-4">Category</th>
+                    <th className="px-5 py-4">Categoría</th>
                     <th className="px-5 py-4">Slug</th>
-                    <th className="px-5 py-4">Level</th>
-                    <th className="px-5 py-4 text-right">Actions</th>
+                    <th className="px-5 py-4">Nivel</th>
+                    <th className="px-5 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6da]">
@@ -132,7 +133,7 @@ const CategoryManagementPage = () => {
                         </td>
                         <td className="px-5 py-4 font-mono text-xs text-[#514b43]">{category.slug}</td>
                         <td className="px-5 py-4 text-sm font-semibold text-[#514b43]">
-                          {category.depth === 0 ? 'Root' : `Sub level ${category.depth}`}
+                          {category.depth === 0 ? 'Raíz' : `Subnivel ${category.depth}`}
                         </td>
                         <td className="px-5 py-4 text-right">
                           <div className="flex items-center justify-end gap-3">
@@ -141,12 +142,12 @@ const CategoryManagementPage = () => {
                                  onClick={() => openModal(category.categoryId)}
                                  className="text-xs font-bold text-[#9d731e] hover:underline"
                                >
-                                 + Sub
+                                 + Subcategoría
                                </button>
                              )}
                              <button 
                                onClick={() => setCategoryToDelete({ id: category.categoryId, name: category.categoryName })}
-                               title="Delete Category"
+                                title="Eliminar categoría"
                                className="grid h-8 w-8 place-items-center border border-red-200 text-red-600 hover:bg-red-50"
                              >
                                 <Trash2 className="h-4 w-4" />
@@ -157,7 +158,7 @@ const CategoryManagementPage = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-[#7c7467]">No categories found.</td>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron categorías.</td>
                     </tr>
                   )}
                 </tbody>
@@ -194,12 +195,12 @@ const CategoryManagementPage = () => {
                             onClick={() => openModal(category.categoryId)}
                             className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9d731e] hover:underline"
                           >
-                            + Sub
+                            + Subcategoría
                           </button>
                         )}
                         <button 
                           onClick={() => setCategoryToDelete({ id: category.categoryId, name: category.categoryName })}
-                          title="Delete Category"
+                          title="Eliminar categoría"
                           className="grid h-8 w-8 place-items-center border border-red-200 text-red-600 hover:bg-red-50"
                         >
                            <Trash2 className="h-3.5 w-3.5" />
@@ -209,7 +210,7 @@ const CategoryManagementPage = () => {
                   </div>
                 ))
               ) : (
-                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No categories found.</div>
+                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron categorías.</div>
               )}
             </div>
           </>
@@ -222,9 +223,9 @@ const CategoryManagementPage = () => {
           <div className="w-full max-w-lg border border-[#e1d5c2] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#eee6da] px-5 py-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#9d731e]">New category</p>
+                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#9d731e]">Nueva categoría</p>
                 <h3 className="mt-1 text-xl font-black uppercase tracking-[0.08em] text-[#111827]">
-                  {parentCategoryId ? 'Create Subcategory' : 'Create Root Category'}
+                  {parentCategoryId ? 'Crear subcategoría' : 'Crear categoría raíz'}
                 </h3>
               </div>
               <button type="button" onClick={() => closeModal()} className="grid h-9 w-9 place-items-center border border-[#d8cdbb]">
@@ -234,7 +235,7 @@ const CategoryManagementPage = () => {
             <form onSubmit={handleCreateCategory} className="space-y-5 p-5">
               <label className="block">
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">
-                  {parentCategoryId ? 'Sub-Category Name' : 'Category Name'}
+                  {parentCategoryId ? 'Nombre de subcategoría' : 'Nombre de categoría'}
                 </span>
                 <input
                   type="text"
@@ -242,35 +243,35 @@ const CategoryManagementPage = () => {
                   value={newCategoryName}
                   onChange={(event) => setNewCategoryName(event.target.value)}
                   className="mt-2 h-11 w-full border border-[#d8cdbb] px-3 text-sm outline-none focus:border-[#9d731e]"
-                  placeholder={parentCategoryId ? "e.g. Graphic Tees" : "e.g. Tops"}
+                  placeholder={parentCategoryId ? "ej. Polos estampados" : "ej. Blusas"}
                 />
               </label>
               
               {newCategoryName && (
                 <div className="bg-[#f3ecdf] p-3 text-xs text-[#514b43]">
-                   <strong>Preview URL Slug: </strong> <span className="font-mono">{previewSlug}</span>
+                   <strong>Vista previa del slug de URL: </strong> <span className="font-mono">{previewSlug}</span>
                 </div>
               )}
 
               <label className="block">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Description</span>
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Descripción</span>
                 <textarea
                   value={newCategoryDesc}
                   onChange={(event) => setNewCategoryDesc(event.target.value)}
                   className="mt-2 h-24 w-full resize-none border border-[#d8cdbb] px-3 py-2 text-sm outline-none focus:border-[#9d731e]"
-                  placeholder="Short merchandising note..."
+                  placeholder="Nota breve de comercialización..."
                 />
               </label>
               <div className="flex justify-end gap-3 border-t border-[#eee6da] pt-5">
                 <button type="button" onClick={() => closeModal()} className="h-10 border border-[#d8cdbb] px-5 text-xs font-bold uppercase tracking-[0.16em]">
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating || !newCategoryName.trim()}
                   className="h-10 bg-[#111827] px-5 text-xs font-black uppercase tracking-[0.16em] text-white disabled:opacity-50"
                 >
-                  {isCreating ? 'Saving...' : 'Save category'}
+                  {isCreating ? 'Guardando...' : 'Guardar categoría'}
                 </button>
               </div>
             </form>
@@ -285,9 +286,9 @@ const CategoryManagementPage = () => {
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-red-100 text-red-600">
                <Trash2 className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Delete Category</h3>
+            <h3 className="text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Eliminar categoría</h3>
             <p className="mt-2 text-sm text-[#514b43]">
-              Do you want to delete the category <strong>"{categoryToDelete.name}"</strong>?
+              ¿Deseas eliminar la categoría <strong>"{categoryToDelete.name}"</strong>?
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <button
@@ -295,7 +296,7 @@ const CategoryManagementPage = () => {
                 onClick={() => setCategoryToDelete(null)}
                 className="h-10 border border-[#d8cdbb] px-5 text-xs font-bold uppercase tracking-[0.16em]"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 type="button"
@@ -303,7 +304,7 @@ const CategoryManagementPage = () => {
                 disabled={isDeleting}
                 className="h-10 bg-red-600 px-5 text-xs font-black uppercase tracking-[0.16em] text-white disabled:opacity-50 hover:bg-red-700"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>

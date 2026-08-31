@@ -93,8 +93,8 @@ namespace Ecommerce.Api.Mapping
                         .Distinct()
                         .OrderBy(value => value)
                         .ToList()))
-                .ForMember(dest => dest.DeliverablePincodes,
-                    opt => opt.MapFrom(src => ProductOptionParser.ParsePincodeList(src.DeliverablePincodes).ToList()))
+                .ForMember(dest => dest.DeliverableZones,
+                    opt => opt.MapFrom(src => ProductOptionParser.ParseDeliveryCodes(src.DeliverableZones).ToList()))
                 .ForMember(dest => dest.Variants,
                     opt => opt.MapFrom(src => src.Variants.OrderBy(v => v.Color).ThenBy(v => v.Size).ToList()))
                 .ForMember(dest => dest.CategoryName,
@@ -127,7 +127,7 @@ namespace Ecommerce.Api.Mapping
                 .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => ((src.Product != null ? src.Product.Price : 0) - (src.Product != null ? src.Product.Discount : 0)) * src.Quantity))
                 .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.SelectedSize))
                 .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.SelectedColor))
-                .ForMember(dest => dest.DeliveryPincode, opt => opt.MapFrom(src => src.DeliveryPincode));
+                .ForMember(dest => dest.DeliveryCode, opt => opt.MapFrom(src => src.DeliveryCode));
 
             CreateMap<Domain.Entities.Cart, CartResponseDto>()
                 .ForMember(dest => dest.CartId, opt => opt.MapFrom(src => src.CartId))

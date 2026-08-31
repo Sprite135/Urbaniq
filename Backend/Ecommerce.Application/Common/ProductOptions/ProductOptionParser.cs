@@ -33,7 +33,7 @@ namespace Ecommerce.Application.Common.ProductOptions
             return string.Join(", ", ParseOptionList(csv));
         }
 
-        public static IReadOnlyList<string> ParsePincodeList(string? csv)
+        public static IReadOnlyList<string> ParseDeliveryCodes(string? csv)
         {
             if (string.IsNullOrWhiteSpace(csv))
             {
@@ -41,7 +41,7 @@ namespace Ecommerce.Application.Common.ProductOptions
             }
 
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            var pincodes = new List<string>();
+            var codes = new List<string>();
 
             foreach (var value in csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
@@ -51,15 +51,15 @@ namespace Ecommerce.Application.Common.ProductOptions
                     continue;
                 }
 
-                pincodes.Add(digitsOnly);
+                codes.Add(digitsOnly);
             }
 
-            return pincodes;
+            return codes;
         }
 
-        public static string NormalizePincodeCsv(string? csv)
+        public static string NormalizeDeliveryCodes(string? csv)
         {
-            return string.Join(", ", ParsePincodeList(csv));
+            return string.Join(", ", ParseDeliveryCodes(csv));
         }
     }
 }

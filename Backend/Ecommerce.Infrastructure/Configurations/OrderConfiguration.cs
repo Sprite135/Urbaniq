@@ -14,8 +14,11 @@ namespace Ecommerce.Infrastructure.Configurations
         {
             builder.HasKey(o => o.OrderId);
 
-            // Decimal precision for order total
+            // Decimal precision for order total and shipping cost
             builder.Property(o => o.TotalPrice).HasColumnType("decimal(18,2)");
+            builder.Property(o => o.ShippingCost).HasColumnType("decimal(18,2)");
+            builder.Property(o => o.PaymentReceiptUrl).HasMaxLength(500);
+            builder.Property(o => o.PaymentApprovalCode).HasMaxLength(32);
 
             builder.Property(o => o.TransactionId).IsRequired().HasMaxLength(100);
             builder.Property(o => o.PaymentMethod).IsRequired().HasMaxLength(30);

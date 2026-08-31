@@ -6,26 +6,26 @@ namespace Ecommerce.UnitTests.Common;
 public class ProductOptionParserTests
 {
     [Fact]
-    public void ParsePincodeList_NormalizesDigitsAndRemovesDuplicates()
+    public void ParseDeliveryCodes_NormalizesDigitsAndRemovesDuplicates()
     {
-        var result = ProductOptionParser.ParsePincodeList("673001, 673 002, 673001, invalid, 12");
+        var result = ProductOptionParser.ParseDeliveryCodes("150106, 673 002, 150106, invalid, 12");
 
-        result.Should().Equal("673001", "673002");
+        result.Should().Equal("150106", "673002");
     }
 
     [Fact]
-    public void ParsePincodeList_EmptyOrNull_ReturnsEmpty()
+    public void ParseDeliveryCodes_EmptyOrNull_ReturnsEmpty()
     {
-        ProductOptionParser.ParsePincodeList(null).Should().BeEmpty();
-        ProductOptionParser.ParsePincodeList("   ").Should().BeEmpty();
+        ProductOptionParser.ParseDeliveryCodes(null).Should().BeEmpty();
+        ProductOptionParser.ParseDeliveryCodes("   ").Should().BeEmpty();
     }
 
     [Fact]
-    public void NormalizePincodeCsv_FormatsUniqueSixDigitCodes()
+    public void NormalizeDeliveryCodes_FormatsUniqueSixDigitCodes()
     {
-        var normalized = ProductOptionParser.NormalizePincodeCsv("673001,673001, 560001");
+        var normalized = ProductOptionParser.NormalizeDeliveryCodes("150106,150106, 150103");
 
-        normalized.Should().Be("673001, 560001");
+        normalized.Should().Be("150106, 150103");
     }
 
     [Fact]

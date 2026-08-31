@@ -12,15 +12,19 @@ import {
   Tags,
   Users,
   X,
+  Ticket,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, description: 'Revenue and operations' },
-  { name: 'Products', href: '/admin/products', icon: Package, description: 'Catalog and stock' },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, description: 'Fulfilment pipeline' },
-  { name: 'Categories', href: '/admin/categories', icon: Tags, description: 'Merchandising tree' },
-  { name: 'Users', href: '/admin/users', icon: Users, description: 'Customer controls' },
+  { name: 'Panel', href: '/admin', icon: LayoutDashboard, description: 'Ingresos y operaciones' },
+  { name: 'Productos', href: '/admin/products', icon: Package, description: 'Catálogo y stock' },
+  { name: 'Pedidos', href: '/admin/orders', icon: ShoppingCart, description: 'Flujo de envío' },
+  { name: 'Categorías', href: '/admin/categories', icon: Tags, description: 'Árbol de comercialización' },
+  { name: 'Cupones', href: '/admin/coupons', icon: Ticket, description: 'Códigos promocionales' },
+  { name: 'Analytics', href: '/admin/coupons/analytics', icon: TrendingUp, description: 'Estadísticas de cupones' },
+  { name: 'Usuarios', href: '/admin/users', icon: Users, description: 'Controles de clientes' },
 ];
 
 const AdminLayout = () => {
@@ -46,7 +50,7 @@ const AdminLayout = () => {
           type="button"
           className="fixed inset-0 z-30 bg-[#111827]/55 lg:hidden"
           onClick={() => setSidebarOpen(false)}
-          aria-label="Close admin navigation"
+          aria-label="Cerrar navegación de administración"
         />
       )}
 
@@ -61,7 +65,7 @@ const AdminLayout = () => {
               <img src="/logo.jpeg" alt="Urbaniq" className="h-12 w-auto object-contain" />
             </div>
           </Link>
-          <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden" aria-label="Close menu">
+          <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden"            aria-label="Cerrar menú">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -93,9 +97,9 @@ const AdminLayout = () => {
 
         <div className="border-t border-[#263044] p-4">
           <div className="mb-4 border border-[#263044] bg-[#172033] p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">Signed in</p>
-            <p className="mt-2 truncate text-sm font-semibold text-white">{user?.name || 'Admin User'}</p>
-            <p className="mt-1 truncate text-xs text-[#9ba4b5]">{user?.email || 'Operations Console'}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">Sesión iniciada</p>
+            <p className="mt-2 truncate text-sm font-semibold text-white">{user?.name || 'Usuario administrador'}</p>
+            <p className="mt-1 truncate text-xs text-[#9ba4b5]">{user?.email || 'Consola de operaciones'}</p>
           </div>
           <button
             type="button"
@@ -103,7 +107,7 @@ const AdminLayout = () => {
             className="flex h-11 w-full items-center justify-center gap-2 border border-[#384257] text-[11px] font-black uppercase tracking-[0.2em] text-[#f8f5ee] transition-colors hover:border-red-400 hover:bg-red-500"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            Cerrar sesión
           </button>
         </div>
       </aside>
@@ -116,12 +120,12 @@ const AdminLayout = () => {
                 type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="grid h-10 w-10 place-items-center border border-[#d8cdbb] bg-white lg:hidden"
-                aria-label="Open admin navigation"
+                aria-label="Abrir navegación de administración"
               >
                 <Menu className="h-5 w-5" />
               </button>
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#9d731e]">Admin console</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#9d731e]">Consola de administración</p>
                 <h1 className="mt-1 truncate text-2xl font-black uppercase tracking-[0.08em] text-[#111827]">{currentRoute.name}</h1>
               </div>
             </div>
@@ -136,8 +140,8 @@ const AdminLayout = () => {
                   {user?.name?.charAt(0).toUpperCase() || 'A'}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-[#111827]">{user?.name || 'Admin'}</p>
-                  <p className="text-[11px] font-medium text-[#7c7467]">Store manager</p>
+                  <p className="truncate text-sm font-bold text-[#111827]">{user?.name || 'Administrador'}</p>
+                  <p className="text-[11px] font-medium text-[#7c7467]">Encargado de tienda</p>
                 </div>
               </div>
             </div>

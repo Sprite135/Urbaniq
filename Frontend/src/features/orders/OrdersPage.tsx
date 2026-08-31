@@ -10,21 +10,21 @@ const formatOrderId = (orderId: string) => orderId.slice(0, 8).toUpperCase();
 
 const formatPaymentLabel = (method: string) => {
   const normalized = method?.toLowerCase();
-  if (normalized === 'cod') return 'Cash on Delivery';
-  if (normalized === 'card') return 'Card Payment';
+  if (normalized === 'cod') return 'Pago contra entrega';
+  if (normalized === 'card') return 'Pago con tarjeta';
   return method;
 };
 
 const formatStatusLabel = (status: string) => {
   const normalized = status?.toLowerCase();
   const labels: Record<string, string> = {
-    pending: 'Pending',
-    processing: 'Processing',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-    refundinitiated: 'Refund Initiated',
-    refunded: 'Refunded',
+    pending: 'Pendiente',
+    processing: 'Procesando',
+    shipped: 'Enviado',
+    delivered: 'Entregado',
+    cancelled: 'Cancelado',
+    refundinitiated: 'Reembolso iniciado',
+    refunded: 'Reembolsado',
   };
   return labels[normalized] || status;
 };
@@ -32,12 +32,12 @@ const formatStatusLabel = (status: string) => {
 const isCancelledOrder = (order: Order) => order.orderStatus?.toLowerCase() === 'cancelled';
 
 const formatItemVariant = (item: OrderItem) =>
-  `Size ${item.size} · ${item.color} · Qty ${item.quantity}`;
+  `${item.color} · Cant ${item.quantity}`;
 
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case 'delivered':
-      return 'text-green-600 bg-green-50';
+      return 'text-green-600 dark:text-green-400 bg-green-50';
     case 'cancelled':
       return 'text-red-600 bg-red-50';
     case 'shipped':
@@ -50,7 +50,7 @@ const getStatusColor = (status: string) => {
     case 'refundinitiated':
       return 'text-green-700 bg-green-50';
     default:
-      return 'text-gray-600 bg-gray-50';
+      return 'text-gray-600 dark:text-[#9ca3af] bg-gray-50 dark:bg-[#0e0f12]';
   }
 };
 
@@ -75,7 +75,7 @@ const OrdersPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#111827] border-t-transparent" />
       </div>
     );
   }
@@ -83,10 +83,10 @@ const OrdersPage: React.FC = () => {
   if (isError) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-        <h2 className="mb-2 text-xl font-black text-gray-900">Failed to Load Orders</h2>
-        <p className="mb-6 text-sm text-gray-500">Please try again later.</p>
-        <button onClick={() => window.location.reload()} className="bg-teal-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-white">
-          Retry
+        <h2 className="mb-2 text-xl font-black text-gray-900 dark:text-[#ece7dd]">No se pudieron cargar los pedidos</h2>
+        <p className="mb-6 text-sm text-gray-500 dark:text-[#9a9388]">Por favor, inténtalo de nuevo más tarde.</p>
+        <button onClick={() => window.location.reload()} className="bg-[#111827] px-8 py-3 text-xs font-bold uppercase tracking-widest text-white">
+          Reintentar
         </button>
       </div>
     );
@@ -97,30 +97,30 @@ const OrdersPage: React.FC = () => {
   if (totalOrders === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-        <Package className="mb-6 h-20 w-20 text-gray-200" />
-        <h2 className="mb-2 text-2xl font-black uppercase tracking-tight text-gray-900">No Orders Yet</h2>
-        <p className="mb-8 max-w-sm text-sm text-gray-500">
-          You have not placed any orders. Start shopping to see your orders here.
+        <Package className="mb-6 h-20 w-20 text-gray-200 dark:text-[#9a9388]" />
+        <h2 className="mb-2 text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-[#ece7dd]">Aún no hay pedidos</h2>
+        <p className="mb-8 max-w-sm text-sm text-gray-500 dark:text-[#9a9388]">
+          Aún no has realizado ningún pedido. Empieza a comprar para ver tus pedidos aquí.
         </p>
-        <Link to="/catalog" className="bg-teal-600 px-10 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-teal-700">
-          Start Shopping
+        <Link to="/catalog" className="bg-[#111827] px-10 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#1f2740]">
+          Empezar a comprar
         </Link>
       </div>
     );
   }
 
   const filterOptions: { key: OrderFilter; label: string; count: number }[] = [
-    { key: 'all', label: 'All orders', count: totalOrders },
-    { key: 'active', label: 'Placed orders', count: activeOrders.length },
-    { key: 'cancelled', label: 'Cancelled', count: cancelledOrders.length },
+    { key: 'all', label: 'Todos los pedidos', count: totalOrders },
+    { key: 'active', label: 'Pedidos realizados', count: activeOrders.length },
+    { key: 'cancelled', label: 'Cancelado', count: cancelledOrders.length },
   ];
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-gray-50 dark:bg-[#0e0f12]">
       <div className="container mx-auto max-w-3xl px-4 py-8">
-        <h1 className="mb-2 text-2xl font-black uppercase tracking-tight text-gray-900">My Orders</h1>
-        <p className="mb-6 text-sm text-gray-500">
-          {activeOrders.length} placed · {cancelledOrders.length} cancelled
+        <h1 className="mb-2 text-2xl font-black uppercase tracking-tight text-gray-900 dark:text-[#ece7dd]">Mis pedidos</h1>
+        <p className="mb-6 text-sm text-gray-500 dark:text-[#9a9388]">
+          {activeOrders.length} realizados · {cancelledOrders.length} cancelados
         </p>
 
         <div className="mb-6 flex flex-wrap gap-2">
@@ -131,8 +131,8 @@ const OrdersPage: React.FC = () => {
               onClick={() => setFilter(option.key)}
               className={`px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
                 filter === option.key
-                  ? 'bg-teal-600 text-white'
-                  : 'border border-gray-200 bg-white text-gray-600 hover:border-teal-300'
+                  ? 'bg-[#111827] text-white'
+                  : 'border border-gray-200 bg-white dark:bg-[#16181d] text-gray-600 dark:text-[#9ca3af] hover:border-[#d7b46a]'
               }`}
             >
               {option.label} ({option.count})
@@ -141,18 +141,18 @@ const OrdersPage: React.FC = () => {
         </div>
 
         {visibleOrders.length === 0 ? (
-          <div className="border border-gray-100 bg-white p-8 text-center">
-            <p className="text-sm text-gray-500">
-              {filter === 'cancelled' ? 'No cancelled orders.' : 'No active orders right now.'}
+          <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-8 text-center">
+            <p className="text-sm text-gray-500 dark:text-[#9a9388]">
+              {filter === 'cancelled' ? 'No hay pedidos cancelados.' : 'No hay pedidos activos en este momento.'}
             </p>
           </div>
         ) : filter === 'all' ? (
           <div className="space-y-8">
             {activeOrders.length > 0 && (
-              <OrderSection title="Placed orders" orders={activeOrders} />
+              <OrderSection title="Pedidos realizados" orders={activeOrders} />
             )}
             {cancelledOrders.length > 0 && (
-              <OrderSection title="Cancelled orders" orders={cancelledOrders} muted />
+              <OrderSection title="Pedidos cancelados" orders={cancelledOrders} muted />
             )}
           </div>
         ) : (
@@ -175,7 +175,7 @@ interface OrderSectionProps {
 
 const OrderSection: React.FC<OrderSectionProps> = ({ title, orders, muted }) => (
   <section>
-    <h2 className={`mb-4 text-xs font-black uppercase tracking-widest ${muted ? 'text-red-600' : 'text-gray-900'}`}>
+    <h2 className={`mb-4 text-xs font-black uppercase tracking-widest ${muted ? 'text-red-600' : 'text-gray-900 dark:text-[#ece7dd]'}`}>
       {title} ({orders.length})
     </h2>
     <div className="space-y-4">
@@ -199,8 +199,8 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   return (
     <Link
       to={`/orders/${order.orderId}`}
-      className={`group block border bg-white p-5 transition-colors hover:border-gray-200 ${
-        isCancelled ? 'border-red-100' : 'border-gray-100'
+      className={`group block border bg-white dark:bg-[#16181d] p-5 transition-colors hover:border-gray-200 ${
+        isCancelled ? 'border-red-100' : 'border-gray-100 dark:border-[#26282e]'
       }`}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -210,35 +210,35 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
               {formatStatusLabel(order.orderStatus)}
             </span>
             <span className="text-xs text-gray-400">
-              {new Date(order.orderDate).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
+               {new Date(order.orderDate).toLocaleDateString('es-PE', {
+                 day: 'numeric',
+                 month: 'short',
+                 year: 'numeric',
+               })}
             </span>
           </div>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-[#9a9388]">
             Order #{formatOrderId(order.orderId)}
           </p>
         </div>
-        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-300 transition-colors group-hover:text-gray-500" />
+        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-300 transition-colors group-hover:text-gray-500 dark:text-[#9a9388]" />
       </div>
 
       {firstItem && (
         <div className="flex gap-4 border-t border-gray-50 pt-4">
           <img
-            src={firstItem.imageUrl || 'https://via.placeholder.com/80x100'}
+            src={firstItem.imageUrl || '/product-images/placeholder.svg'}
             alt={firstItem.productName}
-            className="h-20 w-16 shrink-0 bg-gray-50 object-cover"
+            className="h-20 w-16 shrink-0 bg-gray-50 dark:bg-[#0e0f12] object-cover"
           />
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-bold text-gray-900">{firstItem.productName}</p>
-            <p className="mt-1 text-xs text-gray-500">{formatItemVariant(firstItem)}</p>
+            <p className="line-clamp-2 text-sm font-bold text-gray-900 dark:text-[#ece7dd]">{firstItem.productName}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-[#9a9388]">{formatItemVariant(firstItem)}</p>
             {extraCount > 0 && (
-              <p className="mt-2 text-xs font-semibold text-teal-700">
-                + {extraCount} more {extraCount === 1 ? 'item' : 'items'}
+              <p className="mt-2 text-xs font-semibold text-[#9d731e]">
+                 + {extraCount} más {extraCount === 1 ? 'artículo' : 'artículos'}
                 {order.orderItems.slice(1, 3).map((item) => (
-                  <span key={item.orderItemId} className="mt-1 block font-normal text-gray-500">
+                  <span key={item.orderItemId} className="mt-1 block font-normal text-gray-500 dark:text-[#9a9388]">
                     {item.productName}
                   </span>
                 ))}
@@ -248,19 +248,19 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
         </div>
       )}
 
-      <div className="mt-4 grid gap-2 border-t border-gray-50 pt-4 text-xs text-gray-600 sm:grid-cols-2">
+      <div className="mt-4 grid gap-2 border-t border-gray-50 pt-4 text-xs text-gray-600 dark:text-[#9ca3af] sm:grid-cols-2">
         <div className="flex items-center gap-2">
           {isCod ? <Banknote className="h-3.5 w-3.5 shrink-0 text-gray-400" /> : <CreditCard className="h-3.5 w-3.5 shrink-0 text-gray-400" />}
           <span>
-            <span className="font-bold text-gray-700">Payment:</span> {formatPaymentLabel(order.paymentMethod)}
+               <span className="font-bold text-gray-700">Pago:</span> {formatPaymentLabel(order.paymentMethod)}
           </span>
         </div>
         {order.address && (
           <div className="flex items-start gap-2">
             <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
             <span>
-              <span className="font-bold text-gray-700">Deliver to:</span>{' '}
-              {order.address.fullName}, {order.address.place} — {order.address.pincode}
+               <span className="font-bold text-gray-700">Entregar a:</span>{' '}
+               {order.address.fullName}, {order.address.district}, {order.address.province} — {order.address.department}
             </span>
           </div>
         )}
@@ -268,14 +268,14 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
 
       {isCancelled && order.cancellationReason && (
         <p className="mt-3 rounded-sm bg-red-50 px-3 py-2 text-xs text-red-700">
-          <span className="font-bold">Cancelled because:</span> {order.cancellationReason}
+           <span className="font-bold">Cancelado porque:</span> {order.cancellationReason}
         </p>
       )}
 
       <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-3">
-        <span className="text-sm font-black text-gray-900">Rs. {order.totalPrice.toLocaleString()}</span>
+        <span className="text-sm font-black text-gray-900 dark:text-[#ece7dd]">S/ {order.totalPrice.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         <span className="text-xs text-gray-400">
-          {order.orderItems.length} {order.orderItems.length === 1 ? 'item' : 'items'} · View details
+           {order.orderItems.length} {order.orderItems.length === 1 ? 'artículo' : 'artículos'} · Ver detalles
         </span>
       </div>
     </Link>

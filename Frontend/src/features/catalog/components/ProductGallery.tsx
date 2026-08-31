@@ -24,7 +24,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images, productName }) 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="aspect-[3/4] overflow-hidden bg-gray-50 rounded-sm"
+          className="aspect-[3/4] overflow-hidden bg-gray-50 dark:bg-[#0e0f12] rounded-sm"
         >
           <img
             src={src}

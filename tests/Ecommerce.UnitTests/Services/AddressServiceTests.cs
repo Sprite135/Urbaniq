@@ -40,10 +40,10 @@ public class AddressServiceTests
         {
             FullName = "Test User",
             PhoneNumber = "9876543210",
-            Pincode = "673001",
+            PostalCode = "150106",
             HouseName = "House",
             Place = "City",
-            PostOffice = "PO",
+            Reference = "PO",
             LandMark = "Landmark"
         };
 
@@ -61,23 +61,23 @@ public class AddressServiceTests
         {
             FullName = "Test User",
             PhoneNumber = "9876543210",
-            Pincode = "673001",
+            PostalCode = "150106",
             HouseName = "House",
             Place = "City",
-            PostOffice = "PO",
+            Reference = "PO",
             LandMark = "Landmark"
         };
 
         var empty = new List<Address>().AsQueryable().BuildMock();
         _addressRepoMock.Setup(r => r.Query()).Returns(empty);
         _mapperMock.Setup(m => m.Map<AddressResponseDto>(It.IsAny<Address>()))
-            .Returns(new AddressResponseDto { Pincode = dto.Pincode });
+            .Returns(new AddressResponseDto { PostalCode = dto.PostalCode });
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         var result = await _sut.CreateAddressAsync(dto, userId);
 
         result.Should().NotBeNull();
-        result.Pincode.Should().Be("673001");
+        result.PostalCode.Should().Be("150106");
         _addressRepoMock.Verify(r => r.AddAsync(It.IsAny<Address>()), Times.Once);
     }
 
@@ -102,10 +102,10 @@ public class AddressServiceTests
         {
             FullName = "A",
             PhoneNumber = "9876543210",
-            Pincode = "673001",
+            PostalCode = "150106",
             HouseName = "H",
             Place = "P",
-            PostOffice = "PO",
+            Reference = "PO",
             LandMark = "L"
         });
 

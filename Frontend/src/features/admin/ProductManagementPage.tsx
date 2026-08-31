@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { useDeleteProductMutation, useGetProductsQuery } from '../catalog/catalogApiSlice';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '@/app/apiError';
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
+  new Intl.NumberFormat('es-PE', {
     style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
+    currency: 'PEN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 
 const ProductManagementPage = () => {
@@ -27,13 +29,13 @@ const ProductManagementPage = () => {
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Delete ${name}? This hides the product from the storefront.`)) return;
+    if (!window.confirm(`¿Eliminar ${name}? Esto oculta el producto de la tienda.`)) return;
 
     try {
       await deleteProduct(id).unwrap();
-      toast.success('Product deleted successfully');
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to delete product');
+      toast.success('Producto eliminado correctamente');
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'No se pudo eliminar el producto'));
     }
   };
 
@@ -41,16 +43,16 @@ const ProductManagementPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Catalog control</p>
-          <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Products</h2>
-          <p className="mt-2 text-sm text-[#6f6659]">Manage styles, pricing, imagery, inventory, and storefront visibility.</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Control de catálogo</p>
+          <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Productos</h2>
+          <p className="mt-2 text-sm text-[#6f6659]">Administra productos, precios, imágenes, inventario y visibilidad en la tienda.</p>
         </div>
         <Link
           to="/admin/products/new"
           className="inline-flex h-11 items-center justify-center gap-2 bg-[#111827] px-5 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#1f2740]"
         >
           <Plus className="h-4 w-4" />
-          Add product
+          Agregar producto
         </Link>
       </div>
 
@@ -60,7 +62,7 @@ const ProductManagementPage = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8174]" />
             <input
               type="search"
-              placeholder="Search products by name..."
+              placeholder="Buscar productos por nombre..."
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
@@ -73,7 +75,7 @@ const ProductManagementPage = () => {
             <input
               type="number"
               min="0"
-              placeholder="Min ₹"
+              placeholder="Mín S/"
               value={minPrice}
               onChange={(event) => {
                 const val = event.target.value;
@@ -87,7 +89,7 @@ const ProductManagementPage = () => {
             <input
               type="number"
               min="0"
-              placeholder="Max ₹"
+              placeholder="Máx S/"
               value={maxPrice}
               onChange={(event) => {
                 const val = event.target.value;
@@ -99,7 +101,7 @@ const ProductManagementPage = () => {
             />
           </div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7c7467]">
-            {data?.totalCount || 0} styles
+            {data?.totalCount || 0} productos
           </p>
         </div>
 
@@ -114,11 +116,11 @@ const ProductManagementPage = () => {
               <table className="w-full text-left">
                 <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
                   <tr>
-                    <th className="px-5 py-4">Product</th>
+                    <th className="px-5 py-4">Producto</th>
                     <th className="px-5 py-4">SKU</th>
-                    <th className="px-5 py-4">Price</th>
+                    <th className="px-5 py-4">Precio</th>
                     <th className="px-5 py-4">Stock</th>
-                    <th className="px-5 py-4 text-right">Actions</th>
+                    <th className="px-5 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6da]">
@@ -141,7 +143,7 @@ const ProductManagementPage = () => {
                               <Link to={`/admin/products/${product.id}`} className="block truncate text-sm font-bold text-[#111827] hover:text-[#9d731e] transition-colors">
                                 {product.productName}
                               </Link>
-                              <p className="mt-1 text-xs text-[#7c7467]">{product.categoryName || 'Uncategorized'}</p>
+                              <p className="mt-1 text-xs text-[#7c7467]">{product.categoryName || 'Sin categoría'}</p>
                             </div>
                           </div>
                         </td>
@@ -153,7 +155,7 @@ const ProductManagementPage = () => {
                             product.quantity <= 10 ? 'bg-amber-50 text-amber-700' :
                             'bg-emerald-50 text-emerald-700'
                           }`}>
-                            {product.quantity} in stock
+                            {product.quantity} en stock
                           </span>
                         </td>
                         <td className="px-5 py-4 text-right">
@@ -162,7 +164,7 @@ const ProductManagementPage = () => {
                             onClick={() => handleDelete(product.id, product.productName)}
                             disabled={isDeleting}
                             className="grid h-9 w-9 place-items-center border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            title="Delete product"
+                            title="Eliminar producto"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -171,7 +173,7 @@ const ProductManagementPage = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#7c7467]">No products found.</td>
+                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron productos.</td>
                     </tr>
                   )}
                 </tbody>
@@ -198,14 +200,14 @@ const ProductManagementPage = () => {
                         <div className="flex items-start justify-between gap-2">
                           <Link to={`/admin/products/${product.id}`} className="min-w-0">
                             <p className="text-sm font-bold text-[#111827] truncate hover:text-[#9d731e]">{product.productName}</p>
-                            <p className="text-xs text-[#7c7467]">{product.categoryName || 'Uncategorized'}</p>
+                             <p className="text-xs text-[#7c7467]">{product.categoryName || 'Sin categoría'}</p>
                           </Link>
                           <button
                             type="button"
                             onClick={() => handleDelete(product.id, product.productName)}
                             disabled={isDeleting}
                             className="shrink-0 grid h-8 w-8 place-items-center border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            title="Delete product"
+                            title="Eliminar producto"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -217,7 +219,7 @@ const ProductManagementPage = () => {
                             product.quantity <= 10 ? 'bg-amber-50 text-amber-700' :
                             'bg-emerald-50 text-emerald-700'
                           }`}>
-                            {product.quantity} in stock
+                            {product.quantity} en stock
                           </span>
                         </div>
                         <p className="font-mono text-[11px] text-[#7c7467]">{product.sku}</p>
@@ -226,7 +228,7 @@ const ProductManagementPage = () => {
                   </div>
                 ))
               ) : (
-                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No products found.</div>
+                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron productos.</div>
               )}
             </div>
           </>
@@ -235,8 +237,8 @@ const ProductManagementPage = () => {
         {data && data.totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-[#eee6da] bg-[#fbfaf7] px-5 py-4">
             <p className="text-sm text-[#6f6659]">
-              Page <span className="font-bold text-[#111827]">{data.pageNumber}</span> of{' '}
-              <span className="font-bold text-[#111827]">{data.totalPages}</span>
+               Página <span className="font-bold text-[#111827]">{data.pageNumber}</span> de{' '}
+               <span className="font-bold text-[#111827]">{data.totalPages}</span>
             </p>
             <div className="flex gap-2">
               <button
@@ -244,14 +246,14 @@ const ProductManagementPage = () => {
                 onClick={() => setPage((value) => value - 1)}
                 className="h-9 border border-[#d8cdbb] bg-white px-4 text-xs font-bold uppercase tracking-[0.16em] disabled:opacity-40"
               >
-                Previous
+                 Anterior
               </button>
               <button
                 disabled={page === data.totalPages}
                 onClick={() => setPage((value) => value + 1)}
                 className="h-9 border border-[#d8cdbb] bg-white px-4 text-xs font-bold uppercase tracking-[0.16em] disabled:opacity-40"
               >
-                Next
+                 Siguiente
               </button>
             </div>
           </div>

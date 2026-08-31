@@ -29,9 +29,14 @@ namespace Ecommerce.Application.DTOs.Catalog
         public string Description { get; set; } = null!;
 
         /// <summary>
-        /// Comma-separated six-digit pincodes this product can be delivered to.
+        /// Códigos de zona de entrega opcionales (separados por comas). El envío se resuelve por zona.
         /// </summary>
-        public string DeliverablePincodes { get; set; } = null!;
+        public string DeliverableZones { get; set; } = null!;
+
+        /// <summary>
+        /// Whether the product needs configuration/assembly before shipping (affects delivery ETA).
+        /// </summary>
+        public bool RequiresConfiguration { get; set; }
 
         /// <summary>
         /// Variant rows with actual size/color/stock combinations.

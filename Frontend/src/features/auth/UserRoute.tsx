@@ -8,7 +8,7 @@ const UserRoute = () => {
   const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to={`/?auth=login&redirectTo=${encodeURIComponent(location.pathname)}`} replace />;
+    return <Navigate to={`/login?redirectTo=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   if (user?.role === 'Admin') {

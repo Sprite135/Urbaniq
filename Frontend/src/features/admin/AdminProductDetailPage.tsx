@@ -4,10 +4,11 @@ import { useGetProductByIdQuery } from '../catalog/catalogApiSlice';
 import { ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
+  new Intl.NumberFormat('es-PE', {
     style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
+    currency: 'PEN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 
 const AdminProductDetailPage: React.FC = () => {
@@ -25,10 +26,10 @@ const AdminProductDetailPage: React.FC = () => {
   if (isError || !product) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <h2 className="text-xl font-black text-gray-900">Product Not Found</h2>
-        <p className="mt-2 text-sm text-gray-500">The product you're looking for does not exist.</p>
+        <h2 className="text-xl font-black text-gray-900">Producto no encontrado</h2>
+        <p className="mt-2 text-sm text-gray-500">El producto que buscas no existe.</p>
         <Link to="/admin/dashboard" className="mt-6 flex items-center gap-2 text-sm font-bold text-[#9d731e] hover:underline">
-          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+          <ArrowLeft className="h-4 w-4" /> Volver al panel
         </Link>
       </div>
     );
@@ -41,7 +42,7 @@ const AdminProductDetailPage: React.FC = () => {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Product Details</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Detalles del producto</p>
           <h2 className="mt-1 text-2xl font-black uppercase tracking-[0.08em] text-[#111827]">
             {product.productName}
           </h2>
@@ -66,12 +67,12 @@ const AdminProductDetailPage: React.FC = () => {
                     <span className="font-mono text-sm text-[#111827]">{product.sku}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Price</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Precio</span>
                     <span className="text-xl font-black text-[#111827]">{formatCurrency(product.price)}</span>
                   </div>
                   {product.discount > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Discount</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Descuento</span>
                       <span className="text-sm font-bold text-green-600">-{formatCurrency(product.discount)}</span>
                     </div>
                   )}
@@ -86,7 +87,7 @@ const AdminProductDetailPage: React.FC = () => {
         <div className="space-y-6">
           <section className="border border-[#e1d5c2] bg-white">
             <div className="border-b border-[#eee6da] bg-[#fbfaf7] p-5">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Inventory Status</h3>
+              <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Estado de inventario</h3>
             </div>
             <div className="p-5">
               <div className="flex items-center gap-4">
@@ -100,15 +101,15 @@ const AdminProductDetailPage: React.FC = () => {
                    </div>
                 )}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Current Stock</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Stock actual</p>
                   <p className="text-3xl font-black text-[#111827]">{product.quantity}</p>
                 </div>
               </div>
               
               {product.quantity <= 10 && (
                 <div className="mt-4 border-l-2 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">
-                  <p className="font-bold">Low Stock Alert</p>
-                  <p>This item is running low. Consider restocking soon.</p>
+                  <p className="font-bold">Alerta de stock bajo</p>
+                  <p>Este artículo se está agotando. Considera reabastecerlo pronto.</p>
                 </div>
               )}
             </div>
@@ -116,12 +117,12 @@ const AdminProductDetailPage: React.FC = () => {
 
           <section className="border border-[#e1d5c2] bg-white">
             <div className="border-b border-[#eee6da] bg-[#fbfaf7] p-5">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Variants</h3>
+              <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Variantes</h3>
             </div>
             <div className="p-5">
                <div className="space-y-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#7c7467] mb-2">Available Colors</p>
+                     <p className="text-xs font-bold uppercase tracking-wider text-[#7c7467] mb-2">Colores disponibles</p>
                     <div className="flex flex-wrap gap-2">
                        {product.availableColors.map(c => (
                          <span key={c} className="px-2 py-1 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-widest">{c}</span>
@@ -129,7 +130,7 @@ const AdminProductDetailPage: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-[#7c7467] mb-2">Available Sizes</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-[#7c7467] mb-2">Versiones disponibles</p>
                     <div className="flex flex-wrap gap-2">
                        {product.availableSizes.map(s => (
                          <span key={s} className="px-2 py-1 border border-gray-200 text-xs font-bold text-gray-800 uppercase">{s}</span>

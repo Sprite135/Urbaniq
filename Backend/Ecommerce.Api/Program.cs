@@ -12,6 +12,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -24,7 +26,9 @@ builder.Host.UseSerilog((context, config) =>
 // ===================== Settings =====================
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.Configure<RazorPaySettings>(builder.Configuration.GetSection("RazorPaySettings"));
-builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+    builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+    builder.Services.Configure<ShippingSettings>(builder.Configuration.GetSection("ShippingSettings"));
+    builder.Services.Configure<MerchantPaymentSettings>(builder.Configuration.GetSection("MerchantPaymentSettings"));
 
 // ===================== Clean Architecture Layer Registrations =====================
 builder.Services.AddApplication();                              // Application layer — services, validators
@@ -47,6 +51,14 @@ var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 // StackExchange.Redis would hang for ~5s per operation trying to connect to this invalid host.
 var isRedisConfigured = !string.IsNullOrWhiteSpace(redisConnectionString)
     && !redisConnectionString.StartsWith("SET_VIA", StringComparison.OrdinalIgnoreCase);
+
+if (isRedisConfigured &&
+    builder.Environment.IsDevelopment() &&
+    IsLocalhostEndpoint(redisConnectionString!) &&
+    !await CanConnectToRedisAsync(redisConnectionString!))
+{
+    isRedisConfigured = false;
+}
 
 if (!isRedisConfigured)
 {
@@ -92,15 +104,23 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
+    var resolvedJwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+    if (resolvedJwtSettings == null ||
+        string.IsNullOrWhiteSpace(resolvedJwtSettings.Key) ||
+        Encoding.UTF8.GetByteCount(resolvedJwtSettings.Key) < 32)
+    {
+        throw new Exception("JWT Settings are missing or invalid in configuration.");
+    }
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings!.Issuer,
-        ValidAudience = jwtSettings.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
+        ValidIssuer = resolvedJwtSettings.Issuer,
+        ValidAudience = resolvedJwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(resolvedJwtSettings.Key))
     };
 });
 
@@ -117,6 +137,16 @@ builder.Services.AddCors(options =>
               .AllowCredentials());
 });
 
+// ===================== Forwarded Headers (proxy/TLS termination) =====================
+// Trust X-Forwarded-* from the edge proxy (nginx) so client IP and scheme are correct.
+// This is required for per-IP rate limiting and secure cookies to work behind a reverse proxy.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // ===================== Rate Limiting =====================
 builder.Services.AddRateLimiter(options =>
 {
@@ -127,14 +157,21 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
+    {
+        var path = context.Request.Path.Value ?? "/";
+        if (!path.StartsWith("/api"))
+        {
+            return RateLimitPartition.GetNoLimiter("static");
+        }
+        return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 100,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
-            }));
+            });
+    });
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
@@ -177,7 +214,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHostedService<Ecommerce.Api.HostedServices.AutoShipBackgroundService>();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Ecommerce API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Urbaniq E-commerce API", 
+        Version = "v1.0",
+        Description = "API completa para plataforma de e-commerce Urbaniq - Gestión de productos, órdenes, cupones, usuarios y más.",
+        Contact = new OpenApiContact
+        {
+            Name = "Urbaniq Support",
+            Email = "support@urbaniq.com"
+        }
+    });
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Ecommerce.Api.xml"));
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -185,7 +233,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter your JWT token"
+        Description = "Enter your JWT token from /api/v1.0/Auth/login"
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -236,22 +284,37 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 app.UseResponseCompression();
-app.UseStaticFiles();
 app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ===================== API Routes (PRIORITY) =====================
 app.MapControllers();
 app.MapHealthChecks("/health");
 
+// ===================== Static Files & SPA =====================
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+        ctx.Context.Response.Headers.Pragma = "no-cache";
+    }
+});
+
 // ===================== Serve Frontend SPA =====================
-if (app.Environment.IsDevelopment())
+var frontendDistPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "Frontend", "dist"));
+var hasFrontendDist = Directory.Exists(frontendDistPath);
+
+if (app.Environment.IsDevelopment() && !hasFrontendDist)
 {
     // Proxy non-API, non-Swagger, non-health requests to Vite dev server in development
     app.MapWhen(context => 
         !context.Request.Path.StartsWithSegments("/api") && 
         !context.Request.Path.StartsWithSegments("/swagger") && 
-        !context.Request.Path.StartsWithSegments("/health"), 
+        !context.Request.Path.StartsWithSegments("/health") &&
+        !context.Request.Path.StartsWithSegments("/seed-pc-components"), 
         spaApp =>
         {
             spaApp.Run(async context =>
@@ -301,9 +364,6 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    var frontendDistPath = Path.Combine(app.Environment.ContentRootPath, "..", "Frontend", "dist");
-    var hasFrontendDist = Directory.Exists(frontendDistPath);
-
     if (hasFrontendDist)
     {
         app.UseDefaultFiles(new DefaultFilesOptions
@@ -312,7 +372,12 @@ else
         });
         app.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendDistPath)
+            FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendDistPath),
+            OnPrepareResponse = ctx =>
+            {
+                ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+                ctx.Context.Response.Headers.Pragma = "no-cache";
+            }
         });
     }
     else
@@ -323,16 +388,55 @@ else
 
     app.MapFallbackToFile("index.html", new StaticFileOptions
     {
-        FileProvider = hasFrontendDist 
+        FileProvider = hasFrontendDist
             ? new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendDistPath)
-            : null
+            : null,
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+            ctx.Context.Response.Headers.Pragma = "no-cache";
+        }
     });
 }
 
 // ===================== Database Seeding =====================
+// Seeds the configured admin account (idempotent; reads AdminSettings). Skips if not configured.
 await DbSeeder.SeedAdminAsync(app.Services);
-await DbSeeder.SeedCategoriesAsync(app.Services);
+if (app.Environment.IsDevelopment())
+{
+    await DbSeeder.SeedPcComponentsAsync(app.Services);
+}
 
 app.Run();
+
+static bool IsLocalhostEndpoint(string connectionString)
+{
+    var endpoint = connectionString.Split(',', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+    var host = endpoint.Split(':', 2)[0].Trim('[', ']');
+
+    return host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+        host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+        host.Equals("::1", StringComparison.OrdinalIgnoreCase);
+}
+
+static async Task<bool> CanConnectToRedisAsync(string connectionString)
+{
+    var endpoint = connectionString.Split(',', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+    var parts = endpoint.Split(':', 2);
+    var host = parts[0].Trim('[', ']');
+    var port = parts.Length > 1 && int.TryParse(parts[1], out var parsedPort) ? parsedPort : 6379;
+
+    try
+    {
+        using var client = new TcpClient();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+        await client.ConnectAsync(host, port, timeout.Token);
+        return client.Connected;
+    }
+    catch
+    {
+        return false;
+    }
+}
 
 public partial class Program { }

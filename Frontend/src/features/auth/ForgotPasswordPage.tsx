@@ -27,11 +27,11 @@ const ForgotPasswordPage: React.FC = () => {
     e.preventDefault();
     try {
       await forgotPassword({ email }).unwrap();
-      toast.success('Verification code sent to your email');
+      toast.success('Código de verificación enviado a tu correo electrónico');
       setStep('OTP');
     } catch (err) {
       const error = err as { data?: { message?: string } };
-      toast.error(error.data?.message || 'Failed to send verification code');
+      toast.error(error.data?.message || 'Error al enviar el código de verificación');
     }
   };
 
@@ -43,7 +43,7 @@ const ForgotPasswordPage: React.FC = () => {
       setStep('PASSWORD');
     } catch (err) {
       const error = err as { data?: { message?: string } };
-      toast.error(error.data?.message || 'Invalid or expired code');
+      toast.error(error.data?.message || 'Código inválido o expirado');
     }
   };
 
@@ -51,42 +51,42 @@ const ForgotPasswordPage: React.FC = () => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      return toast.error('Passwords do not match');
+      return toast.error('Las contraseñas no coinciden');
     }
     try {
       await resetPassword({ email, code, newPassword }).unwrap();
-      toast.success('Password reset successful! Please log in.');
-      navigate('/?auth=login');
+      toast.success('¡Contraseña restablecida exitosamente! Por favor, inicia sesión.');
+      navigate('/login');
     } catch (err) {
       const error = err as { data?: { message?: string } };
-      toast.error(error.data?.message || 'Failed to reset password');
+      toast.error(error.data?.message || 'Error al restablecer la contraseña');
     }
   };
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0e0f12] py-12 px-4 sm:px-6 lg:px-8">
       {/* Branding */}
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-[#ece7dd] tracking-tight">
           Urbaniq<span className="text-primary">.</span>
         </h1>
       </div>
 
-      <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+      <div className="max-w-md w-full bg-white dark:bg-[#16181d] p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-[#26282e]">
         
         {/* STEP 1: EMAIL ENTRY (Amazon Style) */}
         {step === 'EMAIL' && (
           <form onSubmit={handleRequestOtp} className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Password assistance</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Enter the email address associated with your Urbaniq account.
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-[#ece7dd]">Asistencia de contraseña</h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-[#9ca3af]">
+                Ingresa la dirección de correo asociada a tu cuenta de Urbaniq.
               </p>
             </div>
             
             <div className="space-y-1">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Correo electrónico
               </label>
               <input
                 id="email"
@@ -94,7 +94,7 @@ const ForgotPasswordPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-gray-900"
+                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-gray-900 dark:text-[#ece7dd]"
                 placeholder="name@example.com"
               />
             </div>
@@ -104,12 +104,12 @@ const ForgotPasswordPage: React.FC = () => {
               disabled={isSendingOtp}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
             >
-              {isSendingOtp ? 'Sending...' : 'Continue'}
+              {isSendingOtp ? 'Enviando...' : 'Continuar'}
             </button>
 
             <div className="text-center text-sm">
-              <Link to="/?auth=login" className="font-medium text-primary hover:underline">
-                Back to sign in
+              <Link to="/login" className="font-medium text-primary hover:underline">
+                Volver a iniciar sesión
               </Link>
             </div>
           </form>
@@ -119,16 +119,16 @@ const ForgotPasswordPage: React.FC = () => {
         {step === 'OTP' && (
           <form onSubmit={handleVerifyOtp} className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Enter verification code</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                For your security, we have sent a 6-digit code to <span className="font-medium text-gray-900">{email}</span>.
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-[#ece7dd]">Ingresa el código de verificación</h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-[#9ca3af]">
+                Por tu seguridad, hemos enviado un código de 6 dígitos a <span className="font-medium text-gray-900 dark:text-[#ece7dd]">{email}</span>.
               </p>
             </div>
             
             <div className="space-y-1">
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700 text-center">
-                6-digit code
-              </label>
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700 text-center">
+                  Código de 6 dígitos
+                </label>
               <input
                 id="code"
                 type="text"
@@ -136,7 +136,7 @@ const ForgotPasswordPage: React.FC = () => {
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                className="block w-full text-center text-3xl tracking-[0.5em] font-mono px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-primary focus:border-primary text-gray-900"
+                className="block w-full text-center text-3xl tracking-[0.5em] font-mono px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-primary focus:border-primary text-gray-900 dark:text-[#ece7dd]"
                 placeholder="000000"
               />
             </div>
@@ -146,7 +146,7 @@ const ForgotPasswordPage: React.FC = () => {
               disabled={isVerifyingOtp}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
             >
-              {isVerifyingOtp ? 'Verifying...' : 'Submit code'}
+              {isVerifyingOtp ? 'Verificando...' : 'Enviar código'}
             </button>
 
             <div className="flex flex-col items-center space-y-4 text-sm">
@@ -155,14 +155,14 @@ const ForgotPasswordPage: React.FC = () => {
                 onClick={handleRequestOtp}
                 className="text-primary font-medium hover:underline"
               >
-                Resend code
+                Reenviar código
               </button>
               <button 
                 type="button"
                 onClick={() => setStep('EMAIL')}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 dark:text-[#9a9388] hover:text-gray-700"
               >
-                Change email address
+                Cambiar correo electrónico
               </button>
             </div>
           </form>
@@ -172,32 +172,32 @@ const ForgotPasswordPage: React.FC = () => {
         {step === 'PASSWORD' && (
           <form onSubmit={handleResetPassword} className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Create new password</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                We'll ask for this password whenever you sign in.
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-[#ece7dd]">Crear nueva contraseña</h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-[#9ca3af]">
+                Te pediremos esta contraseña cada vez que inicies sesión.
               </p>
             </div>
             
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">New password</label>
+                <label className="block text-sm font-medium text-gray-700">Nueva contraseña</label>
                 <input
                   type="password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-gray-900"
-                  placeholder="At least 8 characters"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-gray-900 dark:text-[#ece7dd]"
+                  placeholder="Al menos 8 caracteres"
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Confirm password</label>
+                <label className="block text-sm font-medium text-gray-700">Confirmar contraseña</label>
                 <input
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-gray-900"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-gray-900 dark:text-[#ece7dd]"
                 />
               </div>
             </div>
@@ -207,7 +207,7 @@ const ForgotPasswordPage: React.FC = () => {
               disabled={isResetting}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
             >
-              {isResetting ? 'Saving...' : 'Save changes and sign in'}
+              {isResetting ? 'Guardando...' : 'Guardar y iniciar sesión'}
             </button>
           </form>
         )}
@@ -215,13 +215,13 @@ const ForgotPasswordPage: React.FC = () => {
       </div>
 
       {/* Amazon Style Footer Links */}
-      <div className="mt-8 flex space-x-6 text-xs text-gray-500">
-        <a href="#" className="hover:text-primary hover:underline">Conditions of Use</a>
-        <a href="#" className="hover:text-primary hover:underline">Privacy Notice</a>
-        <a href="#" className="hover:text-primary hover:underline">Help</a>
+      <div className="mt-8 flex space-x-6 text-xs text-gray-500 dark:text-[#9a9388]">
+        <a href="#" className="hover:text-primary hover:underline">Condiciones de uso</a>
+        <a href="#" className="hover:text-primary hover:underline">Aviso de privacidad</a>
+        <a href="#" className="hover:text-primary hover:underline">Ayuda</a>
       </div>
       <p className="mt-4 text-xs text-gray-400">
-        © 1996-2026, Urbaniq.com, Inc. or its affiliates
+        © 2026 Urbaniq. Todos los derechos reservados.
       </p>
     </div>
   );

@@ -1,3 +1,8 @@
+try {
+  document.documentElement.classList.add('dark');
+  localStorage.setItem('theme', 'dark');
+} catch {}
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'

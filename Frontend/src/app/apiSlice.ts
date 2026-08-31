@@ -1,6 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
-import { setCredentials, logout } from '../features/auth/authSlice';
+import { setCredentials, logout, type User } from '../features/auth/authSlice';
+
+type AuthRefreshResponse = {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+};
 
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
@@ -35,7 +41,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
       if (refreshResult.data) {
         // Assume backend returns { accessToken, refreshToken, user, ... }
-        api.dispatch(setCredentials(refreshResult.data as any));
+        api.dispatch(setCredentials(refreshResult.data as AuthRefreshResponse));
         // Retry the initial query
         result = await baseQuery(args, api, extraOptions);
       } else {

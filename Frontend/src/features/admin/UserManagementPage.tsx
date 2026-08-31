@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGetAllUsersQuery, useToggleUserBlockStatusMutation } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { Search, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react';
+import { getApiErrorMessage } from '@/app/apiError';
 
 const UserManagementPage = () => {
   const [page, setPage] = useState(1);
@@ -16,23 +17,23 @@ const UserManagementPage = () => {
     ) || [];
 
   const handleToggleBlock = async (userId: string, currentStatus: boolean, userName: string) => {
-    const action = currentStatus ? 'unblock' : 'block';
-    if (!window.confirm(`Are you sure you want to ${action} ${userName}?`)) return;
+    const action = currentStatus ? 'desbloquear' : 'bloquear';
+    if (!window.confirm(`¿Estás seguro de que deseas ${action} a ${userName}?`)) return;
 
     try {
       await toggleBlock(userId).unwrap();
-      toast.success(`User ${action}ed successfully`);
-    } catch (err: any) {
-      toast.error(err?.data?.message || `Failed to ${action} user`);
+      toast.success(`Usuario ${currentStatus ? 'desbloqueado' : 'bloqueado'} correctamente`);
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, `No se pudo ${action} al usuario`));
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Customer controls</p>
-        <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Users</h2>
-        <p className="mt-2 text-sm text-[#6f6659]">Review account roles, active status, and customer access controls.</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#9d731e]">Controles de clientes</p>
+        <h2 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#111827]">Usuarios</h2>
+        <p className="mt-2 text-sm text-[#6f6659]">Revisa roles de cuenta, estado activo y controles de acceso de clientes.</p>
       </div>
 
       <section className="border border-[#e1d5c2] bg-white">
@@ -41,14 +42,14 @@ const UserManagementPage = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8174]" />
             <input
               type="search"
-              placeholder="Search by name or email..."
+              placeholder="Buscar por nombre o correo..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="h-11 w-full border border-[#d8cdbb] bg-white pl-10 pr-3 text-sm outline-none focus:border-[#9d731e]"
             />
           </label>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7c7467]">
-            {data?.totalCount || 0} users
+            {data?.totalCount || 0} usuarios
           </p>
         </div>
 
@@ -63,10 +64,10 @@ const UserManagementPage = () => {
               <table className="w-full text-left">
                 <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
                   <tr>
-                    <th className="px-5 py-4">User</th>
-                    <th className="px-5 py-4">Role</th>
-                    <th className="px-5 py-4">Status</th>
-                    <th className="px-5 py-4 text-right">Action</th>
+                    <th className="px-5 py-4">Usuario</th>
+                    <th className="px-5 py-4">Rol</th>
+                    <th className="px-5 py-4">Estado</th>
+                    <th className="px-5 py-4 text-right">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6da]">
@@ -88,14 +89,14 @@ const UserManagementPage = () => {
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                             user.role === 'Admin' ? 'bg-[#111827] text-[#d7b46a]' : 'bg-[#f3ecdf] text-[#514b43]'
                           }`}>
-                            {user.role || 'User'}
+                            {user.role || 'Usuario'}
                           </span>
                         </td>
                         <td className="px-5 py-4">
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                             user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
                           }`}>
-                            {user.isBlocked ? 'Blocked' : 'Active'}
+                            {user.isBlocked ? 'Bloqueado' : 'Activo'}
                           </span>
                         </td>
                         <td className="px-5 py-4 text-right">
@@ -111,7 +112,7 @@ const UserManagementPage = () => {
                               }`}
                             >
                               {user.isBlocked ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
-                              {user.isBlocked ? 'Unblock' : 'Block'}
+                               {user.isBlocked ? 'Desbloquear' : 'Bloquear'}
                             </button>
                           )}
                         </td>
@@ -119,7 +120,7 @@ const UserManagementPage = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-[#7c7467]">No users found.</td>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron usuarios.</td>
                     </tr>
                   )}
                 </tbody>
@@ -150,7 +151,7 @@ const UserManagementPage = () => {
                         <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                           user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
                         }`}>
-                          {user.isBlocked ? 'Blocked' : 'Active'}
+                            {user.isBlocked ? 'Bloqueado' : 'Activo'}
                         </span>
                       </div>
                       {user.role !== 'Admin' && (
@@ -165,14 +166,14 @@ const UserManagementPage = () => {
                           }`}
                         >
                           {user.isBlocked ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-                          {user.isBlocked ? 'Unblock' : 'Block'}
+                           {user.isBlocked ? 'Desbloquear' : 'Bloquear'}
                         </button>
                       )}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No users found.</div>
+                <div className="px-5 py-10 text-center text-sm text-[#7c7467]">No se encontraron usuarios.</div>
               )}
             </div>
           </>
@@ -181,7 +182,7 @@ const UserManagementPage = () => {
         {data && data.totalCount > 10 && (
           <div className="flex items-center justify-between border-t border-[#eee6da] bg-[#fbfaf7] px-5 py-4">
             <p className="text-sm text-[#6f6659]">
-              Page <span className="font-bold text-[#111827]">{data.pageNumber}</span>
+              Página <span className="font-bold text-[#111827]">{data.pageNumber}</span>
             </p>
             <div className="flex gap-2">
               <button
@@ -189,14 +190,14 @@ const UserManagementPage = () => {
                 onClick={() => setPage((value) => value - 1)}
                 className="h-9 border border-[#d8cdbb] bg-white px-4 text-xs font-bold uppercase tracking-[0.16em] disabled:opacity-40"
               >
-                Previous
+                Anterior
               </button>
               <button
                 disabled={data.items.length < data.pageSize}
                 onClick={() => setPage((value) => value + 1)}
                 className="h-9 border border-[#d8cdbb] bg-white px-4 text-xs font-bold uppercase tracking-[0.16em] disabled:opacity-40"
               >
-                Next
+                Siguiente
               </button>
             </div>
           </div>
