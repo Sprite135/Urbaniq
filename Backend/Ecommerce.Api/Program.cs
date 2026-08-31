@@ -293,7 +293,19 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
+// ===================== Serve Frontend SPA =====================
+// Use absolute path that works with both dotnet run and IIS Express
+var solutionRoot = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", ".."));
+var frontendDistPath = Path.Combine(solutionRoot, "Frontend", "dist");
+var hasFrontendDist = Directory.Exists(frontendDistPath);
+
+Console.WriteLine($"ContentRootPath: {app.Environment.ContentRootPath}");
+Console.WriteLine($"SolutionRoot: {solutionRoot}");
+Console.WriteLine($"FrontendDistPath: {frontendDistPath}");
+Console.WriteLine($"HasFrontendDist: {hasFrontendDist}");
+
 // ===================== Static Files & SPA =====================
+// Serve uploads from wwwroot (product images, payment QRs, etc.) FIRST
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
@@ -303,9 +315,20 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// ===================== Serve Frontend SPA =====================
-var frontendDistPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "Frontend", "dist"));
-var hasFrontendDist = Directory.Exists(frontendDistPath);
+// Serve frontend compiled assets from Frontend/dist (if exists) SECOND
+if (hasFrontendDist)
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendDistPath),
+        RequestPath = "", // Serve from root
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+            ctx.Context.Response.Headers.Pragma = "no-cache";
+        }
+    });
+}
 
 if (app.Environment.IsDevelopment() && !hasFrontendDist)
 {
@@ -370,20 +393,10 @@ else
         {
             FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendDistPath)
         });
-        app.UseStaticFiles(new StaticFileOptions
-        {
-            FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendDistPath),
-            OnPrepareResponse = ctx =>
-            {
-                ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-                ctx.Context.Response.Headers.Pragma = "no-cache";
-            }
-        });
     }
     else
     {
         app.UseDefaultFiles();
-        app.UseStaticFiles();
     }
 
     app.MapFallbackToFile("index.html", new StaticFileOptions

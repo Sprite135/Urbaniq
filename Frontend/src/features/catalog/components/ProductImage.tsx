@@ -6,8 +6,6 @@ type ProductImageProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> 
   fallbackLabel: string;
 };
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
 const ProductImage: React.FC<ProductImageProps> = ({
   src,
   alt,
@@ -18,9 +16,11 @@ const ProductImage: React.FC<ProductImageProps> = ({
 }) => {
   const [hasError, setHasError] = useState(!src);
 
+  // Use relative URLs when frontend is compiled (served by backend)
+  // Use absolute URLs when running in dev mode with separate Vite server
   const absoluteSrc = src && (src.startsWith('http://') || src.startsWith('https://'))
     ? src
-    : src ? `${BACKEND_URL}${src.startsWith('/') ? '' : '/'}${src}` : src;
+    : src; // Keep relative URLs for production (served by backend)
 
   useEffect(() => {
     setHasError(!src);
