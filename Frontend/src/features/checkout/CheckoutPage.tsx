@@ -147,8 +147,8 @@ const CheckoutPage: React.FC = () => {
                     key={address.addressId}
                     className={`flex items-start justify-between border p-4 transition-colors ${
                       selectedAddress?.addressId === address.addressId
-                        ? 'border-[#111827] bg-[#f3ecdf]/60'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
                     }`}
                   >
                     <label className="flex cursor-pointer items-start gap-4 flex-1">

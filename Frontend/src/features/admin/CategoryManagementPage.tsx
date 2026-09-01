@@ -107,7 +107,7 @@ const CategoryManagementPage = () => {
             {/* Desktop table view */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full min-w-[720px] text-left">
-                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
+                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43] dark:border-[#33363d] dark:bg-[#16181d] dark:text-[#9a9388]">
                   <tr>
                     <th className="px-5 py-4">Categoría</th>
                     <th className="px-5 py-4">Slug</th>
@@ -118,16 +118,16 @@ const CategoryManagementPage = () => {
                 <tbody className="divide-y divide-[#eee6da]">
                   {flattenedCategories.length ? (
                     flattenedCategories.map((category) => (
-                      <tr key={category.categoryId} className="transition-colors hover:bg-[#fbfaf7]">
+                      <tr key={category.categoryId} className="transition-colors hover:bg-[#fbfaf7] dark:hover:bg-[#26282e]">
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-4" style={{ paddingLeft: `${category.depth * 24}px` }}>
-                            {category.depth > 0 && <CornerDownRight className="h-4 w-4 text-[#d8cdbb]" />}
-                            <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e]">
+                            {category.depth > 0 && <CornerDownRight className="h-4 w-4 text-[#d8cdbb] dark:text-[#9a9388]" />}
+                            <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]">
                               <Tags className="h-4 w-4" />
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-[#111827]">{category.categoryName}</p>
-                              {category.description && <p className="mt-1 max-w-md truncate text-xs text-[#7c7467]">{category.description}</p>}
+                              <p className="text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{category.categoryName}</p>
+                              {category.description && <p className="mt-1 max-w-md truncate text-xs text-[#7c7467] dark:text-[#9a9388]">{category.description}</p>}
                             </div>
                           </div>
                         </td>
@@ -171,13 +171,13 @@ const CategoryManagementPage = () => {
                 flattenedCategories.map((category) => (
                   <div key={category.categoryId} className="p-4 space-y-3" style={{ paddingLeft: `${Math.max(16, category.depth * 16 + 16)}px` }}>
                     <div className="flex items-center gap-3">
-                      {category.depth > 0 && <CornerDownRight className="h-4 w-4 text-[#d8cdbb] shrink-0" />}
-                      <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e]">
+                      {category.depth > 0 && <CornerDownRight className="h-4 w-4 text-[#d8cdbb] shrink-0 dark:text-[#9a9388]" />}
+                      <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]">
                         <Tags className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-[#111827] truncate">{category.categoryName}</p>
-                        <p className="font-mono text-[10px] text-[#7c7467] truncate">{category.slug}</p>
+                        <p className="text-sm font-bold text-[#111827] dark:text-[#ece7dd] truncate">{category.categoryName}</p>
+                        <p className="font-mono text-[10px] text-[#7c7467] dark:text-[#9a9388] truncate">{category.slug}</p>
                       </div>
                     </div>
                     {category.description && (
@@ -248,7 +248,7 @@ const CategoryManagementPage = () => {
               </label>
               
               {newCategoryName && (
-                <div className="bg-[#f3ecdf] p-3 text-xs text-[#514b43]">
+                <div className="bg-[#f3ecdf] p-3 text-xs text-[#514b43] dark:bg-[#16181d] dark:text-[#9a9388]">
                    <strong>Vista previa del slug de URL: </strong> <span className="font-mono">{previewSlug}</span>
                 </div>
               )}

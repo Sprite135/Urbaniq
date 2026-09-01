@@ -156,7 +156,7 @@ const CouponManagementPage = () => {
           <>
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full min-w-[900px] text-left">
-                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
+                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43] dark:border-[#33363d] dark:bg-[#16181d] dark:text-[#9a9388]">
                   <tr>
                     <th className="px-5 py-4">Código</th>
                     <th className="px-5 py-4">Tipo</th>
@@ -170,15 +170,15 @@ const CouponManagementPage = () => {
                 <tbody className="divide-y divide-[#eee6da]">
                   {coupons.length ? (
                     coupons.map((coupon) => (
-                      <tr key={coupon.couponId} className="transition-colors hover:bg-[#fbfaf7]">
+                      <tr key={coupon.couponId} className="transition-colors hover:bg-[#fbfaf7] dark:hover:bg-[#26282e]">
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e]">
+                            <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]">
                               <Tag className="h-4 w-4" />
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-[#111827]">{coupon.code}</p>
-                              <p className="text-xs text-[#7c7467]">ID: {coupon.couponId}</p>
+                              <p className="text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{coupon.code}</p>
+                              <p className="text-xs text-[#7c7467] dark:text-[#9a9388]">ID: {coupon.couponId}</p>
                             </div>
                           </div>
                         </td>
@@ -268,12 +268,12 @@ const CouponManagementPage = () => {
                 coupons.map((coupon) => (
                   <div key={coupon.couponId} className="p-4 space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e]">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center bg-[#f3ecdf] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]">
                         <Tag className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-[#111827] truncate">{coupon.code}</p>
-                        <p className="text-xs text-[#7c7467]">{coupon.discountType === 1 ? `${coupon.value}%` : `S/ ${coupon.value}`}</p>
+                        <p className="text-sm font-bold text-[#111827] dark:text-[#ece7dd] truncate">{coupon.code}</p>
+                        <p className="text-xs text-[#7c7467] dark:text-[#9a9388]">{coupon.discountType === 1 ? `${coupon.value}%` : `S/ ${coupon.value}`}</p>
                       </div>
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${
                         coupon.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'

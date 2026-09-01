@@ -88,6 +88,15 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
   const orderTotal = finalAmount + shippingCost;
   const shippingProvider = resolveShippingProvider(address?.DeliveryZone, agency);
 
+  const paymentButtonText = useMemo(() => {
+    if (paymentMethod === 'cod') return 'Realizar pedido (Pago contra entrega)';
+    if (isOfflineTransfer) return 'Confirmar pedido';
+    return `Pagar S/ ${orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }, [paymentMethod, isOfflineTransfer, orderTotal]);
+
+  const invoiceSelectedClass = 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]';
+  const invoiceUnselectedClass = 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]';
+
   const handlePayment = async () => {
     setFailureMessage(null);
 
@@ -306,7 +315,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
         <div className="space-y-3">
           <div
             className={`border transition-colors ${
-              paymentMethod === 'card' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'card' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-start gap-3 sm:gap-4 p-3 sm:p-4">
@@ -391,7 +400,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'cod' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'cod' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -414,7 +423,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'yape' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'yape' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -442,7 +451,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'plin' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'plin' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -470,7 +479,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'bcp' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'bcp' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -498,7 +507,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'interbank' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'interbank' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -526,7 +535,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'bbva' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'bbva' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -554,7 +563,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'scotiabank' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'scotiabank' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -582,7 +591,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
           <div
             className={`border transition-colors ${
-              paymentMethod === 'pagoefectivo' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'
+              paymentMethod === 'pagoefectivo' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
             }`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
@@ -668,11 +677,11 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
       <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-[#ece7dd]">Comprobante de pago</h3>
         <div className="mt-4 flex gap-3">
-          <label className={`flex flex-1 cursor-pointer items-center gap-2 border p-3 ${invoiceType === 'Boleta' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'}`}>
+          <label className={`flex flex-1 cursor-pointer items-center gap-2 border p-3 ${invoiceType === 'Boleta' ? invoiceSelectedClass : invoiceUnselectedClass}`}>
             <input type="radio" name="invoiceType" checked={invoiceType === 'Boleta'} onChange={() => setInvoiceType('Boleta')} className="accent-[#9d731e]" />
             <span className="text-sm font-semibold text-gray-900 dark:text-[#ece7dd]">Boleta</span>
           </label>
-          <label className={`flex flex-1 cursor-pointer items-center gap-2 border p-3 ${invoiceType === 'Factura' ? 'border-[#111827] bg-[#f3ecdf]/60' : 'border-gray-200 hover:border-gray-300'}`}>
+          <label className={`flex flex-1 cursor-pointer items-center gap-2 border p-3 ${invoiceType === 'Factura' ? invoiceSelectedClass : invoiceUnselectedClass}`}>
             <input type="radio" name="invoiceType" checked={invoiceType === 'Factura'} onChange={() => setInvoiceType('Factura')} className="accent-[#9d731e]" />
             <span className="text-sm font-semibold text-gray-900 dark:text-[#ece7dd]">Factura</span>
           </label>
@@ -768,11 +777,11 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
               <CheckCircle className="h-4 w-4 animate-pulse" />
               Processing
             </>
-          ) : (
-              paymentMethod === 'cod' ? 'Realizar pedido (Pago contra entrega)'
-                : isOfflineTransfer ? 'Confirmar pedido'
-                : `Pagar S/ ${orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          )}
+          ) : paymentMethod === 'cod' ? (
+            'Realizar pedido (Pago contra entrega)'
+          ) : isOfflineTransfer ? (
+            'Confirmar pedido'
+          ) : paymentButtonText}
         </button>
       </div>
 

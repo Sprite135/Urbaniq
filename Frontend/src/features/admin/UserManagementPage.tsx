@@ -62,7 +62,7 @@ const UserManagementPage = () => {
             {/* Desktop table view */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
+                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43] dark:border-[#33363d] dark:bg-[#16181d] dark:text-[#9a9388]">
                   <tr>
                     <th className="px-5 py-4">Usuario</th>
                     <th className="px-5 py-4">Rol</th>
@@ -87,7 +87,7 @@ const UserManagementPage = () => {
                         </td>
                         <td className="px-5 py-4">
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                            user.role === 'Admin' ? 'bg-[#111827] text-[#d7b46a]' : 'bg-[#f3ecdf] text-[#514b43]'
+                            user.role === 'Admin' ? 'bg-[#111827] text-[#d7b46a]' : 'bg-[#f3ecdf] text-[#514b43] dark:bg-[#16181d] dark:text-[#9a9388]'
                           }`}>
                             {user.role || 'Usuario'}
                           </span>
@@ -144,7 +144,7 @@ const UserManagementPage = () => {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex gap-2">
                         <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                          user.role === 'Admin' ? 'bg-[#111827] text-[#d7b46a]' : 'bg-[#f3ecdf] text-[#514b43]'
+                          user.role === 'Admin' ? 'bg-[#111827] text-[#d7b46a]' : 'bg-[#f3ecdf] text-[#514b43] dark:bg-[#16181d] dark:text-[#9a9388]'
                         }`}>
                           {user.role || 'User'}
                         </span>

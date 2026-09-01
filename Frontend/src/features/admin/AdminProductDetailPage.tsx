@@ -55,7 +55,7 @@ const AdminProductDetailPage: React.FC = () => {
         <div className="space-y-6 lg:col-span-2">
           <section className="border border-[#e1d5c2] bg-white p-5">
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="aspect-[4/5] bg-[#f3ecdf]">
+              <div className="aspect-[4/5] bg-[#f3ecdf] dark:bg-[#16181d]">
                 <ProductImage src={product.image} alt={product.productName} fallbackLabel={product.productName} className="h-full w-full object-cover" />
               </div>
               <div>

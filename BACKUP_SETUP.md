@@ -95,6 +95,7 @@ C:\Users\sprit\CascadeProjects\Urbaniq\backups\
 - **Por defecto:** 7 días
 - **Cambio:** Modificar `$RetentionDays` en el script
 - **Ejemplo:** Para 30 días: `$RetentionDays = 30`
+- **Recomendación producción:** 30 días (mensual) con off-site backup
 
 ---
 
@@ -137,12 +138,25 @@ El script retorna exit code 1 si falla, lo que genera alerta en Task Scheduler.
 
 ## 📋 **CHECKLIST PRODUCCIÓN**
 
-- [ ] Script de backup creado
-- [ ] Tarea programada configurada
+### **Configuración Inicial:**
+- [ ] Script de backup creado y mejorado ✅
+- [ ] Directorio de backups creado
+- [ ] Permisos de escritura verificados
+- [ ] sqlcmd disponible y funcionando
+
+### **Configuración Automatizada:**
+- [ ] Abrir PowerShell como Administrator
+- [ ] Ejecutar `.\create-backup-task.ps1`
+- [ ] Verificar tarea en Task Scheduler
+- [ ] Probar ejecución manual de la tarea
+
+### **Verificación:**
 - [ ] Backup manual probado exitosamente
 - [ ] Restauración probada exitosamente
-- [ ] Política de retención definida
-- [ ] Off-site backup (opcional) configurado
+- [ ] Política de retención definida (7-30 días)
+- [ ] Off-site backup configurado (opcional pero recomendado)
+- [ ] Logs de backup monitoreados
+- [ ] Alertas configuradas para backup fallido
 
 ---
 

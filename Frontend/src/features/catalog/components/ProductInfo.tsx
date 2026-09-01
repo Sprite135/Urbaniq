@@ -97,8 +97,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
               }}
               className={`border-2 px-4 py-3 text-sm font-black transition-all ${
                 selectedColor === color
-                  ? 'border-[#111827] bg-[#f3ecdf] text-[#9d731e]'
-                  : 'border-gray-200 text-gray-600 dark:text-[#9ca3af] hover:border-gray-400'
+                  ? 'border-[#111827] bg-[#f3ecdf] text-[#9d731e] dark:border-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]'
+                  : 'border-gray-200 text-gray-600 dark:text-[#9ca3af] hover:border-gray-400 dark:border-[#33363d] dark:hover:border-[#9d731e]'
               }`}
             >
               {color}
@@ -126,8 +126,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
                 onClick={() => setSelectedSize((current) => (current === size ? null : size))}
                 className={`flex h-14 w-14 items-center justify-center border-2 text-sm font-black transition-all ${
                   selectedSize === size
-                    ? 'border-[#111827] bg-[#f3ecdf] text-[#9d731e]'
-                    : 'border-gray-200 text-gray-600 dark:text-[#9ca3af] hover:border-gray-400'
+                    ? 'border-[#111827] bg-[#f3ecdf] text-[#9d731e] dark:border-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]'
+                    : 'border-gray-200 text-gray-600 dark:text-[#9ca3af] hover:border-gray-400 dark:border-[#33363d] dark:hover:border-[#9d731e]'
                 }`}
               >
                 {size}

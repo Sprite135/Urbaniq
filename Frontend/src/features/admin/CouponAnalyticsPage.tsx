@@ -83,14 +83,14 @@ const CouponAnalyticsPage = () => {
               const percentage = (day.usesCount / maxUses) * 100;
               return (
                 <div key={index} className="flex items-center gap-3">
-                  <span className="w-12 text-xs font-semibold text-[#514b43]">{day.period}</span>
-                  <div className="flex-1 h-8 bg-[#f3ecdf] rounded-sm overflow-hidden">
-                    <div 
+                  <span className="w-12 text-xs font-semibold text-[#514b43] dark:text-[#9a9388]">{day.period}</span>
+                  <div className="flex-1 h-8 bg-[#f3ecdf] rounded-sm overflow-hidden dark:bg-[#16181d]">
+                    <div
                       className="h-full bg-[#9d731e] transition-all duration-300"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <span className="w-16 text-right text-sm font-bold text-[#111827]">{day.usesCount}</span>
+                  <span className="w-16 text-right text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{day.usesCount}</span>
                 </div>
               );
             })}
@@ -106,14 +106,14 @@ const CouponAnalyticsPage = () => {
               const percentage = (week.usesCount / maxUses) * 100;
               return (
                 <div key={index} className="flex items-center gap-3">
-                  <span className="w-24 text-xs font-semibold text-[#514b43]">{week.period}</span>
-                  <div className="flex-1 h-8 bg-[#f3ecdf] rounded-sm overflow-hidden">
-                    <div 
+                  <span className="w-24 text-xs font-semibold text-[#514b43] dark:text-[#9a9388]">{week.period}</span>
+                  <div className="flex-1 h-8 bg-[#f3ecdf] rounded-sm overflow-hidden dark:bg-[#16181d]">
+                    <div
                       className="h-full bg-[#9d731e] transition-all duration-300"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <span className="w-16 text-right text-sm font-bold text-[#111827]">{week.usesCount}</span>
+                  <span className="w-16 text-right text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{week.usesCount}</span>
                 </div>
               );
             })}
@@ -130,16 +130,16 @@ const CouponAnalyticsPage = () => {
               return (
                 <div key={index} className="space-y-2">
                   <div className="text-center">
-                    <span className="text-xs font-semibold text-[#514b43]">{month.period}</span>
+                    <span className="text-xs font-semibold text-[#514b43] dark:text-[#9a9388]">{month.period}</span>
                   </div>
-                  <div className="h-24 bg-[#f3ecdf] rounded-sm overflow-hidden relative">
-                    <div 
+                  <div className="h-24 bg-[#f3ecdf] rounded-sm overflow-hidden relative dark:bg-[#16181d]">
+                    <div
                       className="absolute bottom-0 left-0 right-0 bg-[#9d731e] transition-all duration-300"
                       style={{ height: `${percentage}%` }}
                     />
                   </div>
                   <div className="text-center">
-                    <span className="text-sm font-bold text-[#111827]">{month.usesCount}</span>
+                    <span className="text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{month.usesCount}</span>
                   </div>
                 </div>
               );
@@ -150,8 +150,8 @@ const CouponAnalyticsPage = () => {
 
       {/* Top Performing Coupons */}
       <div className="border border-[#e1d5c2] bg-white">
-        <div className="border-b border-[#eee6da] bg-[#f3ecdf] px-5 py-4">
-          <h3 className="text-sm font-black uppercase tracking-[0.18em] text-[#514b43]">Cupones Mejor Performados</h3>
+        <div className="border-b border-[#eee6da] bg-[#f3ecdf] px-5 py-4 dark:border-[#33363d] dark:bg-[#16181d]">
+          <h3 className="text-sm font-black uppercase tracking-[0.18em] text-[#514b43] dark:text-[#9a9388]">Cupones Mejor Performados</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">

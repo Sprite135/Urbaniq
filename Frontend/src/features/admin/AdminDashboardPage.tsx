@@ -117,22 +117,22 @@ const AdminDashboardPage = () => {
             <>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#8a8174]">{item.label}</p>
-                  <p className="mt-3 text-3xl font-black text-[#111827]">{isStatsLoading ? '...' : item.value}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#8a8174] dark:text-[#9a9388]">{item.label}</p>
+                  <p className="mt-3 text-3xl font-black text-[#111827] dark:text-[#ece7dd]">{isStatsLoading ? '...' : item.value}</p>
                 </div>
                 <div className={`grid h-11 w-11 place-items-center ${
-                  item.tone === 'gold' ? 'bg-[#f3ecdf] text-[#9d731e]' :
-                  item.tone === 'green' ? 'bg-emerald-50 text-emerald-700' :
-                  item.tone === 'amber' ? 'bg-amber-50 text-amber-700' :
-                  item.tone === 'indigo' ? 'bg-indigo-50 text-indigo-700' :
-                  item.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' :
-                  item.tone === 'red' ? 'bg-red-50 text-red-700' :
+                  item.tone === 'gold' ? 'bg-[#f3ecdf] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]' :
+                  item.tone === 'green' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                  item.tone === 'amber' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' :
+                  item.tone === 'indigo' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400' :
+                  item.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                  item.tone === 'red' ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
                   'bg-[#111827] text-[#d7b46a]'
                 }`}>
                   <item.icon className="h-5 w-5" />
                 </div>
               </div>
-              <p className="mt-4 text-sm text-[#6f6659]">{item.detail}</p>
+              <p className="mt-4 text-sm text-[#6f6659] dark:text-[#9a9388]">{item.detail}</p>
             </>
           );
 
@@ -162,13 +162,13 @@ const AdminDashboardPage = () => {
               <div className="px-5 py-8 text-sm text-[#7c7467]">Cargando pedidos...</div>
             ) : ordersData?.items.length ? (
               ordersData.items.map((order) => (
-                <Link to={`/admin/orders/${order.orderId}`} key={order.orderId} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center hover:bg-gray-50 transition-colors">
+                <Link to={`/admin/orders/${order.orderId}`} key={order.orderId} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center hover:bg-gray-50 dark:hover:bg-[#26282e] transition-colors">
                   <div>
-                    <p className="font-mono text-xs font-bold text-[#111827]">{order.transactionId || order.orderId.slice(0, 8)}</p>
-                    <p className="mt-1 text-xs text-[#7c7467]">{new Date(order.orderDate).toLocaleString()}</p>
+                    <p className="font-mono text-xs font-bold text-[#111827] dark:text-[#ece7dd]">{order.transactionId || order.orderId.slice(0, 8)}</p>
+                    <p className="mt-1 text-xs text-[#7c7467] dark:text-[#9a9388]">{new Date(order.orderDate).toLocaleString()}</p>
                   </div>
-                  <span className="text-sm font-black text-[#111827]">{formatCurrency(order.totalPrice)}</span>
-                  <span className="w-fit bg-[#f3ecdf] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#9d731e]">
+                  <span className="text-sm font-black text-[#111827] dark:text-[#ece7dd]">{formatCurrency(order.totalPrice)}</span>
+                  <span className="w-fit bg-[#f3ecdf] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]">
                     {order.orderStatus}
                   </span>
                 </Link>

@@ -115,7 +115,7 @@ const ProductManagementPage = () => {
             {/* Desktop table view */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">
+                <thead className="border-b border-[#eee6da] bg-[#f3ecdf] text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43] dark:border-[#33363d] dark:bg-[#16181d] dark:text-[#9a9388]">
                   <tr>
                     <th className="px-5 py-4">Producto</th>
                     <th className="px-5 py-4">SKU</th>

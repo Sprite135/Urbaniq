@@ -105,8 +105,8 @@ const AdminOrderDetailPage: React.FC = () => {
         <div className="space-y-6 lg:col-span-2">
           {/* Items */}
           <section className="border border-[#e1d5c2] bg-white">
-            <div className="border-b border-[#eee6da] bg-[#f3ecdf] px-5 py-4">
-               <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Artículos pedidos ({order.orderItems.length})</h3>
+            <div className="border-b border-[#eee6da] bg-[#f3ecdf] px-5 py-4 dark:border-[#33363d] dark:bg-[#16181d]">
+               <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43] dark:text-[#9a9388]">Artículos pedidos ({order.orderItems.length})</h3>
             </div>
             <div className="divide-y divide-[#eee6da]">
               {order.orderItems.map((item) => (

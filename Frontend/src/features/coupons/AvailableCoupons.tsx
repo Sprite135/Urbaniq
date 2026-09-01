@@ -27,39 +27,39 @@ const AvailableCoupons: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43]">Cupones disponibles para ti</h4>
+      <h4 className="text-xs font-black uppercase tracking-[0.18em] text-[#514b43] dark:text-[#9a9388]">Cupones disponibles para ti</h4>
       {availableCoupons.map((coupon) => (
-        <div key={coupon.couponId} className="border border-[#d8cdbb] bg-[#f3ecdf] p-4 rounded-lg">
+        <div key={coupon.couponId} className="border border-[#d8cdbb] bg-[#f3ecdf] p-4 rounded-lg dark:border-[#33363d] dark:bg-[#16181d]">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="h-4 w-4 text-[#9d731e]" />
-                <span className="text-sm font-bold text-[#111827]">{coupon.code}</span>
+                <span className="text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{coupon.code}</span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-sm">
                 {coupon.discountType === 1 ? (
                   <>
-                    <Percent className="h-3 w-3 text-[#7c7467]" />
-                    <span className="font-semibold text-[#111827]">{coupon.value}% de descuento</span>
+                    <Percent className="h-3 w-3 text-[#7c7467] dark:text-[#9a9388]" />
+                    <span className="font-semibold text-[#111827] dark:text-[#ece7dd]">{coupon.value}% de descuento</span>
                   </>
                 ) : coupon.discountType === 2 ? (
                   <>
-                    <DollarSign className="h-3 w-3 text-[#7c7467]" />
-                    <span className="font-semibold text-[#111827]">S/ {coupon.value} de descuento</span>
+                    <DollarSign className="h-3 w-3 text-[#7c7467] dark:text-[#9a9388]" />
+                    <span className="font-semibold text-[#111827] dark:text-[#ece7dd]">S/ {coupon.value} de descuento</span>
                   </>
                 ) : (
-                  <span className="font-semibold text-[#111827]">Descuento especial</span>
+                  <span className="font-semibold text-[#111827] dark:text-[#ece7dd]">Descuento especial</span>
                 )}
               </div>
 
               {coupon.minOrderAmount && (
-                <p className="mt-1 text-xs text-[#7c7467]">
+                <p className="mt-1 text-xs text-[#7c7467] dark:text-[#9a9388]">
                   Mínimo: S/ {coupon.minOrderAmount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                 </p>
               )}
 
-              <div className="flex items-center gap-1 mt-2 text-xs text-[#7c7467]">
+              <div className="flex items-center gap-1 mt-2 text-xs text-[#7c7467] dark:text-[#9a9388]">
                 <Clock className="h-3 w-3" />
                 <span>Válido hasta: {new Date(coupon.endDate).toLocaleDateString('es-PE')}</span>
               </div>
@@ -71,7 +71,7 @@ const AvailableCoupons: React.FC = () => {
                 navigator.clipboard.writeText(coupon.code);
                 // Could also trigger a toast notification
               }}
-              className="shrink-0 p-2 bg-white border border-[#d8cdbb] rounded-md hover:bg-[#ece7dd] transition-colors"
+              className="shrink-0 p-2 bg-white border border-[#d8cdbb] rounded-md hover:bg-[#ece7dd] transition-colors dark:bg-[#0e0f12] dark:border-[#33363d] dark:hover:bg-[#26282e]"
               title="Copiar código"
             >
               <Tag className="h-4 w-4 text-[#9d731e]" />
