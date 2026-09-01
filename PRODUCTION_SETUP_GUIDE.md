@@ -169,7 +169,7 @@ Actualizar en `appsettings.Production.json`:
 3. Configurar transformation settings
 4. Habilitar auto-upload from URL
 
-#### 2.6 Configurar Sentry (Error Tracking)
+#### 2.6 Configurar Sentry (Error Tracking) - OPCIONAL
 ```json
 {
   "Sentry": {
@@ -186,6 +186,10 @@ Actualizar en `appsettings.Production.json`:
 3. Obtener DSN
 4. Configurar alertas (email, Slack)
 5. Configurar sample rate para transactions
+
+**Opción alternativa (sin Sentry):**
+- Urbaniq ya tiene Serilog configurado para guardar logs en archivos
+- Ver sección "FASE 8: Configuración de Logs" para más detalles
 
 ---
 
@@ -323,6 +327,190 @@ Backend/Ecommerce.Api/wwwroot/uploads/payments/yape.png
 
 ---
 
+### **FASE 8: Configuración de Logs**
+
+#### 8.1 Logs Archivados Automáticamente (Serilog)
+Urbaniq ya tiene Serilog configurado para guardar logs en archivos automáticamente.
+
+**Configuración en `appsettings.json` (Desarrollo):**
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Information",
+        "System": "Warning"
+      }
+    },
+    "WriteTo": [
+      { "Name": "Console" },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/urbaniq-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 30,
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Configuración en `appsettings.Production.json` (Producción):**
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Warning",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Error",
+        "Microsoft.EntityFrameworkCore": "Error"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/urbaniq-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 90
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/urbaniq-errors-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 365,
+          "restrictedToMinimumLevel": "Error"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Características:**
+- ✅ **Rotación diaria:** Un nuevo archivo cada día (`urbaniq-20240115.log`)
+- ✅ **Retención automática:** Desarollo = 30 días, Producción = 90 días (logs generales), 365 días (errores)
+- ✅ **Logs de errores separados:** En producción, los errores se guardan en archivo separado con retención de 1 año
+- ✅ **Niveles de log:** Information, Warning, Error, Fatal
+- ✅ **Enrichment:** Machine name, Thread ID, Log Context
+
+#### 8.2 Ubicación de Logs
+```
+Backend/Ecommerce.Api/logs/
+├── urbaniq-20240115.log
+├── urbaniq-20240116.log
+├── urbaniq-20240117.log
+└── urbaniq-errors-20240115.log (solo en producción)
+```
+
+#### 8.3 Script para Ver Logs
+**Archivo:** `scripts/view-logs.ps1`
+
+**Uso básico:**
+```powershell
+# Ver últimas 50 líneas
+.\scripts\view-logs.ps1
+
+# Ver últimas 100 líneas
+.\scripts\view-logs.ps1 -Tail 100
+
+# Ver solo errores
+.\scripts\view-logs.ps1 -ErrorOnly
+
+# Buscar patrón específico
+.\scripts\view-logs.ps1 -Search "Stripe"
+
+# Ver logs de hoy
+.\scripts\view-logs.ps1 -Today
+
+# Ver solo errores de las últimas 20 líneas
+.\scripts\view-logs.ps1 -ErrorOnly -Tail 20
+```
+
+#### 8.4 Revisión Manual de Logs
+**Para desarrollo:**
+```powershell
+# Ver log de hoy
+Get-Content Backend\Ecommerce.Api\logs\urbaniq-$((Get-Date).ToString('yyyyMMdd')).log -Tail 50
+
+# Buscar errores
+Select-String -Path Backend\Ecommerce.Api\logs\*.log -Pattern "\[ERR\]" | Select-Object -Last 20
+```
+
+**Para producción:**
+```powershell
+# Ver errores recientes
+Get-Content Backend\Ecommerce.Api\logs\urbaniq-errors-$((Get-Date).ToString('yyyyMMdd')).log -Tail 20
+
+# Buscar errores en los últimos 7 días
+Get-ChildItem Backend\Ecommerce.Api\logs\urbaniq-errors-*.log |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 7 |
+    ForEach-Object { Get-Content $_.FullName | Select-String "\[ERR\]" }
+```
+
+#### 8.5 Configuración de Log Retention (IIS)
+Si usas IIS, asegúrate que el Application Pool Identity tenga permisos de escritura en el directorio `logs`:
+
+```powershell
+# Crear directorio de logs si no existe
+New-Item -ItemType Directory -Path "C:\inetpub\Urbaniq\logs" -Force
+
+# Configurar permisos (ejecutar como Administrator)
+$acl = Get-Acl "C:\inetpub\Urbaniq\logs"
+$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "IIS AppPool\Urbaniq",
+    "Modify",
+    "ContainerInherit,ObjectInherit",
+    "None",
+    "Allow"
+)
+$acl.SetAccessRule($accessRule)
+Set-Acl "C:\inetpub\Urbaniq\logs" $acl
+```
+
+#### 8.6 Integración con Uptime Monitoring
+Para complementar UptimeRobot, puedes configurar un script que verifique errores recientes y envíe alertas:
+
+```powershell
+# scripts\check-logs.ps1
+$LogDir = "C:\inetpub\Urbaniq\logs"
+$ErrorLog = Get-ChildItem $LogDir -Filter "urbaniq-errors-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$RecentErrors = Get-Content $ErrorLog.FullName -Tail 10
+
+if ($RecentErrors.Count -gt 0) {
+    # Enviar alerta (puedes usar Send-MailMessage o webhook)
+    Write-Host "⚠️ Se detectaron errores recientes: $($RecentErrors.Count)"
+}
+```
+
+#### 8.7 Comparación: Sentry vs Serilog Archivos
+
+| Aspecto | Sentry | Serilog Archivos |
+|---------|--------|------------------|
+| Costo | Gratis (5K errores/mes) | Gratis |
+| Configuración | 15 min | Ya configurado |
+| Alertas | Automáticas | Manual (requiere script) |
+| Dashboard | Visual | Texto/archivos |
+| Agregación | Automática | Manual (grep) |
+| Visibilidad | Tiempo real | Revisar archivos |
+| Dependencia externa | Sí | No |
+| Retención | 90 días | Configurable (30-365 días) |
+
+**Recomendación:**
+- **Para empezar:** Serilog archivos es suficiente
+- **Para crecimiento:** Agregar Sentry para alertas automáticas
+- **Para producción robusta:** Ambos (Sentry para alertas, Serilog para archivo histórico)
+
+---
+
 ## 🧪 PRUEBAS OBLIGATORIAS ANTES DE LANZAR
 
 ### **Prueba 1: Health Check**
@@ -398,7 +586,10 @@ Invoke-WebRequest -Uri "https://tu-dominio.com/health" -UseBasicParsing
 - [ ] Configurar alertas de email
 - [ ] Configurar alertas de SMS
 - [ ] Verificar health check endpoint
-- [ ] Configurar log aggregation
+- [ ] Verificar que logs se guardan en archivos
+- [ ] Configurar permisos de escritura en directorio logs
+- [ ] Probar script view-logs.ps1
+- [ ] Configurar script de verificación de errores (opcional)
 
 ### **Funcionalidad**
 - [ ] Probar flujo completo de compra
