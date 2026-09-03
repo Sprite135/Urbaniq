@@ -94,7 +94,7 @@ const UserManagementPage = () => {
                         </td>
                         <td className="px-5 py-4">
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                            user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                            user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'
                           }`}>
                             {user.isBlocked ? 'Bloqueado' : 'Activo'}
                           </span>
@@ -107,7 +107,7 @@ const UserManagementPage = () => {
                               disabled={isToggling}
                               className={`inline-flex h-9 items-center justify-center gap-2 border px-4 text-[11px] font-black uppercase tracking-[0.16em] disabled:opacity-50 ${
                                 user.isBlocked
-                                  ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                                  ? 'border-gray-200 text-gray-700 hover:bg-gray-50'
                                   : 'border-red-200 text-red-700 hover:bg-red-50'
                               }`}
                             >
@@ -149,7 +149,7 @@ const UserManagementPage = () => {
                           {user.role || 'User'}
                         </span>
                         <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                          user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                          user.isBlocked ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'
                         }`}>
                             {user.isBlocked ? 'Bloqueado' : 'Activo'}
                         </span>
@@ -161,7 +161,7 @@ const UserManagementPage = () => {
                           disabled={isToggling}
                           className={`shrink-0 inline-flex h-8 items-center justify-center gap-1.5 border px-3 text-[10px] font-black uppercase tracking-[0.16em] disabled:opacity-50 ${
                             user.isBlocked
-                              ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                              ? 'border-gray-200 text-gray-700 hover:bg-gray-50'
                               : 'border-red-200 text-red-700 hover:bg-red-50'
                           }`}
                         >

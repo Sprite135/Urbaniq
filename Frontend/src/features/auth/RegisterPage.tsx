@@ -77,7 +77,7 @@ const RegisterPage: React.FC = () => {
         <p className="mt-2 text-sm text-gray-500 dark:text-[#9a9388]">Crea tu cuenta en segundos</p>
       </div>
 
-      <div className="max-w-md w-full bg-white dark:bg-[#16181d] p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-[#26282e]">
+      <div className="max-w-md w-full bg-white dark:bg-[#16181d] p-10 rounded-2xl shadow-xl border border-gray-200 dark:border-[#26282e]">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-[#ece7dd]">Crear una cuenta</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-[#9ca3af]">
@@ -186,7 +186,7 @@ const RegisterPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded-lg bg-primary py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
+            className="flex w-full items-center justify-center rounded-lg bg-primary py-3 text-sm font-medium text-white shadow-md transition-all duration-200 hover:bg-primary-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Crear cuenta'}
           </button>

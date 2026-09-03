@@ -26,32 +26,32 @@ const AccountPage: React.FC = () => {
           <h1 className="mt-2 text-2xl font-black text-gray-900 dark:text-[#ece7dd]">{user?.name || 'Cliente'}</h1>
           {user?.phoneNumber && <p className="mt-1 text-sm text-gray-500 dark:text-[#9a9388]">{user.phoneNumber}</p>}
           {user?.isEmailVerified && user?.email && (
-            <p className="mt-1 flex items-center text-sm font-medium text-emerald-600">
-              <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
+            <p className="mt-1 flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-[#9d731e]"></span>
                {user.email} (Verificado)
             </p>
           )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Link to="/profile" className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 hover:border-teal-200">
+          <Link to="/profile" className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 hover:border-[#9d731e]/50">
             <User className="mb-4 h-5 w-5 text-[#9d731e]" />
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Mi perfil</h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-[#9a9388]">Los detalles del perfil están vinculados a tu cuenta de inicio de sesión.</p>
           </Link>
-          <Link to="/orders" className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 hover:border-teal-200">
+          <Link to="/orders" className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 hover:border-[#9d731e]/50">
             <Package className="mb-4 h-5 w-5 text-[#9d731e]" />
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Pedidos</h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-[#9a9388]">Rastrea, cancela, devuelve y consulta los detalles de tus pedidos.</p>
           </Link>
-          <Link to="/wishlist" className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 hover:border-teal-200">
+          <Link to="/wishlist" className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 hover:border-[#9d731e]/50">
             <Heart className="mb-4 h-5 w-5 text-[#9d731e]" />
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Lista de deseos</h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-[#9a9388]">Productos guardados para comprar más tarde.</p>
           </Link>
-          <div 
+          <div
             onClick={() => setShowCouponHistory(true)}
-            className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 cursor-pointer hover:border-teal-200"
+            className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 cursor-pointer hover:border-[#9d731e]/50"
           >
             <Ticket className="mb-4 h-5 w-5 text-[#9d731e]" />
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Cupones</h2>

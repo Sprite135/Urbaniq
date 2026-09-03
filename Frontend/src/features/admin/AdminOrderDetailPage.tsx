@@ -16,11 +16,11 @@ const formatCurrency = (amount: number) =>
   }).format(amount);
 
 const statusStyles: Record<string, string> = {
-  pending: 'bg-amber-50 text-amber-700',
-  processing: 'bg-blue-50 text-blue-700',
-  shipped: 'bg-indigo-50 text-indigo-700',
-  delivered: 'bg-emerald-50 text-emerald-700',
-  cancelled: 'bg-red-50 text-red-700',
+  pending: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+  processing: 'bg-gray-100 text-gray-700 dark:bg-[#26282e] dark:text-gray-300',
+  shipped: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
+  delivered: 'bg-gray-100 text-gray-700 dark:bg-[#26282e] dark:text-gray-300',
+  cancelled: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400',
 };
 
 const statusIcons: Record<string, typeof Clock> = {
@@ -180,7 +180,7 @@ const AdminOrderDetailPage: React.FC = () => {
             <div className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Estado</span>
-                <span className={`text-xs font-black uppercase tracking-[0.14em] ${order.isPaid ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <span className={`text-xs font-black uppercase tracking-[0.14em] ${order.isPaid ? 'text-gray-700 dark:text-gray-300' : 'text-amber-700'}`}>
                   {order.isPaid ? 'Pagado' : 'Pendiente de pago'}
                 </span>
               </div>

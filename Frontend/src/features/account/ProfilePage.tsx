@@ -122,7 +122,7 @@ const ProfilePage: React.FC = () => {
               
               <div className="mt-3 flex items-center gap-2">
                 {user.isEmailVerified && user.email === email ? (
-                  <span className="flex items-center text-sm font-semibold text-emerald-600">
+                  <span className="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
                      <CheckCircle2 className="mr-1 h-4 w-4" /> Verificado
                    </span>
                  ) : (

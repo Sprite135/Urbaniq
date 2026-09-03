@@ -35,15 +35,15 @@ const CouponAnalyticsPage = () => {
       title: 'Cupones Usados',
       value: performance.totalCouponsUsed.toString(),
       icon: Activity,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      color: 'text-gray-700 dark:text-gray-300',
+      bgColor: 'bg-gray-100 dark:bg-[#26282e]',
     },
     {
       title: 'Usuarios Únicos',
       value: performance.topPerformingCoupons.reduce((sum, c) => sum + c.uniqueUsers, 0).toString(),
       icon: Users,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      color: 'text-gray-700 dark:text-gray-300',
+      bgColor: 'bg-gray-100 dark:bg-[#26282e]',
     },
   ];
 

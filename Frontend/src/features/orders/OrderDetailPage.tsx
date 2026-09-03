@@ -49,11 +49,11 @@ const OrderDetailPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'delivered': return 'text-green-600 dark:text-green-400 bg-green-50 border-green-200';
-      case 'cancelled': return 'text-red-600 bg-red-50 border-red-200';
-      case 'shipped': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'processing': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'refunded': return 'text-green-700 bg-green-50 border-green-200';
+      case 'delivered': return 'text-green-600 dark:text-green-400 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+      case 'cancelled': return 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400';
+      case 'shipped': return 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400';
+      case 'processing': return 'text-gray-700 bg-gray-100 border-gray-200 dark:bg-[#26282e] dark:border-[#373a40] dark:text-gray-300';
+      case 'refunded': return 'text-green-700 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400';
       default: return 'text-gray-600 dark:text-[#9ca3af] bg-gray-50 dark:bg-[#0e0f12] border-gray-200';
     }
   };

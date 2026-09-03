@@ -97,7 +97,7 @@ const AdminProductDetailPage: React.FC = () => {
                      <AlertTriangle className="h-6 w-6" />
                    </div>
                 ) : (
-                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-[#26282e] text-[#9d731e]">
                      <CheckCircle className="h-6 w-6" />
                    </div>
                 )}

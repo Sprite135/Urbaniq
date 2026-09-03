@@ -271,7 +271,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="border border-teal-100 bg-white dark:bg-[#16181d] p-6 text-center shadow-sm"
+          className="border border-gray-200 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6 text-center shadow-sm"
           role="status"
           aria-live="polite"
         >
@@ -279,7 +279,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
             <motion.span
               animate={{ scale: [1, 1.35, 1], opacity: [0.35, 0.05, 0.35] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute inset-0 rounded-full bg-teal-200"
+              className="absolute inset-0 rounded-full bg-gray-200 dark:bg-[#26282e]"
             />
             <motion.span
               animate={{ rotate: 360 }}
@@ -438,8 +438,8 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
                 className="accent-[#9d731e]"
               />
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100">
-                  <QrCode className="h-5 w-5 text-purple-600" />
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-[#26282e]">
+                  <QrCode className="h-5 w-5 text-[#9d731e]" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Yape</p>
@@ -606,8 +606,8 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
                 className="accent-[#9d731e]"
               />
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-100">
-                  <Wallet className="h-5 w-5 text-orange-600" />
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-[#26282e]">
+                  <Wallet className="h-5 w-5 text-[#9d731e]" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">PagoEfectivo</p>
@@ -621,7 +621,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
       {/* Yape / Plin: QR del comercio + comprobante */}
       {isOfflineTransfer && activeMerchant && (
-        <div className="border border-purple-100 dark:border-purple-900/40 bg-white dark:bg-[#16181d] p-6">
+        <div className="border border-gray-200 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
           <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-[#ece7dd]">
             Paga con {paymentMethod === 'yape' ? 'Yape' : 'Plin'}
           </h3>

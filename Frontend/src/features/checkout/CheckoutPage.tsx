@@ -160,7 +160,7 @@ const CheckoutPage: React.FC = () => {
                           setSelectedAddress(address);
                           setDeliveryError(null);
                         }}
-                        className="mt-1 accent-teal-600"
+                        className="mt-1 accent-[#9d731e]"
                       />
                       <div className="text-sm">
                         <p className="font-bold text-gray-900 dark:text-[#ece7dd]">{address.fullName}</p>

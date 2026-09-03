@@ -96,7 +96,7 @@ const AdminDashboardPage = () => {
             <div className="border border-[#263044] bg-[#172033] p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d7b46a]">Estado del sistema</p>
               <div className="mt-4 flex items-center gap-3">
-                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                <CheckCircle2 className="h-6 w-6 text-[#9d731e]" />
                 <span className="text-2xl font-black uppercase">En línea</span>
               </div>
             </div>
@@ -122,10 +122,10 @@ const AdminDashboardPage = () => {
                 </div>
                 <div className={`grid h-11 w-11 place-items-center ${
                   item.tone === 'gold' ? 'bg-[#f3ecdf] text-[#9d731e] dark:bg-[#9d731e]/20 dark:text-[#d7b46a]' :
-                  item.tone === 'green' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                  item.tone === 'green' ? 'bg-gray-100 text-gray-700 dark:bg-[#26282e] dark:text-gray-300' :
                   item.tone === 'amber' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' :
-                  item.tone === 'indigo' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400' :
-                  item.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                  item.tone === 'indigo' ? 'bg-gray-100 text-gray-700 dark:bg-[#26282e] dark:text-gray-300' :
+                  item.tone === 'emerald' ? 'bg-gray-100 text-gray-700 dark:bg-[#26282e] dark:text-gray-300' :
                   item.tone === 'red' ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
                   'bg-[#111827] text-[#d7b46a]'
                 }`}>
@@ -220,7 +220,7 @@ const AdminDashboardPage = () => {
                     <p className="mt-1 font-mono text-[11px] text-[#7c7467]">{product.sku}</p>
                   </div>
                   <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                    product.quantity <= 5 ? 'bg-red-50 text-red-700' : product.quantity <= 10 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                    product.quantity <= 5 ? 'bg-red-50 text-red-700' : product.quantity <= 10 ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-700'
                   }`}>
                     {product.quantity} left
                   </span>

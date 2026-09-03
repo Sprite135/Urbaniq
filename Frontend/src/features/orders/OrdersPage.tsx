@@ -40,16 +40,16 @@ const getStatusColor = (status: string) => {
     case 'delivered':
       return 'text-green-600 dark:text-green-400 bg-green-50';
     case 'cancelled':
-      return 'text-red-600 bg-red-50';
+      return 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400';
     case 'shipped':
-      return 'text-blue-600 bg-blue-50';
+      return 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400';
     case 'processing':
-      return 'text-orange-600 bg-orange-50';
+      return 'text-gray-700 bg-gray-100 dark:bg-[#26282e] dark:text-gray-300';
     case 'pending':
-      return 'text-amber-600 bg-amber-50';
+      return 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400';
     case 'refunded':
     case 'refundinitiated':
-      return 'text-green-700 bg-green-50';
+      return 'text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-400';
     default:
       return 'text-gray-600 dark:text-[#9ca3af] bg-gray-50 dark:bg-[#0e0f12]';
   }

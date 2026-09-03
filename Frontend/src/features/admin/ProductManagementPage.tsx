@@ -152,7 +152,7 @@ const ProductManagementPage = () => {
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                             product.quantity <= 0 ? 'bg-red-50 text-red-700' :
                             product.quantity <= 10 ? 'bg-amber-50 text-amber-700' :
-                            'bg-emerald-50 text-emerald-700'
+                            'bg-gray-100 text-gray-700'
                           }`}>
                             {product.quantity} en stock
                           </span>
@@ -216,7 +216,7 @@ const ProductManagementPage = () => {
                           <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ${
                             product.quantity <= 0 ? 'bg-red-50 text-red-700' :
                             product.quantity <= 10 ? 'bg-amber-50 text-amber-700' :
-                            'bg-emerald-50 text-emerald-700'
+                            'bg-gray-100 text-gray-700'
                           }`}>
                             {product.quantity} en stock
                           </span>

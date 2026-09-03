@@ -69,7 +69,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="group overflow-hidden rounded-2xl border border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#d7b46a]/50 hover:shadow-xl hover:shadow-[#f7c5d0]/40 dark:hover:shadow-[#b14a63]/25 focus-within:ring-2 focus-within:ring-[#9d731e]/40"
+      className="group overflow-hidden rounded-2xl border border-[#e5e7eb] dark:border-[#26282e] bg-white dark:bg-[#16181d] shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:border-[#d7b46a]/60 hover:shadow-2xl hover:shadow-[#d7b46a]/15 dark:hover:shadow-[#d7b46a]/20 focus-within:ring-2 focus-within:ring-[#9d731e]/50"
     >
       <div
         role="link"
@@ -109,7 +109,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               </span>
             )}
             {product.averageRating && product.averageRating >= 4 && product.totalReviews && product.totalReviews > 0 && (
-              <span className="bg-green-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white flex items-center gap-1">
+              <span className="bg-[#9d731e] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white flex items-center gap-1">
                 <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.501.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                 Top Rated
               </span>
@@ -135,7 +135,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
 
-        <div className="px-4 py-4">
+        <div className="px-5 py-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#9d731e]">Urbaniq</p>
             {product.color && <span className="text-[11px] font-semibold text-[#6b7280] dark:text-[#8a8478]">{product.color}</span>}

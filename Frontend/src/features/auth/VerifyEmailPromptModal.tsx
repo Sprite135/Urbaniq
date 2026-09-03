@@ -103,7 +103,7 @@ const VerifyEmailPromptModal: React.FC = () => {
             </div>
 
             {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
-            {message && <p className="mt-3 text-sm font-medium text-emerald-700">{message}</p>}
+            {message && <p className="mt-3 text-sm font-medium text-gray-700 dark:text-gray-300">{message}</p>}
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <button

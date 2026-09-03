@@ -140,7 +140,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, address, onBack, onCo
             <span>-S/ {totalDiscount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           {couponDiscount > 0 && (
-            <div className="flex justify-between text-purple-600 dark:text-purple-400">
+            <div className="flex justify-between text-[#9d731e] dark:text-[#d4a85e]">
               <span>Cupón de descuento</span>
               <span>-S/ {couponDiscount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>

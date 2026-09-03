@@ -226,9 +226,8 @@ if (!builder.Environment.IsEnvironment("Testing"))
         healthChecks.AddSqlServer(connectionString, name: "sql-server");
     }
 
-    // Redis health check
-    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-    if (!string.IsNullOrEmpty(redisConnectionString))
+    // Redis health check (only if Redis is configured and available)
+    if (isRedisConfigured && !string.IsNullOrEmpty(redisConnectionString))
     {
         healthChecks.AddRedis(redisConnectionString, name: "redis");
     }

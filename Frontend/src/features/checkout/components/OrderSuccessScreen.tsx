@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Banknote, CreditCard, Package } from 'lucide-react';
@@ -33,17 +33,17 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          navigate('/orders', { replace: true });
-          return 0;
-        }
-        return prev - 1;
-      });
+      setSecondsLeft((prev) => prev - 1);
     }, 1000);
 
-    return () => clearInterval(interval);
+    const timeout = setTimeout(() => {
+      navigate('/orders', { replace: true });
+    }, REDIRECT_SECONDS * 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [navigate]);
 
   const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -54,7 +54,7 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
       animate={{ opacity: 1 }}
       className="overflow-hidden border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d]"
     >
-      <div className="bg-gradient-to-b from-teal-50 to-white px-6 py-10 text-center sm:px-10 sm:py-12">
+      <div className="bg-gradient-to-b from-gray-50 to-white dark:from-[#0e0f12] dark:to-[#16181d] px-6 py-10 text-center sm:px-10 sm:py-12">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -65,10 +65,10 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
             initial={{ scale: 0.8, opacity: 0.6 }}
             animate={{ scale: [1, 1.35, 1.2], opacity: [0.5, 0, 0] }}
             transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.4 }}
-            className="absolute inset-0 rounded-full bg-teal-200"
+            className="absolute inset-0 rounded-full bg-gray-200 dark:bg-[#26282e]"
           />
-          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[#111827] shadow-lg shadow-teal-600/30">
-            <CheckCircle className="h-11 w-11 text-white" strokeWidth={2.5} />
+          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[#111827] dark:bg-white shadow-lg shadow-gray-500/20 dark:shadow-white/10">
+            <CheckCircle className="h-11 w-11 text-white dark:text-[#111827]" strokeWidth={2.5} />
           </span>
         </motion.div>
 
@@ -97,11 +97,11 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full bg-white dark:bg-[#16181d] px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-sm ring-1 ring-gray-100"
+          className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full bg-white dark:bg-[#16181d] px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-gray-200 dark:ring-[#26282e]"
         >
           {isCod ? <Banknote className="h-4 w-4 text-[#9d731e]" /> : <CreditCard className="h-4 w-4 text-[#9d731e]" />}
           {isCard ? 'Pagado con tarjeta' : isCod ? 'Pago contra entrega' : `Pago por ${methodLabel} · Pendiente`}
-          <span className="text-gray-300">·</span>
+          <span className="text-gray-300 dark:text-gray-600">·</span>
           <span className="text-gray-900 dark:text-[#ece7dd]">S/ {cart.finalAmount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </motion.div>
       </div>
@@ -126,7 +126,7 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.55 + index * 0.08 }}
-              className="flex gap-3 rounded-sm border border-gray-50 bg-gray-50/80 p-3"
+              className="flex gap-3 rounded-sm border border-gray-200 dark:border-[#26282e] bg-gray-50/80 dark:bg-[#1a1c21]/80 p-3"
             >
               <ProductImage
                 src={item.image || '/product-images/placeholder.svg'}

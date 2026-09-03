@@ -179,7 +179,7 @@ const Home: React.FC = () => {
           <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">
             <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]">
               <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
-              <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.06em]">
+              <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
                 {currentSlide?.title}
               </h1>
               <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#6b7280] dark:text-[#9ca3af] md:mx-0">
@@ -188,7 +188,7 @@ const Home: React.FC = () => {
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
                 <Link
                   to={currentSlide?.href || '/catalog'}
-                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#e2c77f]"
+                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
                 >
                   {currentSlide?.cta || 'Comprar ahora'}
                   <ArrowRight className="h-4 w-4" />
@@ -369,10 +369,13 @@ const ProductRail: React.FC<{ railId: string; products: HomeDisplayProduct[]; is
     return (
       <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="animate-pulse">
-            <div className="aspect-[3/4] rounded-2xl bg-[#f3f4f6] dark:bg-[#1a1c21]" />
-            <div className="mt-4 h-3 w-2/3 bg-[#f3f4f6] dark:bg-[#1a1c21]" />
-            <div className="mt-3 h-3 w-1/3 bg-[#f3f4f6] dark:bg-[#1a1c21]" />
+          <div key={index} className="space-y-4">
+            <div className="aspect-[3/4] rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-[#1a1c21] dark:to-[#26282e] animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-3 w-3/4 bg-gray-200 dark:bg-[#26282e] rounded animate-pulse" />
+              <div className="h-3 w-1/2 bg-gray-200 dark:bg-[#26282e] rounded animate-pulse" />
+              <div className="h-4 w-1/3 bg-gray-200 dark:bg-[#26282e] rounded animate-pulse" />
+            </div>
           </div>
         ))}
       </div>
