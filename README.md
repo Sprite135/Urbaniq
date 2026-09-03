@@ -244,7 +244,40 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_tu_clave
 
 ## 🏃 Ejecución del Proyecto
 
-### Opción 1: Desarrollo Local
+### Opción 1: Docker (Recomendado - Rápido y Fácil)
+
+#### Requisitos
+- Docker Desktop instalado y ejecutándose
+
+#### Ejecución
+```bash
+# Desde la raíz del proyecto
+docker-compose up --build
+```
+
+#### Acceder a la Aplicación
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:44320
+- **Swagger:** http://localhost:44320/swagger
+
+#### Comandos Útiles
+```bash
+# Ejecutar en background
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Detener servicios
+docker-compose down
+
+# Detener y eliminar volúmenes (borra base de datos)
+docker-compose down -v
+```
+
+Para más detalles, ver [DOCKER_SETUP.md](DOCKER_SETUP.md)
+
+### Opción 2: Desarrollo Local
 
 #### Backend (Visual Studio)
 1. Abrir `Backend/Urbaniq.sln` en Visual Studio 2022
@@ -264,18 +297,6 @@ cd Frontend
 npm run dev
 ```
 Frontend estará disponible en: `http://localhost:5173`
-
-### Opción 2: Docker (Preparado)
-
-```bash
-# Backend
-docker build -t urbaniq-backend ./Backend
-docker run -p 44320:44320 urbaniq-backend
-
-# Frontend
-docker build -t urbaniq-frontend ./Frontend
-docker run -p 5173:5173 urbaniq-frontend
-```
 
 ---
 
