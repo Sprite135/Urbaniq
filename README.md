@@ -1,562 +1,473 @@
-<div align="center">
+# 🛒 Urbaniq - E-commerce Platform
 
-<img src="Frontend/public/logo.jpeg" alt="UrbanIQ" width="100" style="border-radius: 12px;" />
+Plataforma de e-commerce completa desarrollada con arquitectura moderna Clean Architecture, diseñada para ser escalable, mantenible y profesional.
 
-# UrbanIQ
+![.NET](https://img.shields.io/badge/.NET-8.0-purple)
+![React](https://img.shields.io/badge/React-18+-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-red)
 
-**A production-grade, full-stack e-commerce platform built with Clean Architecture**
+## 📋 Índice
 
-[![.NET](https://img.shields.io/badge/.NET_8-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind](https://img.shields.io/badge/Tailwind_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![SQL Server](https://img.shields.io/badge/SQL_Server-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/sql-server)
-[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white)](https://aws.amazon.com/)
-[![Stripe](https://img.shields.io/badge/Stripe-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
+- [Descripción del Proyecto](#descripción-del-proyecto)
+- [Características](#características)
+- [Stack Tecnológico](#stack-tecnológico)
+- [Arquitectura](#arquitectura)
+- [Requisitos Previos](#requisitos-previos)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Ejecución del Proyecto](#ejecución-del-proyecto)
+- [Testing](#testing)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Despliegue](#despliegue)
+- [Contribución](#contribución)
+- [Licencia](#licencia)
 
-[Live Demo](https://urbaniq.ddnsking.com) · [API Swagger](https://urbaniq.ddns.net/swagger) · [Report Bug](../../issues) · [Request Feature](../../issues)
+---
 
-</div>
+## 🎯 Descripción del Proyecto
 
-<br />
+Urbaniq es una plataforma de e-commerce completa con:
+- **Backend:** API RESTful con .NET 8 siguiendo Clean Architecture
+- **Frontend:** SPA moderna con React + TypeScript + Vite
+- **Base de Datos:** SQL Server con Entity Framework Core
+- **Caching:** Redis con fallback a DistributedMemoryCache
+- **Pagos:** Integración con Stripe, Yape, Plin y otros métodos peruanos
+- **Admin Panel:** Panel de administración completo
 
-> UrbanIQ is an enterprise-grade e-commerce platform that goes beyond typical CRUD applications. It implements **Clean Architecture**, automated **CI/CD pipelines**, secure **Stripe payment processing**, **Twilio SMS**, **Cloudinary CDN**, and cloud-native **Docker + AWS deployment** — built the way production systems should be.
+Ideal para portafolio profesional y demostración de habilidades técnicas para posiciones junior en Perú.
 
-<br />
+---
 
-## 📑 Table of Contents
+## ✨ Características
 
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-- [Deployment](#-deployment)
-- [API Endpoints](#-api-endpoints)
-- [Testing](#-testing)
-- [Environment Variables](#-environment-variables)
-- [Contributing](#-contributing)
-- [License](#-license)
+### 🛍️ Funcionalidades de E-commerce
+- ✅ Catálogo de productos con filtros y búsqueda
+- ✅ Carrito de compras completo
+- ✅ Checkout multi-paso
+- ✅ Múltiples métodos de pago (Stripe, Yape, Plin, Contra Entrega)
+- ✅ Sistema de cupones avanzado
+- ✅ Reviews y calificaciones
+- ✅ Wishlist
+- ✅ Gestión de direcciones
+- ✅ Órdenes completas con tracking
+- ✅ Panel de administración completo
 
-<br />
+### 🔐 Seguridad y Autenticación
+- ✅ JWT Authentication + Refresh Tokens
+- ✅ Roles de usuario (Admin, Customer)
+- ✅ Rate limiting
+- ✅ Security headers
+- ✅ CORS configurado
 
-## ✨ Features
+### 📊 Calidad y Testing
+- ✅ 50+ tests automatizados (Unit + Integration)
+- ✅ Clean Architecture
+- ✅ SOLID principles
+- ✅ Repository Pattern + Unit of Work
+- ✅ FluentValidation
 
-<table>
-<tr>
-<td width="50%" valign="top">
+### 🚀 Infraestructura
+- ✅ Health checks
+- ✅ Serilog logging con rotación
+- ✅ Redis caching
+- ✅ Swagger/OpenAPI documentation
+- ✅ Background services
 
-### 🛒 Customer Experience
+---
 
-- **Product Catalog** — Categories, variants (size/color), image galleries, slugs, and filtering
-- **Shopping Cart** — Real-time stock validation on add/update/remove
-- **Wishlist** — Save favourite products for later
-- **Multi-Address Checkout** — Pincode-based delivery validation
-- **Stripe Payments** — Secure card payments + Cash on Delivery
-- **Order Tracking** — Full lifecycle: Pending → Processing → Shipped → Delivered
-- **Cancellation & Returns** — Auto stock restoration, return/replacement requests, refund lifecycle
-- **Email Notifications** — Rich HTML transactional emails (confirmation, status updates, cancellation)
-- **SMS Verification** — OTP via Twilio
-- **Responsive Design** — Mobile, tablet, and desktop
-
-</td>
-<td width="50%" valign="top">
-
-### 🛡️ Admin Dashboard
-
-- **Revenue Analytics** — Real-time revenue, delivered/cancelled items, processing & shipped counts
-- **Product Management** — CRUD with multi-image upload (Cloudinary), variant & SKU management
-- **Category Management** — Hierarchical tree with image support
-- **Order Management** — Filter by status, update through fulfilment pipeline
-- **User Management** — View and manage customer accounts
-- **Low Stock Alerts** — Auto-surface low-inventory products
-
-</td>
-</tr>
-</table>
-
-<details>
-<summary><b>🔐 Security & Authentication</b></summary>
-<br />
-
-| Feature | Implementation |
-| :--- | :--- |
-| Authentication | JWT access tokens + refresh token rotation |
-| Authorization | Role-based (Customer / Admin) |
-| Password Security | Secure hashing via ASP.NET Identity patterns |
-| Rate Limiting | Global IP-based (100 req/min) + login throttling (5 req/min) |
-| Security Headers | X-Frame-Options, X-XSS-Protection, X-Content-Type-Options, Referrer-Policy |
-| CORS | Configurable allowed origins |
-| Input Validation | FluentValidation on all requests |
-| SSL/TLS | Auto-provisioned Let's Encrypt via Certbot |
-| OWASP | Protection against SQL Injection, XSS, CSRF, IDOR |
-
-</details>
-
-<br />
-
-## 🛠 Tech Stack
-
-<table>
-<tr>
-<td valign="top" width="33%">
+## 🛠️ Stack Tecnológico
 
 ### Backend
-
-| | Technology |
-| :--- | :--- |
-| ⚙️ | ASP.NET Core 8 |
-| 🗄️ | Entity Framework Core |
-| 🛢️ | SQL Server |
-| ⚡ | Redis (distributed cache) |
-| 📝 | Serilog (structured logging) |
-| ✅ | FluentValidation |
-| 🔄 | AutoMapper |
-| 💳 | Stripe.NET |
-| ☁️ | Cloudinary (image CDN) |
-| 📱 | Twilio (SMS/OTP) |
-| 📧 | MailKit / SMTP |
-| 📖 | Swagger / OpenAPI |
-| 🔢 | API Versioning |
-
-</td>
-<td valign="top" width="33%">
+- **Framework:** .NET 8 / ASP.NET Core Web API
+- **Arquitectura:** Clean Architecture (Domain, Application, Infrastructure, API)
+- **ORM:** Entity Framework Core
+- **Base de Datos:** SQL Server / LocalDB
+- **Caching:** Redis (opcional) + DistributedMemoryCache
+- **Autenticación:** JWT Bearer Tokens
+- **Validación:** FluentValidation
+- **Logging:** Serilog
+- **API Documentation:** Swagger/OpenAPI
+- **Testing:** xUnit + Moq
 
 ### Frontend
-
-| | Technology |
-| :--- | :--- |
-| ⚛️ | React 19 |
-| 🔷 | TypeScript |
-| 🏪 | Redux Toolkit + RTK Query |
-| 🎨 | Tailwind CSS 4 |
-| 🎬 | Framer Motion |
-| 📋 | React Hook Form + Zod |
-| 🧭 | React Router v7 |
-| 💳 | Stripe Elements |
-| 🎯 | Lucide React (icons) |
-| 🧪 | Vitest + Testing Library |
-
-</td>
-<td valign="top" width="33%">
+- **Framework:** React 18+ + TypeScript
+- **Build Tool:** Vite
+- **State Management:** Redux Toolkit + RTK Query
+- **Routing:** React Router
+- **Styling:** Tailwind CSS
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
+- **Forms:** React Hook Form
+- **Charts:** Recharts
+- **Payment:** Stripe React Integration
+- **Notifications:** React Toastify
 
 ### DevOps
+- **Containerización:** Docker (preparado)
+- **CI/CD:** GitHub Actions (preparado)
+- **Source Control:** Git + GitHub
 
-| | Technology |
-| :--- | :--- |
-| 🐳 | Docker (multi-stage) |
-| 🐙 | Docker Compose |
-| 🌐 | Nginx (reverse proxy) |
-| 🔒 | Let's Encrypt / Certbot |
-| 🔁 | GitHub Actions CI/CD |
-| ☁️ | AWS EC2 |
-| ▲ | Vercel (frontend) |
+---
 
-</td>
-</tr>
-</table>
+## 🏗️ Arquitectura
 
-<br />
-
-## 🏗 Architecture
-
-UrbanIQ follows **Clean Architecture** with strict separation of concerns:
+### Clean Architecture Layers
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Ecommerce.Api                          │
-│           Controllers · Middleware · Swagger · CORS             │
-│          JWT Auth · Rate Limiting · API Versioning              │
-│          Health Checks · Response Compression                   │
-├─────────────────────────────────────────────────────────────────┤
-│                     Ecommerce.Application                      │
-│            Services · DTOs · Interfaces · Validators            │
-│     Identity · Catalog · Cart · Orders · Wishlist · Admin       │
-├─────────────────────────────────────────────────────────────────┤
-│                    Ecommerce.Infrastructure                    │
-│          DbContext · Repository · UnitOfWork · Migrations       │
-│       Stripe · Cloudinary · Twilio · SMTP · Email Queue         │
-├─────────────────────────────────────────────────────────────────┤
-│                       Ecommerce.Domain                         │
-│              Entities · Enums · Interfaces · Common             │
-│    User · Product · Order · Cart · Address · Category           │
-│         ProductVariant · ProductImage · WishList                │
-└─────────────────────────────────────────────────────────────────┘
+├── Ecommerce.Domain          # Entities, Interfaces, Value Objects
+├── Ecommerce.Application     # Services, DTOs, Use Cases
+├── Ecommerce.Infrastructure  # Repositories, External Services, Data Access
+└── Ecommerce.Api             # Controllers, Middleware, Configuration
 ```
 
-<details>
-<summary><b>Key Architectural Patterns</b></summary>
-<br />
+### Patrones Implementados
+- **Repository Pattern:** Abstracción de acceso a datos
+- **Unit of Work:** Gestión de transacciones
+- **Factory Pattern:** Creación de objetos complejos
+- **Strategy Pattern:** Algoritmos intercambiables
+- **Dependency Injection:** Inversión de dependencias
+- **CQRS:** Separación de lectura/escritura (parcial)
 
-- **Repository + Unit of Work** — Generic `IRepository<T>`, `IReadRepository<T>`, and `IUnitOfWork` with database transaction support
-- **Dependency Injection** — Dedicated `DependencyInjection.cs` extension methods per layer for clean service registration
-- **Graceful Degradation** — External services (Cloudinary, Twilio, Redis) automatically fall back to local implementations when credentials aren't configured
-- **Background Job Processing** — Queued email delivery via `BackgroundEmailJobQueue` + `QueuedEmailHostedService`
-- **Auto-Ship Background Service** — Automated order status progression via hosted service
-- **Soft Delete** — `ISoftDeletable` interface with EF Core global query filters
-- **Audit Fields** — `CreatedAtUtc` / `UpdatedAtUtc` patterns on entities
-- **Centralized Exception Handling** — `ExceptionHandlerMiddleware` for consistent API error responses
-- **Security Headers Middleware** — Applied globally via `SecurityHeadersMiddleware`
-- **Database Seeding** — Auto-seeds admin user and product categories on startup
+---
 
-</details>
+## 📦 Requisitos Previos
 
-<br />
+### Backend
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [SQL Server LocalDB](https://docs.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb)
+- [Redis](https://redis.io/download) (opcional, para producción)
+- Git
 
-## 📁 Project Structure
+### Frontend
+- [Node.js](https://nodejs.org/) 18+ o superior
+- [npm](https://www.npmjs.com/) o [yarn](https://yarnpkg.com/)
 
-<details>
-<summary><b>Click to expand full project tree</b></summary>
-<br />
+### Herramientas Opcionales
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) o [VS Code](https://code.visualstudio.com/)
+- [Postman](https://www.postman.com/) para probar API
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (para contenedores)
 
-```
-UrbanIQ/
-│
-├── Backend/
-│   ├── Ecommerce.Api/                      # Presentation layer
-│   │   ├── Controllers/
-│   │   │   ├── Admin/                      # Dashboard & management endpoints
-│   │   │   ├── Cart/                       # Cart CRUD
-│   │   │   ├── Catalog/                    # Product & category browsing
-│   │   │   ├── Identity/                   # Auth, registration, addresses
-│   │   │   ├── Orders/                     # Order placement & tracking
-│   │   │   ├── Payment/                    # Stripe payment intents
-│   │   │   └── Wishlist/                   # Wishlist management
-│   │   ├── HostedServices/                 # Background services (auto-ship)
-│   │   ├── Mapping/                        # AutoMapper profiles
-│   │   ├── Middleware/                     # Exception & security headers
-│   │   └── Program.cs                      # App startup & middleware pipeline
-│   │
-│   ├── Ecommerce.Application/              # Business logic layer
-│   │   ├── DTOs/                           # Request/Response objects
-│   │   ├── Interfaces/                     # Service contracts
-│   │   ├── Services/
-│   │   │   ├── Admin/                      # Dashboard analytics
-│   │   │   ├── Cart/                       # Cart operations
-│   │   │   ├── Catalog/                    # Product & category logic
-│   │   │   ├── Identity/                   # Auth & user management
-│   │   │   ├── Orders/                     # Order lifecycle
-│   │   │   └── Wishlist/                   # Wishlist logic
-│   │   └── Validators/                     # FluentValidation rules
-│   │
-│   ├── Ecommerce.Domain/                   # Core domain layer
-│   │   ├── Entities/                       # User, Product, Order, Cart, etc.
-│   │   ├── Enums/                          # OrderStatus, UserRole
-│   │   ├── Interfaces/                     # IRepository, IUnitOfWork
-│   │   └── Common/                         # PagedResult, shared objects
-│   │
-│   └── Ecommerce.Infrastructure/           # Data & external services
-│       ├── Data/                           # DbContext, Repository, Seeder
-│       ├── Configurations/                 # EF Core entity configs
-│       ├── Migrations/                     # Database migrations
-│       └── Services/                       # Stripe, Cloudinary, Twilio, SMTP
-│
-├── Frontend/
-│   └── src/
-│       ├── app/                            # Redux store
-│       ├── features/
-│       │   ├── admin/                      # Admin dashboard & management
-│       │   ├── auth/                       # Login, register, auth state
-│       │   ├── cart/                       # Cart page & API slice
-│       │   ├── catalog/                    # Product listing & details
-│       │   ├── checkout/                   # Checkout, address & payment
-│       │   ├── orders/                     # Order history & tracking
-│       │   ├── account/                    # User profile & addresses
-│       │   └── wishlist/                   # Wishlist page & API slice
-│       ├── hooks/                          # Custom React hooks
-│       ├── layouts/                        # Layout components
-│       └── test/                           # Test setup & utilities
-│
-├── tests/
-│   ├── Ecommerce.UnitTests/                # xUnit unit tests
-│   └── Ecommerce.IntegrationTests/         # xUnit integration tests
-│
-├── nginx/                                  # Nginx reverse proxy config
-├── .github/workflows/                      # CI/CD pipeline
-├── Dockerfile                              # Multi-stage Docker build
-├── docker-compose.yml                      # Production orchestration
-└── Ecommerce.sln
-```
+---
 
-</details>
+## 🚀 Instalación
 
-<br />
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- [.NET SDK 8.0+](https://dotnet.microsoft.com/download)
-- [Node.js 20+](https://nodejs.org/)
-- [SQL Server 2019+](https://www.microsoft.com/sql-server) (or LocalDB)
-- [Redis](https://redis.io/) *(optional — falls back to in-memory cache)*
-- [Docker](https://www.docker.com/) *(optional — for containerized deployment)*
-
-### 1️⃣ Clone
+### 1. Clonar el Repositorio
 
 ```bash
-git clone https://github.com/MuhammedRiyasB/Ecommerce.git
-cd Ecommerce
+git clone https://github.com/Sprite135/Urbaniq.git
+cd Urbaniq
 ```
 
-### 2️⃣ Configure Backend
+### 2. Instalación del Backend
 
 ```bash
-cp Backend/Ecommerce.Api/appsettings.Development.example.json Backend/Ecommerce.Api/appsettings.Development.json
+cd Backend
+
+# Restaurar dependencias
+dotnet restore
+
+# Configurar base de datos (ver sección Configuración)
+# Editar Ecommerce.Api/appsettings.LocalDb.json
+
+# Ejecutar migraciones
+cd Ecommerce.Api
+dotnet ef database update
 ```
 
-Open `appsettings.Development.json` and set at minimum:
+### 3. Instalación del Frontend
 
-```jsonc
+```bash
+cd Frontend
+
+# Instalar dependencias
+npm install
+```
+
+---
+
+## ⚙️ Configuración
+
+### Backend Configuration
+
+#### Base de Datos Local
+
+Editar `Backend/Ecommerce.Api/appsettings.LocalDb.json`:
+
+```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=YOUR_SERVER;Database=EcommerceDb;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=UrbaniqDb;Trusted_Connection=True;MultipleActiveResultSets=true"
   },
-  "Jwt": {
-    "Key": "YOUR_SECRET_KEY_MINIMUM_32_CHARACTERS"
+  "JwtSettings": {
+    "SecretKey": "TU_CLAVE_SECRETA_SUPER_LARGA_AQUI",
+    "Issuer": "https://localhost:44320",
+    "Audience": "https://localhost:44320",
+    "ExpirationInMinutes": 60
+  },
+  "Redis": {
+    "ConnectionString": "localhost:6379"
+  },
+  "Stripe": {
+    "SecretKey": "sk_test_tu_clave_stripe",
+    "PublishableKey": "pk_test_tu_clave_stripe"
+  },
+  "Cloudinary": {
+    "CloudName": "tu_cloud_name",
+    "ApiKey": "tu_api_key",
+    "ApiSecret": "tu_api_secret"
   }
 }
 ```
 
-> [!TIP]
-> Only the **database connection** and **JWT key** are required. All external services — Cloudinary, Twilio, Redis — gracefully fall back to local implementations when not configured.
+#### Variables de Entorno
 
-### 3️⃣ Run Backend
-
-```bash
-dotnet restore Ecommerce.sln
-dotnet ef database update --project Backend/Ecommerce.Infrastructure --startup-project Backend/Ecommerce.Api
-dotnet run --project Backend/Ecommerce.Api
-```
-
-API available at `https://localhost:7078` — Swagger at `/swagger`
-
-### 4️⃣ Run Frontend
+Para producción, usa variables de entorno o `appsettings.Production.json`:
 
 ```bash
-cd Frontend
-npm install
-npm run dev
+# Backend
+export ConnectionStrings__DefaultConnection="Server=tu_servidor;Database=UrbaniqDb;..."
+export JwtSettings__SecretKey="tu_clave_secreta"
+export Stripe__SecretKey="sk_live_tu_clave"
 ```
 
-Frontend available at `http://localhost:5173`
+### Frontend Configuration
 
-### 5️⃣ Admin Access
+Crear `Frontend/.env`:
 
-The database auto-seeds an admin account using the credentials from `AdminSettings` in your config. Navigate to `/admin-login` to access the dashboard.
-
-<br />
-
-## 🐳 Deployment
-
-### Infrastructure Overview
-
+```env
+VITE_API_URL=https://localhost:44320
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_tu_clave
 ```
-                    ┌──────────────┐
-                    │   Vercel     │
-   Users ─── ────►  │  (Frontend)  │
-                    └──────────────┘
-                           │ API calls
-                    ┌──────▼──────┐
-                    │    Nginx    │
-                    │  SSL + Rate │
-                    │   Limiting  │
-                    └──────┬──────┘
-                           │ Reverse Proxy
-                    ┌──────▼──────┐
-                    │  ASP.NET    │
-                    │  Core API   │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-        ┌─────▼────┐ ┌────▼────┐ ┌─────▼──────┐
-        │SQL Server│ │  Redis  │ │ Cloudinary │
-        └──────────┘ └─────────┘ └────────────┘
-```
-
-### CI/CD Pipeline
-
-The GitHub Actions workflow automates the full deployment on every push to `main`:
-
-```
-Push to main → Build & Test → Docker Build → Push to Hub → SSH Deploy to EC2 → SSL Provision
-```
-
-### Docker
-
-```bash
-# Local production build
-docker compose up -d
-```
-
-The compose file orchestrates an **API container** + **Nginx reverse proxy** with auto-provisioned Let's Encrypt SSL.
-
-<br />
-
-## 📡 API Endpoints
-
-> Full interactive documentation available at [`/swagger`](https://urbaniq.ddns.net/swagger)
-
-<details>
-<summary><b>Authentication</b></summary>
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/register` | User registration |
-| `POST` | `/api/v1/auth/login` | Login (returns JWT + refresh token) |
-| `POST` | `/api/v1/auth/refresh-token` | Refresh access token |
-
-</details>
-
-<details>
-<summary><b>Catalog</b></summary>
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/products` | Browse products (paginated, filtered) |
-| `GET` | `/api/v1/products/{slug}` | Product detail by slug |
-| `GET` | `/api/v1/categories` | List all categories |
-
-</details>
-
-<details>
-<summary><b>Cart & Wishlist</b></summary>
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/cart` | Get user's cart |
-| `POST` | `/api/v1/cart` | Add item to cart |
-| `PUT` | `/api/v1/cart` | Update cart item |
-| `DELETE` | `/api/v1/cart/{id}` | Remove item from cart |
-| `GET` | `/api/v1/wishlist` | Get wishlist |
-| `POST` | `/api/v1/wishlist` | Add to wishlist |
-| `DELETE` | `/api/v1/wishlist/{id}` | Remove from wishlist |
-
-</details>
-
-<details>
-<summary><b>Orders & Payments</b></summary>
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/orders` | Place an order |
-| `GET` | `/api/v1/orders` | User's order history |
-| `GET` | `/api/v1/orders/{id}` | Order details |
-| `POST` | `/api/v1/orders/{id}/cancel` | Cancel an order |
-| `POST` | `/api/v1/payment/create-intent` | Create Stripe payment intent |
-
-</details>
-
-<details>
-<summary><b>Admin</b></summary>
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/admin/dashboard` | Dashboard analytics |
-| `GET` | `/api/v1/admin/products` | List all products (admin) |
-| `POST` | `/api/v1/admin/products` | Create product |
-| `PUT` | `/api/v1/admin/products/{id}` | Update product |
-| `PUT` | `/api/v1/admin/orders/{id}/status` | Update order status |
-| `GET` | `/api/v1/admin/users` | List all users |
-
-</details>
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/health` | Health check |
-
-<br />
-
-## 🧪 Testing
-
-### Backend
-
-```bash
-# All tests
-dotnet test Ecommerce.sln
-
-# Unit tests only
-dotnet test tests/Ecommerce.UnitTests
-
-# Integration tests only
-dotnet test tests/Ecommerce.IntegrationTests
-```
-
-### Frontend
-
-```bash
-cd Frontend
-
-npm test            # Run all tests
-npm run test:watch  # Watch mode
-```
-
-<br />
-
-## 🔑 Environment Variables
-
-<details>
-<summary><b>Production environment variables</b></summary>
-<br />
-
-| Variable | Description | Required |
-| :--- | :--- | :---: |
-| `PROD_DB_CONNECTION` | SQL Server connection string | ✅ |
-| `JWT_SECRET_KEY` | JWT signing key (min 32 bytes) | ✅ |
-| `REDIS_CONNECTION_STRING` | Redis connection string | ❌ |
-| `STRIPE_SECRET_KEY` | Stripe secret API key | ✅ |
-| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | ✅ |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | ❌ |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | ❌ |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | ❌ |
-| `TWILIO_ACCOUNT_SID` | Twilio Account SID | ❌ |
-| `TWILIO_AUTH_TOKEN` | Twilio Auth Token | ❌ |
-| `TWILIO_FROM_NUMBER` | Twilio sender phone number | ❌ |
-| `SMTP_HOST` | SMTP server host | ❌ |
-| `SMTP_PORT` | SMTP server port | ❌ |
-| `SMTP_USERNAME` | SMTP username | ❌ |
-| `SMTP_PASSWORD` | SMTP password | ❌ |
-| `SMTP_FROM_ADDRESS` | Sender email address | ❌ |
-| `ADMIN_EMAIL` | Default admin email | ✅ |
-| `ADMIN_PASSWORD` | Default admin password | ✅ |
-| `FRONTEND_URL` | Frontend URL for email links | ✅ |
-
-> ❌ = Optional — the system gracefully falls back to local implementations
-
-</details>
-
-<br />
-
-## 📊 Order Lifecycle
-
-```
- Pending ──► Processing ──► Shipped ──► Delivered
-    │                                       │
-    │                                       ├──► Return Requested ──► Returned ──► Refund Initiated ──► Refunded
-    │                                       │
-    └──► Cancelled                          └──► Replacement Requested
-        (stock auto-restored)
-```
-
-<br />
-
-## 🤝 Contributing
-
-1. **Fork** the repository
-2. **Create** a feature branch — `git checkout -b feature/amazing-feature`
-3. **Commit** your changes — `git commit -m 'Add amazing feature'`
-4. **Push** to the branch — `git push origin feature/amazing-feature`
-5. **Open** a Pull Request
-
-<br />
 
 ---
 
-<div align="center">
+## 🏃 Ejecución del Proyecto
 
-**Built with ❤️ by [Muhammed Riyas B](https://github.com/MuhammedRiyasB)**
+### Opción 1: Desarrollo Local
 
-</div>
+#### Backend (Visual Studio)
+1. Abrir `Backend/Urbaniq.sln` en Visual Studio 2022
+2. Configurar `Ecommerce.Api` como proyecto de inicio
+3. Presionar F5 o "Iniciar"
+
+#### Backend (Terminal)
+```bash
+cd Backend/Ecommerce.Api
+dotnet run
+```
+Backend estará disponible en: `https://localhost:44320`
+
+#### Frontend
+```bash
+cd Frontend
+npm run dev
+```
+Frontend estará disponible en: `http://localhost:5173`
+
+### Opción 2: Docker (Preparado)
+
+```bash
+# Backend
+docker build -t urbaniq-backend ./Backend
+docker run -p 44320:44320 urbaniq-backend
+
+# Frontend
+docker build -t urbaniq-frontend ./Frontend
+docker run -p 5173:5173 urbaniq-frontend
+```
+
+---
+
+## 🧪 Testing
+
+### Ejecutar Todos los Tests
+
+```bash
+cd Backend
+dotnet test
+```
+
+### Ejecutar Tests por Proyecto
+
+```bash
+# Tests de Domain
+dotnet test Ecommerce.Domain.Tests
+
+# Tests de Application
+dotnet test Ecommerce.Application.Tests
+
+# Tests de Infrastructure
+dotnet test Ecommerce.Infrastructure.Tests
+
+# Tests de API
+dotnet test Ecommerce.Api.Tests
+```
+
+### Resultados Actuales
+- **Domain Tests:** 45/45 ✅
+- **Application Tests:** 2/2 ✅
+- **Infrastructure Tests:** 1/1 ✅
+- **API Tests:** 2/2 ✅
+- **Total:** 50/50 tests pasando
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+Urbaniq/
+├── Backend/
+│   ├── Ecommerce.Domain/           # Entities, Interfaces
+│   ├── Ecommerce.Application/      # Services, DTOs
+│   ├── Ecommerce.Infrastructure/   # Repositories, Data Access
+│   ├── Ecommerce.Api/             # Controllers, Middleware
+│   ├── Ecommerce.Domain.Tests/     # Unit tests de dominio
+│   ├── Ecommerce.Application.Tests/# Tests de servicios
+│   ├── Ecommerce.Infrastructure.Tests/# Tests de infraestructura
+│   ├── Ecommerce.Api.Tests/       # Integration tests de API
+│   └── Urbaniq.sln                # Solution file
+├── Frontend/
+│   ├── src/
+│   │   ├── app/                   # Redux store, API slices
+│   │   ├── features/              # Feature modules
+│   │   ├── layouts/               # Layout components
+│   │   ├── components/            # Shared components
+│   │   └── main.tsx               # Entry point
+│   ├── public/                    # Static assets
+│   ├── package.json
+│   └── vite.config.ts
+└── README.md
+```
+
+---
+
+## 🚀 Despliegue
+
+### Backend (Azure App Service)
+
+```bash
+# Build para producción
+dotnet publish -c Release -o ./publish
+
+# Deploy a Azure
+az webapp up --resource-group UrbaniqRG --name urbaniq-api --sku F1
+```
+
+### Frontend (Vercel/Netlify)
+
+```bash
+# Build para producción
+cd Frontend
+npm run build
+
+# Deploy a Vercel
+vercel --prod
+```
+
+### Docker Compose (Producción)
+
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: ./Backend
+    ports:
+      - "44320:44320"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build: ./Frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+```
+
+---
+
+## 🤝 Contribución
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+---
+
+## 📝 Credenciales de Desarrollo
+
+⚠️ **IMPORTANTE:** Estas credenciales son SOLO para desarrollo local. Nunca las uses en producción.
+
+### Admin User
+- **Email:** admin@urbaniq.com
+- **Password:** Urbaniq#2024!Secure
+
+### Base de Datos Local
+- **Server:** (localdb)\mssqllocaldb
+- **Database:** UrbaniqDb
+- **Authentication:** Windows Authentication
+
+---
+
+## 📄 Licencia
+
+Este proyecto es para propósitos educativos y de portafolio.
+
+---
+
+## 👨‍💻 Autor
+
+**Desarrollado por:** [Tu Nombre]
+
+**LinkedIn:** [Tu LinkedIn]
+**GitHub:** [Sprite135](https://github.com/Sprite135)
+
+---
+
+## 🎓 Propósito del Proyecto
+
+Este proyecto fue desarrollado como:
+- ✅ Portafolio profesional para posiciones junior en Perú
+- ✅ Demostración de habilidades técnicas en .NET y React
+- ✅ Proyecto académico para presentación universitaria
+- ✅ Ejemplo de Clean Architecture y mejores prácticas
+
+---
+
+## 📞 Soporte
+
+Para preguntas o soporte:
+- Abre un issue en GitHub
+- Contacta por LinkedIn
+- Email: [tu-email@ejemplo.com]
+
+---
+
+## 🙏 Agradecimientos
+
+- Microsoft por .NET y ASP.NET Core
+- React community por las herramientas modernas
+- Open source community por las librerías utilizadas
+
+---
+
+**Última actualización:** Septiembre 2026
