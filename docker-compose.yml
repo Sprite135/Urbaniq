@@ -1,80 +1,69 @@
+version: '3.8'
+
 services:
-  # --- SQL Server (parity dev/staging) ---
+  # SQL Server Database
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: urbaniq-db
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - SA_PASSWORD=Urbaniq@2024!Secure
+      - MSSQL_PID=Express
     ports:
       - "1433:1433"
     volumes:
-      - mssql_data:/var/opt/mssql
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    restart: unless-stopped
+      - sqldata:/var/opt/mssql
+    networks:
+      - urbaniq-network
 
-  # --- Redis (parity dev/staging) ---
+  # Redis Cache
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: urbaniq-redis
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
+    networks:
+      - urbaniq-network
 
-  api:
-    image: ${DOCKER_USERNAME:-urbaniq}/ecommerce-api:latest
+  # Backend API
+  backend:
     build:
-      context: .
+      context: ./Backend
       dockerfile: Dockerfile
-    restart: always
+    container_name: urbaniq-backend
+    ports:
+      - "44320:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=UrbaniqDb;User Id=sa;Password=Urbaniq@2024!Secure;TrustServerCertificate=True;MultipleActiveResultSets=true
+      - Redis__ConnectionString=redis:6379
+      - JwtSettings__SecretKey=UrbaniqSuperSecretKeyForDevelopmentOnly123456789
+      - JwtSettings__Issuer=https://localhost:44320
+      - JwtSettings__Audience=https://localhost:44320
+      - JwtSettings__ExpirationInMinutes=60
     depends_on:
       - db
       - redis
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
-      - ConnectionStrings__DefaultConnection=${PROD_DB_CONNECTION}
-      - ConnectionStrings__Redis=${REDIS_CONNECTION_STRING}
-      - StripeSettings__SecretKey=${STRIPE_SECRET_KEY}
-      - StripeSettings__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
-      - StripeSettings__WebhookSecret=${STRIPE_WEBHOOK_SECRET}
-      - CloudinarySettings__CloudName=${CLOUDINARY_CLOUD_NAME}
-      - CloudinarySettings__ApiKey=${CLOUDINARY_API_KEY}
-      - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
-      - Jwt__Key=${JWT_SECRET_KEY}
-      - AdminSettings__Email=${ADMIN_EMAIL}
-      - AdminSettings__Password=${ADMIN_PASSWORD}
-      - SmsSettings__AccountSid=${TWILIO_ACCOUNT_SID}
-      - SmsSettings__AuthToken=${TWILIO_AUTH_TOKEN}
-      - SmsSettings__FromNumber=${TWILIO_FROM_NUMBER}
-      - EmailSettings__Host=${SMTP_HOST}
-      - EmailSettings__Port=${SMTP_PORT}
-      - EmailSettings__Username=${SMTP_USERNAME}
-      - EmailSettings__Password=${SMTP_PASSWORD}
-      - EmailSettings__FromAddress=${SMTP_FROM_ADDRESS}
-      - EmailSettings__FrontendUrl=${FRONTEND_URL}
+    networks:
+      - urbaniq-network
 
-  nginx:
-    image: nginx:alpine
-    restart: always
+  # Frontend
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: urbaniq-frontend
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - "5173:80"
     depends_on:
-      - api
+      - backend
+    networks:
+      - urbaniq-network
+
+networks:
+  urbaniq-network:
+    driver: bridge
 
 volumes:
-  mssql_data:
-  redis_data:
+  sqldata:
