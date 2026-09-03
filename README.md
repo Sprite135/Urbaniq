@@ -6,6 +6,8 @@ Plataforma de e-commerce completa desarrollada con arquitectura moderna Clean Ar
 ![React](https://img.shields.io/badge/React-18+-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-red)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-green)
 
 ## 📋 Índice
 
@@ -18,6 +20,7 @@ Plataforma de e-commerce completa desarrollada con arquitectura moderna Clean Ar
 - [Configuración](#configuración)
 - [Ejecución del Proyecto](#ejecución-del-proyecto)
 - [Testing](#testing)
+- [CI/CD Pipeline](#cicd-pipeline)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Despliegue](#despliegue)
 - [Contribución](#contribución)
@@ -334,7 +337,52 @@ dotnet test Ecommerce.Api.Tests
 
 ---
 
-## 📁 Estructura del Proyecto
+## � CI/CD Pipeline
+
+El proyecto incluye un pipeline de CI/CD automatizado con GitHub Actions.
+
+### Jobs del Pipeline
+
+#### 1. Build and Test
+- ✅ Restaura dependencias .NET
+- ✅ Compila backend y frontend
+- ✅ Ejecuta 50 tests automatizados
+- ✅ Sube artefactos de build
+
+#### 2. Docker Build (Solo en main)
+- ✅ Construye imágenes Docker
+- ✅ Publica en Docker Hub
+- ✅ Tags con version y SHA
+
+#### 3. Deploy (Solo en main)
+- ✅ Despliegue a producción
+- ✅ Health checks
+
+### Configuración
+
+Para activar el pipeline completo:
+
+1. **Configurar Secrets en GitHub:**
+   - `DOCKER_USERNAME`: Tu usuario de Docker Hub
+   - `DOCKER_PASSWORD`: Tu contraseña de Docker Hub
+
+2. **Ejecutar Pipeline:**
+   - Push a `main` → Build + Test + Docker + Deploy
+   - Push a `develop` → Build + Test
+   - Pull Request → Build + Test
+
+### Monitoreo
+
+Ver el status del pipeline en:
+- GitHub Actions tab del repositorio
+- Pull Request checks
+- Email notifications
+
+Para más detalles, ver [CI_CD_SETUP.md](CI_CD_SETUP.md)
+
+---
+
+## �📁 Estructura del Proyecto
 
 ```
 Urbaniq/

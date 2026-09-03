@@ -1,0 +1,129 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: |
+        cd Backend
+        dotnet restore
+
+    - name: Build Backend
+      run: |
+        cd Backend
+        dotnet build --no-restore
+
+    - name: Run Backend Tests
+      run: |
+        cd Backend
+        dotnet test --no-build --verbosity normal
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Frontend Dependencies
+      run: |
+        cd Frontend
+        npm ci
+
+    - name: Build Frontend
+      run: |
+        cd Frontend
+        npm run build
+
+    - name: Run Frontend Tests (if any)
+      run: |
+        cd Frontend
+        npm test -- --passWithNoTests
+
+    - name: Upload Frontend Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: Frontend/dist
+
+    - name: Upload Backend Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-build
+        path: Backend/Ecommerce.Api/bin/Release/net8.0
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push Backend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./Backend
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/urbaniq-backend:latest
+          ${{ secrets.DOCKER_USERNAME }}/urbaniq-backend:${{ github.sha }}
+
+    - name: Build and Push Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./Frontend
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/urbaniq-frontend:latest
+          ${{ secrets.DOCKER_USERNAME }}/urbaniq-frontend:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://urbaniq.example.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Production
+      run: |
+        echo "Deploying to production..."
+        # Add your deployment commands here
+        # Example: SSH to server and pull new images
+        # Example: Update Kubernetes deployment
+        # Example: Update Azure App Service
+
+    - name: Health Check
+      run: |
+        echo "Performing health check..."
+        # Add health check commands here
+        # Example: curl https://urbaniq.example.com/health
