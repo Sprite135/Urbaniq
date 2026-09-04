@@ -172,7 +172,7 @@ const Home: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: direction === 1 ? -50 : 50 }}
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="relative w-full"
+                className="relative w-full h-full"
               >
                 {/* Slide Images */}
                 {currentSlide.image && (
@@ -185,12 +185,12 @@ const Home: React.FC = () => {
                       aria-hidden="true"
                       className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl transition-opacity duration-500"
                     />
-                    {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
+                    {/* Crisp foreground image: cover on mobile, larger on desktop */}
                     <ProductImage
                       src={currentSlide.image}
                       alt={currentSlide.title}
                       fallbackLabel={currentSlide.title}
-                      className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
+                      className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/4 md:w-3/4 md:object-cover md:object-right lg:left-1/3 lg:w-2/3 lg:pr-8"
                     />
                   </>
                 )}
