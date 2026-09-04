@@ -187,12 +187,7 @@ const Home: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/20 md:to-transparent dark:from-[#0e0f12]/95 dark:via-[#0e0f12]/80 dark:to-[#0e0f12]/30 md:dark:to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white/95 to-transparent dark:from-[#0e0f12]/95" />
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]"
-          >
+          <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSlide}
@@ -236,7 +231,7 @@ const Home: React.FC = () => {
                 </div>
               </motion.div>
             </AnimatePresence>
-          </motion.div>
+          </div>
 
           {heroSlides.length > 1 && (
             <>
