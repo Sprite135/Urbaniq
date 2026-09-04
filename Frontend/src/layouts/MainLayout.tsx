@@ -6,7 +6,6 @@ import { selectCartCount } from '../features/cart/cartSlice';
 import { selectCurrentUser, selectIsAuthenticated, logout } from '../features/auth/authSlice';
 import VerifyEmailPromptModal from '../features/auth/VerifyEmailPromptModal';
 import Footer from './Footer';
-import PageTransition from '../components/PageTransition';
 
 import { useGetMeQuery } from '../features/auth/authApiSlice';
 import { catalogApiSlice, useSearchSuggestionsQuery, useGetCategoriesQuery, type Category } from '../features/catalog/catalogApiSlice';
@@ -454,9 +453,7 @@ export default function MainLayout() {
        )}
 
       <main>
-        <PageTransition>
-          <Outlet />
-        </PageTransition>
+        <Outlet />
       </main>
 
       <Footer />
