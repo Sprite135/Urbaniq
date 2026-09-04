@@ -150,25 +150,34 @@ const Home: React.FC = () => {
     <div className="bg-gradient-to-b from-white to-[#fdf3f5] dark:from-[#0e0f12] dark:to-[#150f12]">
       <section className="relative overflow-hidden bg-[#f9fafb] dark:bg-[#0b0d11]">
         <div className="relative min-h-[560px] md:min-h-[680px]">
-          {currentSlide && (
-            <>
-              {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
-              <ProductImage
-                src={currentSlide.image}
-                alt=""
-                fallbackLabel={currentSlide.title}
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl transition-opacity duration-500"
-              />
-              {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
-              <ProductImage
-                src={currentSlide.image}
-                alt={currentSlide.title}
-                fallbackLabel={currentSlide.title}
-                className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
-              />
-            </>
-          )}
+          <AnimatePresence mode="wait">
+            {currentSlide && (
+              <motion.div
+                key={`images-${activeSlide}`}
+                initial={{ opacity: 0, x: direction === 1 ? 50 : -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction === 1 ? -50 : 50 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="absolute inset-0"
+              >
+                {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
+                <ProductImage
+                  src={currentSlide.image}
+                  alt=""
+                  fallbackLabel={currentSlide.title}
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl transition-opacity duration-500"
+                />
+                {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
+                <ProductImage
+                  src={currentSlide.image}
+                  alt={currentSlide.title}
+                  fallbackLabel={currentSlide.title}
+                  className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           {/* Tech decorative glows - slate/navy/amber */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-[#cbd5e1] opacity-40 blur-3xl dark:bg-[#1f2740] dark:opacity-30" />
