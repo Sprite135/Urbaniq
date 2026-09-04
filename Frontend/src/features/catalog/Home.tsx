@@ -150,25 +150,6 @@ const Home: React.FC = () => {
     <div className="bg-gradient-to-b from-white to-[#fdf3f5] dark:from-[#0e0f12] dark:to-[#150f12]">
       <section className="relative overflow-hidden bg-[#f9fafb] dark:bg-[#0b0d11]">
         <div className="relative min-h-[560px] md:min-h-[680px]">
-          {currentSlide && (
-            <>
-              {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
-              <ProductImage
-                src={currentSlide.image}
-                alt=""
-                fallbackLabel={currentSlide.title}
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl transition-opacity duration-500"
-              />
-              {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
-              <ProductImage
-                src={currentSlide.image}
-                alt={currentSlide.title}
-                fallbackLabel={currentSlide.title}
-                className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
-              />
-            </>
-          )}
           {/* Tech decorative glows - slate/navy/amber */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-[#cbd5e1] opacity-40 blur-3xl dark:bg-[#1f2740] dark:opacity-30" />
@@ -191,39 +172,63 @@ const Home: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: direction === 1 ? -50 : 50 }}
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]"
+                className="relative w-full"
               >
-                <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
-                <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
-                  {currentSlide?.title}
-                </h1>
-                <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#6b7280] dark:text-[#9ca3af] md:mx-0">
-                  {currentSlide?.copy}
-                </p>
-                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link
-                      to={currentSlide?.href || '/catalog'}
-                      className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+                {/* Slide Images */}
+                {currentSlide.image && (
+                  <>
+                    {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
+                    <ProductImage
+                      src={currentSlide.image}
+                      alt=""
+                      fallbackLabel={currentSlide.title}
+                      aria-hidden="true"
+                      className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl transition-opacity duration-500"
+                    />
+                    {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
+                    <ProductImage
+                      src={currentSlide.image}
+                      alt={currentSlide.title}
+                      fallbackLabel={currentSlide.title}
+                      className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
+                    />
+                  </>
+                )}
+
+                {/* Slide Content */}
+                <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd] relative z-10">
+                  <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
+                  <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
+                    {currentSlide?.title}
+                  </h1>
+                  <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#6b7280] dark:text-[#9ca3af] md:mx-0">
+                    {currentSlide?.copy}
+                  </p>
+                  <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      {currentSlide?.cta || 'Comprar ahora'}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link
-                      to="/catalog"
-                      className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
+                      <Link
+                        to={currentSlide?.href || '/catalog'}
+                        className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+                      >
+                        {currentSlide?.cta || 'Comprar ahora'}
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Ver todos los productos
-                    </Link>
-                  </motion.div>
+                      <Link
+                        to="/catalog"
+                        className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
+                      >
+                        Ver todos los productos
+                      </Link>
+                    </motion.div>
+                  </div>
                 </div>
               </motion.div>
             </AnimatePresence>
