@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   useGetHomeProductCardsQuery,
   useGetTopSellingProductsQuery,
@@ -178,15 +178,7 @@ const Home: React.FC = () => {
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white/95 to-transparent dark:from-[#0e0f12]/95" />
 
           <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">
-            <AnimatePresence mode="sync">
-              <motion.div
-                key={activeSlide}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]"
-              >
+            <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]">
                 <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
                 <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
                   {currentSlide?.title}
@@ -219,8 +211,7 @@ const Home: React.FC = () => {
                     </Link>
                   </motion.div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </div>
             </div>
 
           {heroSlides.length > 1 && (
