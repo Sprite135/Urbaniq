@@ -217,7 +217,7 @@ const Home: React.FC = () => {
                 </motion.div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {heroSlides.length > 1 && (
             <>
