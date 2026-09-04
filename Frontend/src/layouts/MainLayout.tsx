@@ -191,7 +191,13 @@ export default function MainLayout() {
             </button>
           </div>
 
-          <Link to="/" className="shrink-0 leading-none">
+          <Link to="/" className="shrink-0 leading-none" onClick={(e) => {
+            // Prevenir navegación si ya estamos en el home
+            if (location.pathname === '/') {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}>
             <img src="/logo.jpeg" alt="Urbaniq" className="h-[70px] lg:h-[120px] w-auto object-contain dark:invert" />
           </Link>
 
@@ -454,18 +460,7 @@ export default function MainLayout() {
        )}
 
       <main>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="w-full"
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
+        <Outlet />
       </main>
 
       <Footer />
