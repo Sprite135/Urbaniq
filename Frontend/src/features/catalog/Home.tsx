@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetHomeProductCardsQuery,
   useGetTopSellingProductsQuery,
@@ -39,6 +39,7 @@ const scrollRail = (railId: string, direction: 'left' | 'right') => {
 
 const Home: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [direction, setDirection] = useState(0);
 
   const { data: homeProductCards, isLoading: isHomeCardsLoading } = useGetHomeProductCardsQuery(HOME_PRODUCT_CARD_COUNT);
   const { data: topSellingProductsData, isLoading: isTopSellingLoading } = useGetTopSellingProductsQuery(10);
@@ -183,40 +184,49 @@ const Home: React.FC = () => {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]"
           >
-            <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]">
-              <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
-              <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
-                {currentSlide?.title}
-              </h1>
-              <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#6b7280] dark:text-[#9ca3af] md:mx-0">
-                {currentSlide?.copy}
-              </p>
-              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    to={currentSlide?.href || '/catalog'}
-                    className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSlide}
+                initial={{ opacity: 0, x: direction === 1 ? 50 : -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction === 1 ? -50 : 50 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]"
+              >
+                <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
+                <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
+                  {currentSlide?.title}
+                </h1>
+                <p className="mx-auto mt-4 sm:mt-5 max-w-xl text-sm sm:text-base md:text-lg font-medium leading-6 sm:leading-7 text-[#6b7280] dark:text-[#9ca3af] md:mx-0">
+                  {currentSlide?.copy}
+                </p>
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {currentSlide?.cta || 'Comprar ahora'}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    to="/catalog"
-                    className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
+                    <Link
+                      to={currentSlide?.href || '/catalog'}
+                      className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+                    >
+                      {currentSlide?.cta || 'Comprar ahora'}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Ver todos los productos
-                  </Link>
-                </motion.div>
-              </div>
-            </div>
+                    <Link
+                      to="/catalog"
+                      className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
+                    >
+                      Ver todos los productos
+                    </Link>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
 
           {heroSlides.length > 1 && (
@@ -224,7 +234,10 @@ const Home: React.FC = () => {
               <motion.button
                 type="button"
                 aria-label="Banner anterior"
-                onClick={() => setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length)}
+                onClick={() => {
+                  setDirection(-1);
+                  setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length);
+                }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300 }}
@@ -235,7 +248,10 @@ const Home: React.FC = () => {
               <motion.button
                 type="button"
                 aria-label="Banner siguiente"
-                onClick={() => setActiveSlide((current) => (current + 1) % heroSlides.length)}
+                onClick={() => {
+                  setDirection(1);
+                  setActiveSlide((current) => (current + 1) % heroSlides.length);
+                }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300 }}
@@ -249,7 +265,10 @@ const Home: React.FC = () => {
                     key={`${slide.title}-${index}`}
                     type="button"
                     aria-label={`Mostrar banner ${index + 1}`}
-                    onClick={() => setActiveSlide(index)}
+                    onClick={() => {
+                      setDirection(index > activeSlide ? 1 : -1);
+                      setActiveSlide(index);
+                    }}
                     className={`h-1.5 rounded-full transition-all ${activeSlide === index ? 'w-12 bg-[#d7b46a]' : 'w-8 bg-white/72'}`}
                   />
                 ))}
