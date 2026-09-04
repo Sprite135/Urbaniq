@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   useGetHomeProductCardsQuery,
   useGetTopSellingProductsQuery,
@@ -39,7 +39,6 @@ const scrollRail = (railId: string, direction: 'left' | 'right') => {
 
 const Home: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [direction, setDirection] = useState(0);
 
   const { data: homeProductCards, isLoading: isHomeCardsLoading } = useGetHomeProductCardsQuery(HOME_PRODUCT_CARD_COUNT);
   const { data: topSellingProductsData, isLoading: isTopSellingLoading } = useGetTopSellingProductsQuery(10);
@@ -150,34 +149,25 @@ const Home: React.FC = () => {
     <div className="bg-gradient-to-b from-white to-[#fdf3f5] dark:from-[#0e0f12] dark:to-[#150f12]">
       <section className="relative overflow-hidden bg-[#f9fafb] dark:bg-[#0b0d11]">
         <div className="relative min-h-[560px] md:min-h-[680px]">
-          <AnimatePresence mode="sync">
-            {currentSlide && (
-              <motion.div
-                key={`images-${activeSlide}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="absolute inset-0"
-              >
-                {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
-                <ProductImage
-                  src={currentSlide.image}
-                  alt=""
-                  fallbackLabel={currentSlide.title}
-                  aria-hidden="true"
-                  className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl"
-                />
-                {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
-                <ProductImage
-                  src={currentSlide.image}
-                  alt={currentSlide.title}
-                  fallbackLabel={currentSlide.title}
-                  className="absolute inset-0 h-full w-full object-cover object-center md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {currentSlide && (
+            <>
+              {/* Blurred background layer to maintain the ambient colors without stretching artifacts */}
+              <ProductImage
+                src={currentSlide.image}
+                alt=""
+                fallbackLabel={currentSlide.title}
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-3xl"
+              />
+              {/* Crisp foreground image: cover on mobile, contained on the right for desktop */}
+              <ProductImage
+                src={currentSlide.image}
+                alt={currentSlide.title}
+                fallbackLabel={currentSlide.title}
+                className="absolute inset-0 h-full w-full object-cover object-center md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
+              />
+            </>
+          )}
           {/* Tech decorative glows - slate/navy/amber */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-[#cbd5e1] opacity-40 blur-3xl dark:bg-[#1f2740] dark:opacity-30" />
@@ -188,15 +178,7 @@ const Home: React.FC = () => {
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white/95 to-transparent dark:from-[#0e0f12]/95" />
 
           <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">
-            <AnimatePresence mode="sync">
-              <motion.div
-                key={activeSlide}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]"
-              >
+            <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]">
                 <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
                 <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
                   {currentSlide?.title}
@@ -229,8 +211,7 @@ const Home: React.FC = () => {
                     </Link>
                   </motion.div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </div>
             </div>
 
           {heroSlides.length > 1 && (
@@ -238,10 +219,7 @@ const Home: React.FC = () => {
               <motion.button
                 type="button"
                 aria-label="Banner anterior"
-                onClick={() => {
-                  setDirection(-1);
-                  setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length);
-                }}
+                onClick={() => setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length)}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300 }}
@@ -252,10 +230,7 @@ const Home: React.FC = () => {
               <motion.button
                 type="button"
                 aria-label="Banner siguiente"
-                onClick={() => {
-                  setDirection(1);
-                  setActiveSlide((current) => (current + 1) % heroSlides.length);
-                }}
+                onClick={() => setActiveSlide((current) => (current + 1) % heroSlides.length)}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300 }}
@@ -269,10 +244,7 @@ const Home: React.FC = () => {
                     key={`${slide.title}-${index}`}
                     type="button"
                     aria-label={`Mostrar banner ${index + 1}`}
-                    onClick={() => {
-                      setDirection(index > activeSlide ? 1 : -1);
-                      setActiveSlide(index);
-                    }}
+                    onClick={() => setActiveSlide(index)}
                     className={`h-1.5 rounded-full transition-all ${activeSlide === index ? 'w-12 bg-[#d7b46a]' : 'w-8 bg-white/72'}`}
                   />
                 ))}
