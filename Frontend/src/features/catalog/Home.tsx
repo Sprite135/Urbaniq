@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag, Flame } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   useGetHomeProductCardsQuery,
   useGetTopSellingProductsQuery,
@@ -176,7 +177,12 @@ const Home: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/20 md:to-transparent dark:from-[#0e0f12]/95 dark:via-[#0e0f12]/80 dark:to-[#0e0f12]/30 md:dark:to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white/95 to-transparent dark:from-[#0e0f12]/95" />
 
-          <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]"
+          >
             <div className="mx-auto max-w-2xl px-4 text-center md:mx-0 md:px-0 md:text-left text-[#111827] dark:text-[#ece7dd]">
               <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.36em] text-[#9d731e]">{currentSlide?.eyebrow}</p>
               <h1 className="mt-4 sm:mt-5 text-4xl sm:text-5xl md:text-7xl font-black uppercase leading-[1.1] md:leading-[0.94] tracking-[0.04em]">
@@ -186,41 +192,57 @@ const Home: React.FC = () => {
                 {currentSlide?.copy}
               </p>
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start">
-                <Link
-                  to={currentSlide?.href || '/catalog'}
-                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  {currentSlide?.cta || 'Comprar ahora'}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  to="/catalog"
-                  className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
+                  <Link
+                    to={currentSlide?.href || '/catalog'}
+                    className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+                  >
+                    {currentSlide?.cta || 'Comprar ahora'}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  Ver todos los productos
-                </Link>
+                  <Link
+                    to="/catalog"
+                    className="inline-flex h-12 w-full sm:w-auto items-center justify-center border border-[#d1d5db] px-8 text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] transition-colors hover:bg-[#111827] hover:text-white"
+                  >
+                    Ver todos los productos
+                  </Link>
+                </motion.div>
               </div>
             </div>
           </div>
 
           {heroSlides.length > 1 && (
             <>
-              <button
+              <motion.button
                 type="button"
                 aria-label="Banner anterior"
                 onClick={() => setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 300 }}
                 className="absolute left-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
               >
                 <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
                 aria-label="Banner siguiente"
                 onClick={() => setActiveSlide((current) => (current + 1) % heroSlides.length)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 300 }}
                 className="absolute right-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
               >
                 <ChevronRight className="h-6 w-6" />
-              </button>
+              </motion.button>
               <div className="absolute bottom-7 left-1/2 flex -translate-x-1/2 items-center gap-3">
                 {heroSlides.map((slide, index) => (
                   <button

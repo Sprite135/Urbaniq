@@ -6,6 +6,7 @@ import { selectCartCount } from '../features/cart/cartSlice';
 import { selectCurrentUser, selectIsAuthenticated, logout } from '../features/auth/authSlice';
 import VerifyEmailPromptModal from '../features/auth/VerifyEmailPromptModal';
 import Footer from './Footer';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { useGetMeQuery } from '../features/auth/authApiSlice';
 import { catalogApiSlice, useSearchSuggestionsQuery, useGetCategoriesQuery, type Category } from '../features/catalog/catalogApiSlice';
@@ -453,7 +454,18 @@ export default function MainLayout() {
        )}
 
       <main>
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="w-full"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <Footer />
