@@ -23,6 +23,18 @@ jobs:
         with:
           dotnet-version: '8.x'
 
+      # --- NUEVO: Instalación de la herramienta de EF Core ---
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      # --- NUEVO: Aplicar migraciones directamente en Azure SQL ---
+      - name: Apply EF Core Migrations
+        run: |
+          dotnet ef database update \
+            --project Backend/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj \
+            --startup-project Backend/Ecommerce.Api/Ecommerce.Api.csproj \
+            --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
+
       - name: Build with dotnet
         run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release
 
