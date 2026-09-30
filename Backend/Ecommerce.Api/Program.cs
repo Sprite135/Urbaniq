@@ -473,10 +473,10 @@ else
 
 // Seeds the configured admin account (idempotent; reads AdminSettings). Skips if not configured.
 await DbSeeder.SeedAdminAsync(app.Services);
-if (app.Environment.IsDevelopment())
-{
-    await DbSeeder.SeedPcComponentsAsync(app.Services);
-}
+
+// Seed PC components - run in both development and production for Azure deployment
+// The seeder is idempotent and will not create duplicates
+await DbSeeder.SeedPcComponentsAsync(app.Services);
 
 app.Run();
 
