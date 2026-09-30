@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read # This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +23,15 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # --- NUEVO: Instalación de la herramienta de EF Core ---
+      # 1. Restaurar dependencias NuGet (soluciona el error NETSDK1004)
+      - name: Restore dependencies
+        run: dotnet restore Backend/Ecommerce.Api/Ecommerce.Api.csproj
+
+      # 2. Instalación de la herramienta CLI de EF Core
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef
 
-      # --- NUEVO: Aplicar migraciones directamente en Azure SQL ---
+      # 3. Aplicar migraciones directamente en Azure SQL
       - name: Apply EF Core Migrations
         run: |
           dotnet ef database update \
@@ -35,12 +39,15 @@ jobs:
             --startup-project Backend/Ecommerce.Api/Ecommerce.Api.csproj \
             --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
 
+      # 4. Compilar el proyecto de la API
       - name: Build with dotnet
-        run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release
+        run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release --no-restore
 
+      # 5. Publicar los binarios de la aplicación
       - name: dotnet publish
         run: dotnet publish Backend/Ecommerce.Api/Ecommerce.Api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
+      # 6. Subir el artefacto para el trabajo de despliegue
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
