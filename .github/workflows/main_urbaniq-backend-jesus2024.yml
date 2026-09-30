@@ -43,7 +43,7 @@ jobs:
 
       # 4. Compilar únicamente la API de Backend
       - name: Build with dotnet
-        run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release --no-restore
+        run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release --no-build --no-restore
 
       # 5. Publicar los binarios de la API
       - name: dotnet publish
