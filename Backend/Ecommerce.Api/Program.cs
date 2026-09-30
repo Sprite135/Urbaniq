@@ -467,11 +467,9 @@ else
 
 // ===================== Database Seeding =====================
 // Apply EF Core migrations to create/upgrade database schema
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<Ecommerce.Infrastructure.Data.AppDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
+// Note: Automatic migrations are disabled for this deployment.
+// For production deployment, run migrations manually using:
+// dotnet ef database update --project Backend/Ecommerce.Infrastructure --startup-project Backend/Ecommerce.Api
 
 // Seeds the configured admin account (idempotent; reads AdminSettings). Skips if not configured.
 await DbSeeder.SeedAdminAsync(app.Services);
