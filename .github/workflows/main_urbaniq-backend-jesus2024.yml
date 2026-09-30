@@ -23,9 +23,11 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # 1. Restaurar dependencias NuGet (soluciona el error NETSDK1004)
+      # 1. Restaurar dependencias del proyecto API e Infraestructura
       - name: Restore dependencies
-        run: dotnet restore Backend/Ecommerce.Api/Ecommerce.Api.csproj
+        run: |
+          dotnet restore Backend/Ecommerce.Api/Ecommerce.Api.csproj
+          dotnet restore Backend/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj
 
       # 2. Instalación de la herramienta CLI de EF Core
       - name: Install EF Core CLI
@@ -39,15 +41,15 @@ jobs:
             --startup-project Backend/Ecommerce.Api/Ecommerce.Api.csproj \
             --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
 
-      # 4. Compilar el proyecto de la API
+      # 4. Compilar únicamente la API de Backend
       - name: Build with dotnet
         run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release --no-restore
 
-      # 5. Publicar los binarios de la aplicación
+      # 5. Publicar los binarios de la API
       - name: dotnet publish
         run: dotnet publish Backend/Ecommerce.Api/Ecommerce.Api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
-      # 6. Subir el artefacto para el trabajo de despliegue
+      # 6. Subir el artefacto para el despliegue
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
