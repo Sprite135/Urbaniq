@@ -23,33 +23,12 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # 1. Restaurar dependencias ÚNICAMENTE de los proyectos necesarios
-      - name: Restore dependencies
-        run: |
-          dotnet restore Backend/Ecommerce.Api/Ecommerce.Api.csproj
-          dotnet restore Backend/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj
-
-      # 2. Instalación de la herramienta CLI de EF Core
-      - name: Install EF Core CLI
-        run: dotnet tool install --global dotnet-ef
-
-      # 3. Aplicar migraciones directamente en Azure SQL
-      - name: Apply EF Core Migrations
-        run: |
-          dotnet ef database update \
-            --project Backend/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj \
-            --startup-project Backend/Ecommerce.Api/Ecommerce.Api.csproj \
-            --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
-
-      # 4. Compilar únicamente la API (evita Ecommerce.sln para ignorar UnitTests con errores)
       - name: Build with dotnet
-        run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release --no-restore
+        run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release
 
-      # 5. Publicar los binarios de la API
       - name: dotnet publish
         run: dotnet publish Backend/Ecommerce.Api/Ecommerce.Api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
-      # 6. Subir el artefacto para el trabajo de despliegue
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
