@@ -1,11 +1,17 @@
 using AutoMapper;
 using Ecommerce.Application.DTOs.Orders;
 using Ecommerce.Application.Interfaces.Email;
+using Ecommerce.Application.Interfaces.Payment;
+using Ecommerce.Application.Interfaces.Coupons;
+using Ecommerce.Application.Interfaces.Notifications;
 using Ecommerce.Application.Services.Orders;
+using Ecommerce.Application.Common.Settings;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Enums;
 using Ecommerce.Domain.Interfaces;
 using FluentAssertions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using MockQueryable.Moq;
 using Moq;
 
@@ -27,6 +33,11 @@ public class OrderServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IEmailJobQueue> _emailJobQueueMock;
+    private readonly Mock<IPaymentGatewayService> _paymentGatewayMock;
+    private readonly Mock<IHostEnvironment> _environmentMock;
+    private readonly Mock<ICouponService> _couponServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly IOptions<ShippingSettings> _shippingOptions;
     private readonly OrderService _sut;
 
     public OrderServiceTests()
@@ -41,6 +52,11 @@ public class OrderServiceTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _mapperMock = new Mock<IMapper>();
         _emailJobQueueMock = new Mock<IEmailJobQueue>();
+        _paymentGatewayMock = new Mock<IPaymentGatewayService>();
+        _environmentMock = new Mock<IHostEnvironment>();
+        _couponServiceMock = new Mock<ICouponService>();
+        _notificationServiceMock = new Mock<INotificationService>();
+        _shippingOptions = Options.Create(new ShippingSettings());
 
         _sut = new OrderService(
             _orderRepoMock.Object,
@@ -52,7 +68,12 @@ public class OrderServiceTests
             _userRepoMock.Object,
             _unitOfWorkMock.Object,
             _mapperMock.Object,
-            _emailJobQueueMock.Object);
+            _emailJobQueueMock.Object,
+            _paymentGatewayMock.Object,
+            _environmentMock.Object,
+            _shippingOptions,
+            _couponServiceMock.Object,
+            _notificationServiceMock.Object);
     }
 
     private static Guid SetupUserId() => Guid.NewGuid();
@@ -131,7 +152,7 @@ public class OrderServiceTests
         var result = await _sut.CreateOrderAsync(userId, dto);
 
         // Assert
-        result.Should().BeTrue();
+        result.Should().NotBeEmpty();
         _orderRepoMock.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Once);
         _unitOfWorkMock.Verify(
             u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()),

@@ -1,6 +1,7 @@
 using AutoMapper;
 using Ecommerce.Application.DTOs.Category;
 using Ecommerce.Application.Services.Catalog;
+using Ecommerce.Application.Interfaces.Catalog;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Interfaces;
 using FluentAssertions;
@@ -21,6 +22,7 @@ public class CategoryServiceTests
     private readonly Mock<IRepository<Category>> _categoryRepoMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<ICloudImageService> _cloudImageServiceMock;
     private readonly CategoryService _sut;
 
     public CategoryServiceTests()
@@ -28,12 +30,14 @@ public class CategoryServiceTests
         _categoryRepoMock = new Mock<IRepository<Category>>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _mapperMock = new Mock<IMapper>();
+        _cloudImageServiceMock = new Mock<ICloudImageService>();
 
         _sut = new CategoryService(
             _categoryRepoMock.Object,
             _unitOfWorkMock.Object,
             _mapperMock.Object,
-            new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())));
+            new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())),
+            _cloudImageServiceMock.Object);
     }
 
     // ==================== CreateCategory Tests ====================

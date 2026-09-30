@@ -89,7 +89,7 @@ public class CartServiceTests
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         // Act
-        var result = await _sut.AddToCartAsync(userId, dto);
+        var result = await _sut.AddToCartAsync(userId, null, dto);
 
         // Assert
         result.Should().NotBeNull();
@@ -130,7 +130,7 @@ public class CartServiceTests
         var dto = new AddToCartRequestDto { ProductId = productId, ProductVariantId = variant.Id, Quantity = 3, DeliveryCode = "150106" };
 
         // Act
-        await _sut.AddToCartAsync(userId, dto);
+        await _sut.AddToCartAsync(userId, null, dto);
 
         // Assert — quantity should increase from 2 to 5
         existingItem.Quantity.Should().Be(5);
@@ -170,7 +170,7 @@ public class CartServiceTests
         var dto = new AddToCartRequestDto { ProductId = productId, ProductVariantId = variant.Id, Quantity = 5, DeliveryCode = "150106" };
 
         // Act
-        await _sut.AddToCartAsync(userId, dto);
+        await _sut.AddToCartAsync(userId, null, dto);
 
         // Assert — must not exceed MaxQuantity (10)
         existingItem.Quantity.Should().BeLessThanOrEqualTo(10);
@@ -183,7 +183,7 @@ public class CartServiceTests
         var dto = new AddToCartRequestDto { ProductId = Guid.NewGuid(), Quantity = 1 };
 
         // Act & Assert — Guid.Empty is invalid
-        var act = () => _sut.AddToCartAsync(Guid.Empty, dto);
+        var act = () => _sut.AddToCartAsync(Guid.Empty, null, dto);
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
@@ -196,7 +196,7 @@ public class CartServiceTests
         var dto = new AddToCartRequestDto { ProductId = Guid.NewGuid(), ProductVariantId = Guid.NewGuid(), Quantity = 1, DeliveryCode = "150106" };
 
         // Act & Assert
-        var act = () => _sut.AddToCartAsync(Guid.NewGuid(), dto);
+        var act = () => _sut.AddToCartAsync(Guid.NewGuid(), null, dto);
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("Product not found*");
     }
@@ -221,7 +221,7 @@ public class CartServiceTests
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         // Act
-        var result = await _sut.RemoveFromCartAsync(userId, cartItem.Id);
+        var result = await _sut.RemoveFromCartAsync(userId, null, cartItem.Id);
 
         // Assert
         result.Should().BeTrue();
@@ -236,7 +236,7 @@ public class CartServiceTests
         _cartRepoMock.Setup(r => r.Query()).Returns(emptyCarts);
 
         // Act
-        var result = await _sut.RemoveFromCartAsync(Guid.NewGuid(), Guid.NewGuid());
+        var result = await _sut.RemoveFromCartAsync(Guid.NewGuid(), null, Guid.NewGuid());
 
         // Assert
         result.Should().BeFalse();
@@ -270,7 +270,7 @@ public class CartServiceTests
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         // Act
-        var result = await _sut.IncreaseQuantityAsync(userId, cartItem.Id);
+        var result = await _sut.IncreaseQuantityAsync(userId, null, cartItem.Id);
 
         // Assert
         result.Should().BeTrue();
@@ -295,7 +295,7 @@ public class CartServiceTests
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         // Act
-        var result = await _sut.DecreaseQuantityAsync(userId, cartItem.Id);
+        var result = await _sut.DecreaseQuantityAsync(userId, null, cartItem.Id);
 
         // Assert — item at quantity 1 decreased by 1 should be removed
         result.Should().BeTrue();

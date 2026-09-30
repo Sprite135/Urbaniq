@@ -6,11 +6,14 @@ using Ecommerce.Application.Common.Settings;
 using Ecommerce.Application.DTOs.Identity;
 using Ecommerce.Application.Interfaces.Email;
 using Ecommerce.Application.Interfaces.Sms;
+using Ecommerce.Application.Interfaces.Cart;
+using Ecommerce.Application.Interfaces.Notifications;
 using Ecommerce.Application.Services.Identity;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Domain.Enums;
 using Ecommerce.Domain.Interfaces;
 using FluentAssertions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MockQueryable.Moq;
@@ -31,6 +34,9 @@ public class AuthServiceTests
     private readonly Mock<IEmailSender> _emailSenderMock;
     private readonly Mock<ISmsSender> _smsSenderMock;
     private readonly Mock<ILogger<AuthService>> _loggerMock;
+    private readonly Mock<IHostEnvironment> _environmentMock;
+    private readonly Mock<ICartService> _cartServiceMock;
+    private readonly Mock<INotificationService> _notificationServiceMock;
     private readonly IOptions<JwtSettings> _jwtOptions;
     private readonly IOptions<EmailSettings> _emailOptions;
     private readonly AuthService _sut; // System Under Test
@@ -44,6 +50,9 @@ public class AuthServiceTests
         _emailSenderMock = new Mock<IEmailSender>();
         _smsSenderMock = new Mock<ISmsSender>();
         _loggerMock = new Mock<ILogger<AuthService>>();
+        _environmentMock = new Mock<IHostEnvironment>();
+        _cartServiceMock = new Mock<ICartService>();
+        _notificationServiceMock = new Mock<INotificationService>();
 
         // Configure JWT settings for token generation tests
         _jwtOptions = Options.Create(new JwtSettings
@@ -72,7 +81,10 @@ public class AuthServiceTests
             _emailSenderMock.Object,
             _emailOptions,
             _smsSenderMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _environmentMock.Object,
+            _cartServiceMock.Object,
+            _notificationServiceMock.Object);
     }
 
     // ==================== Registration Tests ====================
