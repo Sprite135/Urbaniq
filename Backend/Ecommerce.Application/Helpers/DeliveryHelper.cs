@@ -12,7 +12,8 @@ namespace Ecommerce.Application.Helpers
 
         public static string ResolveZone(string? department, string? province)
         {
-            if (string.Equals(department?.Trim(), "Lima", StringComparison.OrdinalIgnoreCase) &&
+            if ((string.Equals(department?.Trim(), "Lima", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(department?.Trim(), "Callao", StringComparison.OrdinalIgnoreCase)) &&
                 (string.Equals(province?.Trim(), "Lima", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(province?.Trim(), "Callao", StringComparison.OrdinalIgnoreCase)))
             {
@@ -60,11 +61,11 @@ namespace Ecommerce.Application.Helpers
             if (zone == LimaMetropolitana)
             {
                 return requiresConfiguration
-                    ? "Entrega en Lima Metropolitana en 24-48 horas (requiere configuración/ensamblaje)."
-                    : "Entrega en Lima Metropolitana al día siguiente (24 horas), con flota propia.";
+                    ? "Coordinaremos la fecha de entrega en Lima Metropolitana y el tiempo de configuración o ensamblaje."
+                    : "Coordinaremos contigo la fecha de entrega en Lima Metropolitana.";
             }
 
-            return "Envío a provincia vía agencias Shalom/Marvisur/Olva (contra entrega, el cliente paga el envío en destino). Cobertura 92% del territorio nacional.";
+            return "Coordinaremos la agencia, el costo y el plazo de envío a provincia antes del despacho.";
         }
 
         public static bool IsLimaMetropolitana(string? zone) => zone == LimaMetropolitana;

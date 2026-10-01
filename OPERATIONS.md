@@ -37,6 +37,20 @@ Validar un pago de prueba, firma del webhook, importe/moneda, estado pagado y re
 
 Confirmar costos y plazos de envío, condiciones de devoluciones, datos del negocio y destinos reales de Yape/Plin/transferencia antes de publicar políticas definitivas.
 
+## Prioridad: Yape, Plin y seguimiento
+
+El propietario solicita cobros automáticos con Yape y Plin. El flujo actual de transferencia es manual: una referencia ingresada por el cliente no confirma el abono. No hay integración automática de billeteras activa ni una transacción real verificada.
+
+Izipay es la propuesta de pasarela pendiente de confirmar la afiliación del comercio. Su SDK web ofrece Yape, Plin Interbank y QR interoperable; las modalidades y límites deben habilitarse y verificarse con la cuenta contratada. Referencias oficiales:
+- https://developers.izipay.pe/value-table/
+- https://developers.izipay.pe/web-core/use-cases/pay/
+- https://developers.izipay.pe/credentials/
+- https://developers.izipay.pe/notifications/
+
+Pasos pendientes para automatizar: obtener cuenta de comercio y credenciales de integración; elegir el producto/API contratado; crear el pago desde el servidor con importe PEN calculado a partir del pedido; mostrar el checkout oficial; verificar la autenticidad de la notificación y el pedido, importe, moneda y resultado; confirmar una sola vez el pago y pasar el pedido a preparación. Los datos enviados por el navegador o una captura no deben marcar un pedido pagado. Probar éxito, rechazo, expiración, importe distinto y notificaciones repetidas en sandbox antes de activar producción. Las credenciales se guardan directamente en Azure.
+
+El tracker del cliente representa los estados del pedido, con consulta cada 30 segundos mientras la página está enfocada. No incorpora ubicación GPS ni guía de una agencia externa. El pago se muestra por separado. El checkout consulta `/api/v1/Payment/shipping-config` para utilizar las mismas tarifas que el servidor; los plazos comerciales deben confirmarse antes de prometer fechas de entrega.
+
 ## Incidentes y restauración
 
 1. Consultar `/health`, estado del App Service y Secuencia de registro.

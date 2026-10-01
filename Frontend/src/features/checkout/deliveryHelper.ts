@@ -35,7 +35,7 @@ export const PERU_DEPARTMENTS = [
 
 export const resolveZone = (department?: string | null, province?: string | null): DeliveryZone => {
   if (
-    department?.trim().toLowerCase() === 'lima' &&
+    ['lima', 'callao'].includes(department?.trim().toLowerCase() ?? '') &&
     (province?.trim().toLowerCase() === 'lima' || province?.trim().toLowerCase() === 'callao')
   ) {
     return DELIVERY_ZONES.LIMA_METROPOLITANA;
@@ -46,10 +46,10 @@ export const resolveZone = (department?: string | null, province?: string | null
 export const estimateText = (zone: DeliveryZone | undefined | null, requiresConfiguration = false): string => {
   if (zone === DELIVERY_ZONES.LIMA_METROPOLITANA) {
     return requiresConfiguration
-      ? 'Entrega en Lima Metropolitana en 24-48 horas (requiere configuración/ensamblaje).'
-      : 'Entrega en Lima Metropolitana al día siguiente (24 horas), con flota propia.';
+      ? 'Coordinaremos la fecha de entrega en Lima Metropolitana y el tiempo de configuración o ensamblaje.'
+      : 'Coordinaremos contigo la fecha de entrega en Lima Metropolitana.';
   }
-  return 'Envío a provincia vía agencias Shalom/Marvisur/Olva (contra entrega, pagas el envío en destino). Cobertura 92% del territorio nacional.';
+  return 'Coordinaremos la agencia, el costo y el plazo de envío a provincia antes del despacho.';
 };
 
 // Agencias de transporte para envíos a provincia (contra entrega).

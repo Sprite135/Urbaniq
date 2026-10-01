@@ -32,6 +32,12 @@ export interface PaymentConfigResponse {
   publishableKey: string;
 }
 
+export interface ShippingConfig {
+  limaMetropolitanaFee: number;
+  provinceFee: number;
+  freeShippingThreshold: number;
+}
+
 export interface MerchantOfflineMethod {
   phone: string;
   ownerName: string;
@@ -51,6 +57,9 @@ export interface UploadVoucherResponse {
 
 export const paymentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    getShippingConfig: builder.query<ShippingConfig, void>({
+      query: () => '/Payment/shipping-config',
+    }),
     /** Gets Stripe browser configuration from the backend to avoid frontend/backend key mismatch */
     getPaymentConfig: builder.query<PaymentConfigResponse, void>({
       query: () => '/Payment/config',
@@ -91,6 +100,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 });
 
 export const {
+  useGetShippingConfigQuery,
   useGetPaymentConfigQuery,
   useGetMerchantMethodsQuery,
   useUploadVoucherMutation,

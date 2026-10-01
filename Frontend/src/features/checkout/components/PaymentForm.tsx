@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, CreditCard, Lock, ShieldCheck, XCircle, Smartphone, QrCode, Building2, Wallet } from 'lucide-react';
-import { useCreatePaymentIntentMutation, useGetMerchantMethodsQuery, useGetPaymentConfigQuery, useVerifyPaymentMutation } from '../paymentApiSlice';
+import { useCreatePaymentIntentMutation, useGetMerchantMethodsQuery, useGetPaymentConfigQuery, useGetShippingConfigQuery, useVerifyPaymentMutation } from '../paymentApiSlice';
+import type { ShippingConfig } from '../paymentApiSlice';
 import { useAttachVoucherMutation, usePlaceOrderMutation } from '@/features/orders/orderApiSlice';
 import type { CartResponse } from '@/features/cart/cartApiSlice';
 import type { Address } from '../addressApiSlice';
@@ -11,6 +12,7 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 import ProductImage from '@/features/catalog/components/ProductImage';
 import { getApiErrorMessage } from '@/app/apiError';
 import { calculateShippingCost, PROVINCE_AGENCIES, resolveShippingProvider } from '../deliveryHelper';
+import { isMerchantPaymentConfigured } from '../merchantPayment';
 
 export interface OrderSuccessDetails {
   cart: CartResponse;
@@ -28,13 +30,14 @@ interface PaymentFormProps {
   onOrderSuccess: (details: OrderSuccessDetails) => void;
 }
 
-const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = ({
+const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shippingConfig: ShippingConfig }> = ({
   cart,
   addressId,
   address,
   onBack,
   onOrderSuccess,
   stripeEnabled = true,
+  shippingConfig,
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -84,7 +87,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
   const finalAmount = cart.finalAmount;
 
   const isProvince = address?.deliveryZone !== 'LimaMetropolitana';
-  const shippingCost = calculateShippingCost(address?.deliveryZone, finalAmount);
+  const shippingCost = calculateShippingCost(address?.deliveryZone, finalAmount, shippingConfig);
   const orderTotal = finalAmount + shippingCost;
   const shippingProvider = resolveShippingProvider(address?.deliveryZone, agency);
 
@@ -106,6 +109,11 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
     }
 
     const isCardPayment = paymentMethod === 'card';
+
+    if (['yape', 'plin'].includes(paymentMethod) && !isMerchantPaymentConfigured(activeMerchant)) {
+      toast.error('Este método aún no está habilitado. Elige otro método disponible.');
+      return;
+    }
 
     if (isCardPayment && !stripeEnabled) {
       toast.error('El pago con tarjeta no está disponible. Elige otro método de pago.');
@@ -306,7 +314,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
         <div className="border border-amber-200 bg-amber-50 p-4 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-800">Pago con tarjeta no disponible</p>
           <p className="mt-1 text-xs text-amber-700">
-            Puedes realizar tu pedido con pago contra entrega, Yape, Plin o transferencia.
+            Elige un método de pago habilitado para realizar tu pedido.
           </p>
         </div>
       )}
@@ -433,6 +441,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
                 type="radio"
                 name="payment"
                 checked={paymentMethod === 'yape'}
+                disabled={!isMerchantPaymentConfigured(merchantMethods?.yape)}
                 onChange={() => {
                   setPaymentMethod('yape');
                   setCardErrors({ number: null, expiry: null, cvc: null });
@@ -445,7 +454,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Yape</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Paga con la app Yape (BCP)</p>
+                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">{isMerchantPaymentConfigured(merchantMethods?.yape) ? 'Transferencia con verificación del comercio' : 'Pendiente de habilitación'}</p>
                 </div>
               </div>
             </label>
@@ -461,6 +470,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
                 type="radio"
                 name="payment"
                 checked={paymentMethod === 'plin'}
+                disabled={!isMerchantPaymentConfigured(merchantMethods?.plin)}
                 onChange={() => {
                   setPaymentMethod('plin');
                   setCardErrors({ number: null, expiry: null, cvc: null });
@@ -473,7 +483,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Plin</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Interbank, BBVA, Scotiabank y más</p>
+                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">{isMerchantPaymentConfigured(merchantMethods?.plin) ? 'Transferencia con verificación del comercio' : 'Pendiente de habilitación'}</p>
                 </div>
               </div>
             </label>
@@ -632,7 +642,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
             <span className="font-bold text-gray-900 dark:text-[#ece7dd]">
               S/ {orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            . Luego ingresa el <span className="font-bold text-gray-900 dark:text-[#ece7dd]">código de aprobación</span> de 6 dígitos para confirmar tu pedido.
+            . Tu pedido quedará pendiente hasta que el comercio verifique la recepción del dinero.
           </p>
           {activeMerchant.qrImageUrl && !qrBroken ? (
             <div className="mt-4 flex justify-center">
@@ -647,7 +657,6 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
           ) : (
             <p className="mt-4 rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
               El código QR no está disponible. Consulta los datos del comercio antes de realizar el pago.
-              Mientras tanto, escribe cualquier código de 6 dígitos para probar el flujo.
             </p>
           )}
           <div className="mt-4 text-center text-sm text-gray-600 dark:text-[#9a9388]">
@@ -669,7 +678,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
               className="w-full border border-gray-300 px-3 py-2.5 text-sm tracking-[0.3em] dark:bg-[#0e0f12] dark:border-[#26282e] dark:text-[#ece7dd]"
             />
             <p className="mt-1.5 text-xs text-gray-500 dark:text-[#9a9388]">
-              Lo encuentras en la pantalla de pago de tu app, tras transferir. El vendedor lo valida en su Yape.
+              Ingresa únicamente la referencia real de tu transferencia. Este dato no confirma automáticamente el cobro.
             </p>
           </div>
         </div>
@@ -796,6 +805,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
 const PaymentForm: React.FC<PaymentFormProps> = (props) => {
   const { data: paymentConfig, isLoading } = useGetPaymentConfigQuery();
+  const { data: shippingConfig, isLoading: shippingLoading, refetch: retryShipping } = useGetShippingConfigQuery();
   const publishableKey = paymentConfig?.publishableKey;
   const stripeEnabled = Boolean(publishableKey);
   const stripePromise = useMemo(
@@ -803,7 +813,7 @@ const PaymentForm: React.FC<PaymentFormProps> = (props) => {
     [publishableKey]
   );
 
-  if (isLoading) {
+  if (isLoading || shippingLoading) {
     return (
       <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-8 text-center">
         <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#111827] border-t-transparent" />
@@ -812,9 +822,18 @@ const PaymentForm: React.FC<PaymentFormProps> = (props) => {
     );
   }
 
+  if (!shippingConfig) {
+    return (
+      <div className="p-8 text-center" role="alert">
+        <p>No se pudieron consultar los costos de envío. Reintenta antes de pagar.</p>
+        <button type="button" onClick={() => retryShipping()} className="mt-4 underline">Reintentar</button>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutForm {...props} stripeEnabled={stripeEnabled} />
+      <CheckoutForm {...props} stripeEnabled={stripeEnabled} shippingConfig={shippingConfig} />
     </Elements>
   );
 };

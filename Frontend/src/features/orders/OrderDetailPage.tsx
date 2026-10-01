@@ -1,22 +1,25 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Package, CreditCard, CheckCircle, Circle, XCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCancelOrderMutation, useGetOrderByIdQuery } from './orderApiSlice';
 import ProductImage from '@/features/catalog/components/ProductImage';
 
-const trackingSteps = ['Pendiente', 'Procesando', 'Enviado', 'Entregado'];
+import { trackingSteps, getTrackingStepIndex, getOrderStatusLabel, getPaymentStatusLabel } from './orderTracking';
 
 const OrderDetailPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
-  const { data: order, isLoading, isError } = useGetOrderByIdQuery(orderId || '');
+  const { data: order, isLoading, isError } = useGetOrderByIdQuery(orderId || '', {
+    skip: !orderId,
+    pollingInterval: 30000,
+    skipPollingIfUnfocused: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
   const [reason, setReason] = useState('');
 
-  const activeStepIndex = useMemo(() => {
-    if (!order) return 0;
-    return Math.max(0, trackingSteps.findIndex((step) => step.toLowerCase() === order.orderStatus.toLowerCase()));
-  }, [order]);
+  const activeStepIndex = getTrackingStepIndex(order?.orderStatus ?? '');
 
   if (isLoading) {
     return (
@@ -42,9 +45,13 @@ const OrderDetailPage: React.FC = () => {
       toast.error('Agrega un motivo primero');
       return;
     }
-    await cancelOrder({ orderId: order.orderId, reason }).unwrap();
-    toast.success('Pedido cancelado');
-    setReason('');
+    try {
+      await cancelOrder({ orderId: order.orderId, reason }).unwrap();
+      toast.success('Pedido cancelado');
+      setReason('');
+    } catch {
+      toast.error('No se pudo cancelar el pedido. Actualiza para comprobar su estado e inténtalo de nuevo.');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -75,9 +82,9 @@ const OrderDetailPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <Package className="h-5 w-5" />
             <div>
-              <p className="text-sm font-black uppercase tracking-wider">{order.orderStatus}</p>
+              <p className="text-sm font-black uppercase tracking-wider">{getOrderStatusLabel(order.orderStatus)}</p>
               <p className="mt-0.5 text-xs opacity-80">
-                 Ordered on {new Date(order.orderDate).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}
+                 Pedido realizado el {new Date(order.orderDate).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>
@@ -95,29 +102,30 @@ const OrderDetailPage: React.FC = () => {
               {order.cancelledAtUtc && (
                 <p>
                    <span className="font-black text-gray-900 dark:text-[#ece7dd]">Cancelado el:</span>{' '}
-                  {new Date(order.cancelledAtUtc).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(order.cancelledAtUtc).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               )}
               {order.refundedAtUtc && (
                 <p>
                    <span className="font-black text-gray-900 dark:text-[#ece7dd]">Reembolsado el:</span>{' '}
-                  {new Date(order.refundedAtUtc).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(order.refundedAtUtc).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               )}
             </div>
           </div>
         )}
 
-        {!['cancelled', 'refunded'].includes(order.orderStatus.toLowerCase()) && (
+        {activeStepIndex >= 0 && (
           <div className="mb-4 border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
             <h3 className="mb-5 text-xs font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Seguimiento del pedido</h3>
+            <p className="mb-4 text-xs text-gray-500">El estado se actualiza cada 30 segundos mientras esta página está abierta.</p>
             <div className="grid gap-4 sm:grid-cols-4">
               {trackingSteps.map((step, index) => {
                 const isDone = index <= activeStepIndex;
                 return (
-                  <div key={step} className="flex items-center gap-2">
+                  <div key={step.status} className="flex items-center gap-2" aria-current={index === activeStepIndex ? 'step' : undefined}>
                     {isDone ? <CheckCircle className="h-5 w-5 text-[#9d731e]" /> : <Circle className="h-5 w-5 text-gray-300" />}
-                    <span className={`text-xs font-bold uppercase tracking-wider ${isDone ? 'text-gray-900 dark:text-[#ece7dd]' : 'text-gray-400'}`}>{step}</span>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isDone ? 'text-gray-900 dark:text-[#ece7dd]' : 'text-gray-400'}`}>{step.label}</span>
                   </div>
                 );
               })}
@@ -180,6 +188,10 @@ const OrderDetailPage: React.FC = () => {
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
+              <span className="text-gray-600 dark:text-[#9ca3af]">Estado del pago</span>
+              <span className="font-bold">{getPaymentStatusLabel(order.isPaid, order.orderStatus)}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-600 dark:text-[#9ca3af]">Método</span>
               <span className="font-medium uppercase text-gray-900 dark:text-[#ece7dd]">{order.paymentMethod}</span>
             </div>
@@ -188,7 +200,7 @@ const OrderDetailPage: React.FC = () => {
               <span className="text-xs font-medium text-gray-900 dark:text-[#ece7dd]">{order.transactionId}</span>
             </div>
             <div className="flex justify-between border-t border-gray-100 dark:border-[#26282e] pt-2 font-black text-gray-900 dark:text-[#ece7dd]">
-              <span>Total pagado</span>
+              <span>Total del pedido</span>
               <span>S/ {order.totalPrice.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>

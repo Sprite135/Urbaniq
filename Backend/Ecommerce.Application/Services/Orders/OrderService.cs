@@ -287,6 +287,8 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 return;
 
             order.IsPaid = true;
+            if (order.OrderStatus == OrderStatus.Pending)
+                order.OrderStatus = OrderStatus.Processing;
             _orderRepo.Update(order);
             await _unitOfWork.SaveChangesAsync();
         }

@@ -25,6 +25,7 @@ namespace Ecommerce.Api.Controllers.Payment
         private readonly MerchantPaymentSettings _merchantSettings;
         private readonly ILogger<PaymentController> _logger;
         private readonly IWebHostEnvironment _env;
+        private readonly ShippingSettings _shippingSettings;
 
         public PaymentController(
             IPaymentGatewayService paymentGatewayService,
@@ -32,7 +33,8 @@ namespace Ecommerce.Api.Controllers.Payment
             IOptions<StripeSettings> stripeSettings,
             IOptions<MerchantPaymentSettings> merchantSettings,
             ILogger<PaymentController> logger,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IOptions<ShippingSettings> shippingSettings)
         {
             _paymentGatewayService = paymentGatewayService;
             _orderService = orderService;
@@ -40,14 +42,19 @@ namespace Ecommerce.Api.Controllers.Payment
             _merchantSettings = merchantSettings.Value;
             _logger = logger;
             _env = env;
+            _shippingSettings = shippingSettings.Value;
         }
+
+        [HttpGet("shipping-config")]
+        [AllowAnonymous]
+        public IActionResult GetShippingConfig() => Ok(_shippingSettings);
 
         [HttpGet("config")]
         public IActionResult GetPaymentConfig()
         {
             // Return Stripe config if available, otherwise return empty config
             // This allows Yape/Plin to work without Stripe being configured
-            if (string.IsNullOrWhiteSpace(_stripeSettings.PublishableKey) ||
+            if (!_paymentGatewayService.IsConfigured || string.IsNullOrWhiteSpace(_stripeSettings.PublishableKey) ||
                 !_stripeSettings.PublishableKey.StartsWith("pk_", StringComparison.Ordinal))
             {
                 return Ok(new PaymentConfigResponseDto

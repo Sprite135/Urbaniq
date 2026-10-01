@@ -90,6 +90,35 @@ public class OrderServiceTests
 
     private static Guid SetupUserId() => Guid.NewGuid();
 
+    [Fact]
+    public async Task MarkOrderPaidAsync_AdvancesPendingOrderOnlyOnce()
+    {
+        var order = new Order { OrderId = Guid.NewGuid(), TransactionId = "confirmed-payment", OrderStatus = OrderStatus.Pending };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+
+        await _sut.MarkOrderPaidAsync("confirmed-payment");
+        await _sut.MarkOrderPaidAsync("confirmed-payment");
+
+        order.IsPaid.Should().BeTrue();
+        order.OrderStatus.Should().Be(OrderStatus.Processing);
+        _orderRepoMock.Verify(r => r.Update(order), Times.Once);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Shipped)]
+    [InlineData(OrderStatus.Cancelled)]
+    public async Task MarkOrderPaidAsync_DoesNotRegressExistingDeliveryStatus(OrderStatus status)
+    {
+        var order = new Order { OrderId = Guid.NewGuid(), TransactionId = "confirmed-payment", OrderStatus = status };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+
+        await _sut.MarkOrderPaidAsync("confirmed-payment");
+
+        order.IsPaid.Should().BeTrue();
+        order.OrderStatus.Should().Be(status);
+    }
+
     /// <summary>
     /// Creates a full test scenario with user, address, cart, and products ready for ordering.
     /// </summary>
