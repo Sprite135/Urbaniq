@@ -16,7 +16,6 @@ import ProductImage from '@/features/catalog/components/ProductImage';
 import { useValidateCouponMutation } from '@/features/orders/orderApiSlice';
 import { selectCurrentUser } from '@/features/auth/authSlice';
 import AvailableCoupons from '@/features/coupons/AvailableCoupons';
-import CouponHistory from '@/features/coupons/CouponHistory';
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,9 +42,9 @@ const CartPage: React.FC = () => {
     setCouponValidating(true);
     setCouponError(null);
     try {
-      const cartItems = isServerCart ? activeServerCart.items : localItems;
-      const categoryIds = cartItems.map(item => item.productId).slice(0, 20); // approximate
-      const productIds = cartItems.map(item => item.productId);
+      const productIds = isServerCart
+        ? activeServerCart.items.map(item => item.productId)
+        : localItems.map(item => item.id);
       const cartTotal = isServerCart ? activeServerCart.finalAmount : localTotal;
       
       const result = await validateCoupon({
@@ -65,7 +64,7 @@ const CartPage: React.FC = () => {
         setAppliedCoupon(null);
       }
     } catch (error: unknown) {
-      setCouponError('Error al validar el cupón');
+      setCouponError(getApiErrorMessage(error, 'Error al validar el cupón'));
       setAppliedCoupon(null);
     } finally {
       setCouponValidating(false);
@@ -106,7 +105,6 @@ const CartPage: React.FC = () => {
         quantity: item.cartQuantity,
       }));
 
-  const totalAmount = isServerCart ? activeServerCart.finalAmount : localTotal;
   const totalItems = isServerCart
     ? activeServerCart.items.reduce((sum, item) => sum + item.quantity, 0)
     : localCount;
@@ -201,7 +199,7 @@ const CartPage: React.FC = () => {
                     src={item.image || '/product-images/placeholder.svg'}
                     alt={item.name}
                     fallbackLabel={item.name}
-                    className="h-32 w-24 bg-gray-50 dark:bg-[#0e0f12] object-cover sm:h-36 sm:w-28"
+                    className="h-24 w-24 bg-white object-contain sm:h-28 sm:w-28"
                   />
                 </Link>
 
@@ -212,9 +210,9 @@ const CartPage: React.FC = () => {
                     </h3>
                   </Link>
                   <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-[#9a9388]">
-                    <span>Color: <strong className="text-gray-700">{item.color}</strong></span>
+                    {item.color && item.color.toLowerCase() !== 'default' && <span>Color: <strong className="text-gray-700 dark:text-[#ece7dd]">{item.color}</strong></span>}
                     {item.size && item.size !== 'Unico' && (
-                      <span>Versión: <strong className="text-gray-700">{item.size}</strong></span>
+                      <span>Versión: <strong className="text-gray-700 dark:text-[#ece7dd]">{item.size.toLowerCase() === 'standard' ? 'Estándar' : item.size}</strong></span>
                     )}
                   </div>
 

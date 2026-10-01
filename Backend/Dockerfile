@@ -24,6 +24,7 @@ RUN dotnet publish "Ecommerce.Api.csproj" -c Release -o /app/publish /p:UseAppHo
 
 # Use the official .NET 8 runtime as final image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443

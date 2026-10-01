@@ -16,12 +16,6 @@ const ProductImage: React.FC<ProductImageProps> = ({
 }) => {
   const [hasError, setHasError] = useState(!src);
 
-  // Use relative URLs when frontend is compiled (served by backend)
-  // Use absolute URLs when running in dev mode with separate Vite server
-  const absoluteSrc = src && (src.startsWith('http://') || src.startsWith('https://'))
-    ? src
-    : src; // Keep relative URLs for production (served by backend)
-
   useEffect(() => {
     setHasError(!src);
   }, [src]);
@@ -43,7 +37,7 @@ const ProductImage: React.FC<ProductImageProps> = ({
   return (
     <img
       {...imageProps}
-      src={absoluteSrc}
+      src={src}
       alt={alt}
       className={className}
       onError={(event) => {

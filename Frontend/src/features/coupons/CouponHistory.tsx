@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGetUserCouponHistoryQuery } from './couponApiSlice';
-import { Tag, Calendar, DollarSign, X } from 'lucide-react';
+import { Tag, Calendar, DollarSign } from 'lucide-react';
 
 const CouponHistory: React.FC = () => {
   const { data: couponHistory, isLoading } = useGetUserCouponHistoryQuery();

@@ -226,7 +226,7 @@ export const catalogApiSlice = apiSlice.injectEndpoints({
         url: `/Reviews/product/${productId}`,
         params,
       }),
-      providesTags: (result, error, { productId }) => [{ type: 'Review', id: productId }],
+      providesTags: (_result, _error, { productId }) => [{ type: 'Review', id: productId }],
     }),
 
     createReview: builder.mutation<ReviewResponseDto, { productId: string; rating: number; title: string; comment: string }>({
@@ -235,7 +235,7 @@ export const catalogApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (result, error, { productId }) => [{ type: 'Review', id: productId }],
+      invalidatesTags: (_result, _error, { productId }) => [{ type: 'Review', id: productId }],
     }),
 
     // Lightweight search suggestions — debounced autocomplete dropdown

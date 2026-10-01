@@ -42,7 +42,7 @@ namespace Ecommerce.Infrastructure.Services
             try
             {
                 // Stripe expects amounts in the smallest currency unit (e.g., cents or paise)
-                long amountInSmallestUnit = (long)(amount * 100);
+                long amountInSmallestUnit = (long)decimal.Round(amount * 100, 0, MidpointRounding.AwayFromZero);
 
                 var options = new PaymentIntentCreateOptions
                 {
@@ -112,7 +112,9 @@ namespace Ecommerce.Infrastructure.Services
                         Data = new PaymentVerificationResponseDto
                         {
                             Status = intent.Status,
-                            IsSuccessful = true
+                            IsSuccessful = true,
+                            AmountReceived = intent.AmountReceived,
+                            Currency = intent.Currency
                         }
                     };
                 }

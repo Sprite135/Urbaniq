@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { 
   useForgotPasswordMutation, 
   useVerifyOtpMutation, 
@@ -10,9 +10,12 @@ import { toast } from 'react-toastify';
 type Step = 'EMAIL' | 'OTP' | 'PASSWORD';
 
 const ForgotPasswordPage: React.FC = () => {
-  const [step, setStep] = useState<Step>('EMAIL');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialEmail = searchParams.get('email') ?? '';
+  const initialCode = searchParams.get('code') ?? '';
+  const [step, setStep] = useState<Step>(initialEmail && /^\d{6}$/.test(initialCode) ? 'OTP' : 'EMAIL');
+  const [email, setEmail] = useState(initialEmail);
+  const [code, setCode] = useState(initialCode);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   

@@ -1,5 +1,6 @@
 using Ecommerce.Application.Interfaces.Catalog;
 using Ecommerce.Application.Interfaces.Payment;
+using Ecommerce.Application.Interfaces.Notifications;
 using Ecommerce.Application.DTOs.Payment;
 using Ecommerce.Domain.Common;
 using Ecommerce.Infrastructure.Data;
@@ -23,6 +24,15 @@ public class CustomWebAppFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"EcommerceTestDb_{Guid.NewGuid():N}";
 
+    public async Task VerifyEmailAsync(string email)
+    {
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = await context.Users.SingleAsync(u => u.Email == email);
+        user.IsEmailVerified = true;
+        await context.SaveChangesAsync();
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureAppConfiguration((_, configurationBuilder) =>
@@ -39,6 +49,9 @@ public class CustomWebAppFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            var notifications = services.SingleOrDefault(d => d.ServiceType == typeof(INotificationService));
+            if (notifications != null) services.Remove(notifications);
+            services.AddScoped(_ => Mock.Of<INotificationService>());
             // ===== Remove the real SQL Server DbContext registration =====
             var dbDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
@@ -55,6 +68,8 @@ public class CustomWebAppFactory : WebApplicationFactory<Program>
                 // Reuse one in-memory store per factory instance so multi-request
                 // scenarios (register -> login, duplicate checks) share state.
                 options.UseInMemoryDatabase(_databaseName);
+                // InMemory has no transaction support; SQL Server retains real transactions.
+                options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
             });
 
             // ===== Mock Cloudinary — returns a fake image URL instead of uploading =====

@@ -472,6 +472,13 @@ else
 // dotnet ef database update --project Backend/Ecommerce.Infrastructure --startup-project Backend/Ecommerce.Api
 
 // Seeds the configured admin account (idempotent; reads AdminSettings). Skips if not configured.
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.MigrateAsync(db.Database);
+}
+
 await DbSeeder.SeedAdminAsync(app.Services);
 
 // Seed PC components - run in both development and production for Azure deployment

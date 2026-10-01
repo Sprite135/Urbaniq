@@ -31,7 +31,7 @@ interface AddToCartRequest {
   productId: string;
   productVariantId: string;
   quantity: number;
-  deliveryCode: string;
+  deliveryCode?: string;
 }
 
 export const cartApiSlice = apiSlice.injectEndpoints({

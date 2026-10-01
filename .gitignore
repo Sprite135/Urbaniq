@@ -361,11 +361,19 @@ MigrationBackup/
 
 # Local development secrets (never commit)
 **/appsettings.Development.json
+**/appsettings.LocalDb.json
 # Docker compose local secrets (root .env)
 /.env
+/.env.local
+/.env.production
 # Frontend local secrets (repo tracks Frontend/ on feature branches)
 Frontend/.env
 Frontend/.env.*
+# Production secrets
+*.pfx
+*.pem
+*.key
+secrets/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd

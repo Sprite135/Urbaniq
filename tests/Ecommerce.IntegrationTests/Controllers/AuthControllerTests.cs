@@ -13,10 +13,12 @@ namespace Ecommerce.IntegrationTests.Controllers;
 public class AuthControllerTests : IClassFixture<CustomWebAppFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebAppFactory _factory;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public AuthControllerTests(CustomWebAppFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -71,6 +73,7 @@ public class AuthControllerTests : IClassFixture<CustomWebAppFactory>
             name = "Login User", email, password = "Password123!"
         });
 
+        await _factory.VerifyEmailAsync(email);
         // Act — login with the same credentials
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/Auth/login", new
         {
@@ -108,10 +111,35 @@ public class AuthControllerTests : IClassFixture<CustomWebAppFactory>
     // ==================== Authorization Tests ====================
 
     [Fact]
+    public async Task Login_UnverifiedEmail_Returns401()
+    {
+        var email = $"unverified_{Guid.NewGuid():N}@gmail.com";
+        await _client.PostAsJsonAsync("/api/v1/Auth/register", new
+        {
+            name = "Unverified User", email, password = "Password123!"
+        });
+        var response = await _client.PostAsJsonAsync("/api/v1/Auth/login", new
+        {
+            email, password = "Password123!"
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task PlaceOrder_NoToken_Returns401()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/Order/place-order", new
+        {
+            addressId = Guid.NewGuid(), transactionId = "anonymous", paymentMethod = "cod"
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task ProtectedEndpoint_NoToken_Returns401()
     {
         // Act — call a protected endpoint without any JWT token
-        var response = await _client.GetAsync("/api/v1/Cart");
+        var response = await _client.GetAsync("/api/v1/Order/user-orders");
 
         // Assert — must be rejected with 401 Unauthorized
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

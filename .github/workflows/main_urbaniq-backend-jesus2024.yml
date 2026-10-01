@@ -18,6 +18,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Test and build frontend
+        working-directory: Frontend
+        env:
+          VITE_API_BASE_URL: /api/v1
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
+        run: |
+          npm ci
+          npm test
+          npm run build:check
+
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
@@ -26,8 +43,18 @@ jobs:
       - name: Build with dotnet
         run: dotnet build Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release
 
+      - name: Test backend
+        run: |
+          dotnet test tests/Ecommerce.UnitTests/Ecommerce.UnitTests.csproj --configuration Release
+          dotnet test tests/Ecommerce.IntegrationTests/Ecommerce.IntegrationTests.csproj --configuration Release
+
       - name: dotnet publish
         run: dotnet publish Backend/Ecommerce.Api/Ecommerce.Api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+
+      - name: Include frontend in Azure package
+        run: |
+          cp -a Frontend/dist/. "${{env.DOTNET_ROOT}}/myapp/wwwroot/"
+          rm -f "${{env.DOTNET_ROOT}}/myapp/appsettings.Development.json" "${{env.DOTNET_ROOT}}/myapp/appsettings.LocalDb.json"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -38,13 +65,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -53,3 +80,9 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3E70F87F4DFF45DC81063B14AE98AB0D }}
+
+      - name: Check deployed API
+        run: >-
+          curl --fail --show-error --silent
+          --retry 12 --retry-delay 10 --retry-all-errors --max-time 30
+          https://urbaniq-backend-jesus2024-b0d6huewaubghcg7.brazilsouth-01.azurewebsites.net/health

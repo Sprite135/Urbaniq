@@ -86,6 +86,7 @@ namespace Ecommerce.Application.Services.Cart
 
         public async Task<CartResponseDto> AddToCartAsync(Guid? userId, string? sessionId, AddToCartRequestDto dto)
         {
+            if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId));
             if (!userId.HasValue && string.IsNullOrEmpty(sessionId))
                 throw new ArgumentException("Either userId or sessionId must be provided");
 

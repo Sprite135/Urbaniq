@@ -164,7 +164,7 @@ namespace Ecommerce.Application.Services.Notifications
             <div class='warning'>
                 <p><strong>⚠️ Importante:</strong></p>
                 <ul>
-                    <li>Este enlace expira en 1 hora</li>
+                    <li>Este enlace expira en 15 minutos</li>
                     <li>Si no solicitaste este cambio, ignora este email</li>
                     <li>No compartas este enlace con nadie</li>
                 </ul>

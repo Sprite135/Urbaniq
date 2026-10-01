@@ -1,7 +1,9 @@
 try {
   document.documentElement.classList.add('dark');
   localStorage.setItem('theme', 'dark');
-} catch {}
+} catch {
+  // Storage may be unavailable in private browsing.
+}
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

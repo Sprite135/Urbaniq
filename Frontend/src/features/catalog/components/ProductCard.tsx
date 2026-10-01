@@ -81,7 +81,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         onTouchStart={prefetchProductDetail}
         className="block cursor-pointer"
       >
-          <div className="relative aspect-[3/4] overflow-hidden bg-[#f3f4f6] dark:bg-[#1a1c21]">
+          <div className="relative aspect-square overflow-hidden bg-white">
           <ProductImage
             src={cardImage}
             srcSet={isCloudinary
@@ -92,7 +92,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             fallbackLabel={product.productName}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-110"
+            className="h-full w-full object-contain object-center transition-transform duration-700 ease-out group-hover:scale-105"
           />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#111827]/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-[#0b0d11]/50" />
@@ -138,7 +138,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="px-5 py-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#9d731e]">Urbaniq</p>
-            {product.color && <span className="text-[11px] font-semibold text-[#6b7280] dark:text-[#8a8478]">{product.color}</span>}
+            {product.color && product.color.toLowerCase() !== 'default' && <span className="text-[11px] font-semibold text-[#6b7280] dark:text-[#8a8478]">{product.color}</span>}
           </div>
           <h3 className="mt-2 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-[#111827] dark:text-[#ece7dd] transition-colors group-hover:text-[#9d731e]">
             {product.productName}

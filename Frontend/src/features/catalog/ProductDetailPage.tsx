@@ -226,7 +226,7 @@ const ProductDetailPage: React.FC = () => {
       setReviewComment('');
       setReviewRating(5);
     } catch (error: unknown) {
-      toast.error('No se pudo enviar la reseña. Intenta de nuevo.');
+      toast.error(getApiErrorMessage(error, 'No se pudo enviar la reseña. Intenta de nuevo.'));
     } finally {
       setReviewSubmitting(false);
     }
@@ -261,7 +261,7 @@ const ProductDetailPage: React.FC = () => {
         <nav className="mb-7 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a8174]">
           <Link to="/" className="hover:text-[#9d731e]">Inicio</Link>
           <span>/</span>
-          <Link to="/catalog" className="hover:text-[#9d731e]">Colección</Link>
+          <Link to="/catalog" className="hover:text-[#9d731e]">Catálogo</Link>
           <span>/</span>
           <span className="text-[#111827] dark:text-[#ece7dd]">{product.productName}</span>
         </nav>
@@ -273,21 +273,22 @@ const ProductDetailPage: React.FC = () => {
                 <button
                   key={`${image}-${index}`}
                   type="button"
+                  aria-label={`Ver imagen ${index + 1} de ${product.productName}`}
                   onClick={() => setSelectedImage(image)}
-                  className={`aspect-[3/4] overflow-hidden border bg-white dark:bg-[#16181d] ${
+                  className={`aspect-square overflow-hidden border bg-white dark:bg-[#16181d] ${
                     selectedGalleryImage === image ? 'border-[#111827]' : 'border-[#e5e7eb] dark:border-[#26282e]'
                   }`}
                 >
-                  <ProductImage src={image} alt="" fallbackLabel={product.productName} className="h-full w-full object-cover" />
+                  <ProductImage src={image} alt="" fallbackLabel={product.productName} className="h-full w-full object-contain" />
                 </button>
               ))}
             </div>
-            <div className="relative aspect-[3/4] overflow-hidden bg-[#f3f4f6] dark:bg-[#1a1c21]">
+            <div className="relative aspect-square overflow-hidden bg-white">
               <ProductImage
                 src={selectedGalleryImage}
                 alt={product.productName}
                 fallbackLabel={product.productName}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
               {discountPercent > 0 && (
                 <span className="absolute left-4 top-4 bg-[#d7b46a] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#111827] dark:text-[#ece7dd]">
@@ -317,7 +318,7 @@ const ProductDetailPage: React.FC = () => {
               <p className="mt-2 text-xs font-medium text-[#6b7280] dark:text-[#9a9388]">Precio incluye IGV</p>
             </div>
 
-            <div ref={colorSectionRef} className="mt-6">
+            {!(colorOptions.length === 1 && colorOptions[0].toLowerCase() === 'default') && <div ref={colorSectionRef} className="mt-6">
               <h2 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#111827] dark:text-[#ece7dd]">Selecciona el color</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {colorOptions.map((color) => (
@@ -336,13 +337,12 @@ const ProductDetailPage: React.FC = () => {
                         : 'border-[#d1d5db] dark:border-[#33363d] bg-white dark:bg-[#16181d] text-[#111827] dark:text-[#ece7dd] hover:border-[#9d731e]'
                     }`}
                   >
-                    {color}
+                    {color.toLowerCase() === 'default' ? 'Estándar' : color}
                   </button>
                 ))}
               </div>
               {fieldErrors.color && <p className="mt-2 text-sm font-medium text-red-600">{fieldErrors.color}</p>}
-            </div>
-
+            </div>}
             {sizeOptions.length > 1 && (
             <div ref={sizeSectionRef} className="mt-7">
               <div className="mb-3 flex items-center justify-between">
@@ -468,7 +468,7 @@ const ProductDetailPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between gap-4 bg-white dark:bg-[#0e0f12] p-4">
                     <dt className="text-[#6b7280] dark:text-[#8a8478]">Colores</dt>
-                  <dd className="font-semibold text-[#111827] dark:text-[#ece7dd]">{colorOptions.join(', ')}</dd>
+                  <dd className="font-semibold text-[#111827] dark:text-[#ece7dd]">{colorOptions.map(color => color.toLowerCase() === 'default' ? 'Estándar' : color).join(', ')}</dd>
                 </div>
               </dl>
             </div>
@@ -479,8 +479,8 @@ const ProductDetailPage: React.FC = () => {
           <section className="mt-16 border-t border-[#e5e7eb] dark:border-[#26282e] pt-12">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-[#9d731e]">Completa el look</p>
-                <h2 className="mt-3 text-2xl font-black uppercase tracking-[0.08em] text-[#111827] dark:text-[#ece7dd]">Estilos similares</h2>
+                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-[#9d731e]">Explora más tecnología</p>
+                <h2 className="mt-3 text-2xl font-black uppercase tracking-[0.08em] text-[#111827] dark:text-[#ece7dd]">Productos relacionados</h2>
               </div>
               <Link to="/catalog" className="text-[11px] font-black uppercase tracking-[0.22em] text-[#111827] dark:text-[#ece7dd] luxury-link">
                 Ver todo

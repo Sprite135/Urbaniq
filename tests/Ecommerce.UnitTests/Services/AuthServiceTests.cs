@@ -51,6 +51,7 @@ public class AuthServiceTests
         _smsSenderMock = new Mock<ISmsSender>();
         _loggerMock = new Mock<ILogger<AuthService>>();
         _environmentMock = new Mock<IHostEnvironment>();
+        _environmentMock.SetupGet(e => e.EnvironmentName).Returns(Environments.Development);
         _cartServiceMock = new Mock<ICartService>();
         _notificationServiceMock = new Mock<INotificationService>();
 
@@ -348,8 +349,8 @@ public class AuthServiceTests
 
         await _sut.ForgotPasswordAsync(new ForgotPasswordRequestDto { Email = "missing@test.com" });
 
-        _emailSenderMock.Verify(
-            e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
+        _notificationServiceMock.Verify(
+            e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
             Times.Never);
     }
 
@@ -366,14 +367,15 @@ public class AuthServiceTests
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         string? emailBody = null;
-        _emailSenderMock
-            .Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        _notificationServiceMock
+            .Setup(e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Callback<string, string, string>((_, _, body) => emailBody = body)
             .Returns(Task.CompletedTask);
 
         await _sut.ForgotPasswordAsync(new ForgotPasswordRequestDto { Email = "jane@test.com" });
 
         emailBody.Should().NotBeNullOrWhiteSpace();
+        emailBody.Should().StartWith("https://test.local/forgot-password?email=jane%40test.com&code=");
         var otp = Regex.Match(emailBody!, @"\b(\d{6})\b").Groups[1].Value;
         otp.Should().MatchRegex(@"^\d{6}$");
         user.PasswordResetTokenHash.Should().Be(ComputeSha256Hash(otp));

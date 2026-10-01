@@ -1,4 +1,5 @@
 import { apiSlice } from '@/app/apiSlice';
+import type { DeliveryZone } from './deliveryHelper';
 
 // === Address DTOs ===
 
@@ -10,7 +11,7 @@ export interface Address {
   department?: string | null;
   province?: string | null;
   district?: string | null;
-  deliveryZone?: string | null;
+  deliveryZone?: DeliveryZone | null;
   houseName: string;
   place: string;
   reference: string;
@@ -24,7 +25,7 @@ export interface CreateAddressRequest {
   department?: string | null;
   province?: string | null;
   district?: string | null;
-  deliveryZone?: string | null;
+  deliveryZone?: DeliveryZone | null;
   houseName: string;
   place: string;
   reference: string;

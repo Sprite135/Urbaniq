@@ -1,4 +1,5 @@
 import { apiSlice } from '@/app/apiSlice';
+import type { Address } from '@/features/checkout/addressApiSlice';
 
 // === Coupon DTOs ===
 export interface ValidateCouponRequest {
@@ -40,16 +41,7 @@ export interface Order {
   cancellationReason?: string;
   cancelledAtUtc?: string;
   refundedAtUtc?: string;
-  address: {
-    addressId: string;
-    fullName: string;
-    phoneNumber: string;
-    postalCode: string;
-    houseName: string;
-    place: string;
-    reference: string;
-    landMark: string;
-  };
+  address: Address;
   orderItems: OrderItem[];
   isPaid?: boolean;
   paymentReceiptUrl?: string;
@@ -64,6 +56,7 @@ export interface CreateOrderRequest {
   ruc?: string;
   razonSocial?: string;
   fiscalAddress?: string;
+  shippingProvider?: string;
   couponCode?: string;
 }
 

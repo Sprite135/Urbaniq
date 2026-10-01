@@ -14,12 +14,12 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'https://localhost:44320',
+        target: 'http://localhost:5215',
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'https://localhost:44320',
+        target: 'http://localhost:5215',
         changeOrigin: true,
         secure: false,
       },

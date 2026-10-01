@@ -7,6 +7,7 @@ import MainLayout from './layouts/MainLayout';
 
 // Lazy load components for code splitting
 const Home = lazy(() => import('./features/catalog/Home'));
+const HelpPage = lazy(() => import('./features/support/HelpPage'));
 const ProductListPage = lazy(() => import('./features/catalog/ProductListPage'));
 const ProductDetailPage = lazy(() => import('./features/catalog/ProductDetailPage'));
 const CartPage = lazy(() => import('./features/cart/CartPage'));
@@ -55,6 +56,7 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="catalog" element={<ProductListPage />} />
+            <Route path="help" element={<HelpPage />} />
             <Route path="product/:slug" element={<ProductDetailPage />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="login" element={<LoginPage />} />

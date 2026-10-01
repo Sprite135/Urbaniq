@@ -25,6 +25,7 @@ namespace Ecommerce.Api.Controllers.Orders
         private bool IsAdmin() => User.IsInRole("Admin");
 
         [HttpPost("place-order")]
+        [Authorize(Roles = "User")]
         public async Task<IActionResult> PlaceOrder([FromBody] CreateOrderRequestDto dto)
         {
             var userId = GetUserId();
@@ -35,6 +36,7 @@ namespace Ecommerce.Api.Controllers.Orders
         }
 
         [HttpGet("validate-delivery/{addressId:guid}")]
+        [Authorize(Roles = "User")]
         public async Task<IActionResult> ValidateDelivery(Guid addressId)
         {
             var userId = GetUserId();

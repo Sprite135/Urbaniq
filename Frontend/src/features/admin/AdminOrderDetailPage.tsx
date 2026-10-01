@@ -46,6 +46,7 @@ const AdminOrderDetailPage: React.FC = () => {
   const [markPaid, { isLoading: isMarkingPaid }] = useMarkOrderPaidMutation();
 
   const handleMarkPaid = async () => {
+    if (!order) return;
     try {
       await markPaid(order.orderId).unwrap();
       toast.success('Pedido marcado como pagado');

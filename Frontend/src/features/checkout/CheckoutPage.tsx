@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Package, CreditCard, Check, Edit2, Trash2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { useGetCartQuery } from '@/features/cart/cartApiSlice';
 import { useGetAddressesQuery, useDeleteAddressMutation } from './addressApiSlice';
@@ -13,7 +12,6 @@ import PaymentForm from './components/PaymentForm';
 import OrderSuccessScreen from './components/OrderSuccessScreen';
 import type { OrderSuccessDetails } from './components/PaymentForm';
 import { useLazyValidateDeliveryQuery } from '@/features/orders/orderApiSlice';
-import type { RootState } from '@/app/store';
 
 type Step = 'address' | 'summary' | 'payment';
 
@@ -25,7 +23,6 @@ const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const token = useSelector((state: RootState) => state.auth.token);
   const [currentStep, setCurrentStep] = useState<Step>('address');
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);

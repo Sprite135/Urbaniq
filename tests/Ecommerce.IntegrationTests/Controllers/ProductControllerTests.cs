@@ -14,10 +14,12 @@ namespace Ecommerce.IntegrationTests.Controllers;
 public class ProductControllerTests : IClassFixture<CustomWebAppFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebAppFactory _factory;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public ProductControllerTests(CustomWebAppFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -36,6 +38,7 @@ public class ProductControllerTests : IClassFixture<CustomWebAppFactory>
             password = "Password123!"
         });
 
+        await _factory.VerifyEmailAsync(email);
         // Login
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/Auth/login", new
         {

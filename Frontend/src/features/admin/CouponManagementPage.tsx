@@ -4,6 +4,7 @@ import { useGetCategoriesQuery } from '../catalog/catalogApiSlice';
 import { toast } from 'react-toastify';
 import { Plus, X, Trash2, Tag, Calendar, Percent, DollarSign, Users, Activity } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
+import type { Coupon } from './adminApiSlice';
 
 const CouponManagementPage = () => {
   const { data: couponsData, isLoading, refetch } = useGetAllCouponsQuery({ pageNumber: 1, pageSize: 50 });
@@ -13,7 +14,7 @@ const CouponManagementPage = () => {
   const [deleteCoupon, { isLoading: isDeleting }] = useDeleteCouponMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCoupon, setEditingCoupon] = useState<any>(null);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [couponToDelete, setCouponToDelete] = useState<{ id: number; code: string } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -47,7 +48,7 @@ const CouponManagementPage = () => {
     setEditingCoupon(null);
   };
 
-  const openModal = (coupon?: any) => {
+  const openModal = (coupon?: Coupon) => {
     if (coupon) {
       setEditingCoupon(coupon);
       setFormData({

@@ -286,7 +286,8 @@ namespace Ecommerce.Application.Services.Identity
             await _unitOfWork.SaveChangesAsync();
 
             // Use the new notification service
-            var resetLink = $"https://urbaniq.com/reset-password?email={email}&code={otpCode}";
+            var frontendUrl = _emailSettings.FrontendUrl.TrimEnd('/');
+            var resetLink = $"{frontendUrl}/forgot-password?email={Uri.EscapeDataString(email)}&code={otpCode}";
             await _notificationService.SendPasswordResetEmailAsync(email, user.Name, resetLink);
             _logger.LogInformation("[Auth] Password reset email sent to {Email}", email);
         }

@@ -1,5 +1,5 @@
 import { useGetCouponPerformanceQuery } from './adminApiSlice';
-import { TrendingUp, Users, DollarSign, Tag, Activity, Calendar } from 'lucide-react';
+import { Users, DollarSign, Tag, Activity, Calendar } from 'lucide-react';
 
 const CouponAnalyticsPage = () => {
   const { data: performance, isLoading } = useGetCouponPerformanceQuery();

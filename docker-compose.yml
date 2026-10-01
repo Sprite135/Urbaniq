@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # SQL Server Database
   db:
@@ -7,7 +5,7 @@ services:
     container_name: urbaniq-db
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Urbaniq@2024!Secure
+      - SA_PASSWORD=${SQL_SERVER_PASSWORD}
       - MSSQL_PID=Express
     ports:
       - "1433:1433"
@@ -15,6 +13,12 @@ services:
       - sqldata:/var/opt/mssql
     networks:
       - urbaniq-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$SA_PASSWORD\" -C -Q \"SELECT 1\" -b"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
 
   # Redis Cache
   redis:
@@ -34,17 +38,19 @@ services:
     ports:
       - "44320:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=UrbaniqDb;User Id=sa;Password=Urbaniq@2024!Secure;TrustServerCertificate=True;MultipleActiveResultSets=true
-      - Redis__ConnectionString=redis:6379
-      - JwtSettings__SecretKey=UrbaniqSuperSecretKeyForDevelopmentOnly123456789
-      - JwtSettings__Issuer=https://localhost:44320
-      - JwtSettings__Audience=https://localhost:44320
-      - JwtSettings__ExpirationInMinutes=60
+      - Database__ApplyMigrations=true
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__Redis=${REDIS_CONNECTION_STRING}
+      - Jwt__Key=${JWT_SECRET_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - urbaniq-network
 

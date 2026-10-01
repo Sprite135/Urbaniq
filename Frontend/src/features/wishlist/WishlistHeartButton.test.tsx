@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import WishlistHeartButton from './WishlistHeartButton';
 
@@ -13,10 +13,11 @@ vi.mock('./useWishlistProduct', () => ({
 }));
 
 describe('WishlistHeartButton', () => {
+  beforeEach(() => vi.clearAllMocks());
   it('renders filled heart when wishlisted and toggles on click', () => {
     render(<WishlistHeartButton productId="prod-1" />);
 
-    const button = screen.getByRole('button', { name: 'Remove from wishlist' });
+    const button = screen.getByRole('button', { name: 'Quitar de la lista de deseos' });
     expect(button).toHaveAttribute('aria-pressed', 'true');
     expect(button.className).toContain('text-red-500');
 
@@ -35,7 +36,8 @@ describe('WishlistHeartButton', () => {
       </a>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove from wishlist' }));
-    expect(toggleWishlist).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar de la lista de deseos' }));
+    expect(toggleWishlist).toHaveBeenCalledTimes(1);
+    expect(parentClick).not.toHaveBeenCalled();
   });
 });

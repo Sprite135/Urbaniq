@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:admin": "vite --host localhost --port 5174",
-    "build": "vite build",
-    "build:check": "tsc -b && vite build",
+    "build": "tsc -b && vite build",
+    "build:check": "npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -27,6 +27,7 @@
     "@eslint/js": "^10.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.11.2",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -53,7 +54,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.11",
     "zod": "^4.4.3"
   }
 }

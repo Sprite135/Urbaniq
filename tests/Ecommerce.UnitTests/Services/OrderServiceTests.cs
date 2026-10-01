@@ -1,5 +1,7 @@
 using AutoMapper;
 using Ecommerce.Application.DTOs.Orders;
+using Ecommerce.Application.DTOs.Payment;
+using Ecommerce.Domain.Common;
 using Ecommerce.Application.Interfaces.Email;
 using Ecommerce.Application.Interfaces.Payment;
 using Ecommerce.Application.Interfaces.Coupons;
@@ -54,6 +56,16 @@ public class OrderServiceTests
         _emailJobQueueMock = new Mock<IEmailJobQueue>();
         _paymentGatewayMock = new Mock<IPaymentGatewayService>();
         _environmentMock = new Mock<IHostEnvironment>();
+        _environmentMock.SetupGet(e => e.EnvironmentName).Returns(Environments.Development);
+        _paymentGatewayMock.SetupGet(p => p.IsConfigured).Returns(true);
+        _paymentGatewayMock.Setup(p => p.VerifyPaymentAsync(It.IsAny<string>()))
+            .ReturnsAsync(new ApiResponse<PaymentVerificationResponseDto>
+            {
+                Data = new PaymentVerificationResponseDto
+                {
+                    IsSuccessful = true, Status = "succeeded", AmountReceived = 100000, Currency = "pen"
+                }
+            });
         _couponServiceMock = new Mock<ICouponService>();
         _notificationServiceMock = new Mock<INotificationService>();
         _shippingOptions = Options.Create(new ShippingSettings());
@@ -153,7 +165,7 @@ public class OrderServiceTests
 
         // Assert
         result.Should().NotBeEmpty();
-        _orderRepoMock.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Once);
+        _orderRepoMock.Verify(r => r.AddAsync(It.Is<Order>(o => o.IsPaid && o.OrderStatus == OrderStatus.Processing)), Times.Once);
         _unitOfWorkMock.Verify(
             u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -307,6 +319,54 @@ public class OrderServiceTests
     }
 
     // ==================== ChangeOrderStatus Tests ====================
+
+    [Theory]
+    [InlineData(1, "pen", true)]
+    [InlineData(100000, "usd", true)]
+    [InlineData(100000, "pen", false)]
+    public async Task CreateOrderAsync_InvalidPayment_DoesNotSaveOrDeductStock(long amount, string currency, bool successful)
+    {
+        var (userId, addressId, product) = SetupValidOrderScenario();
+        _paymentGatewayMock.Setup(p => p.VerifyPaymentAsync(It.IsAny<string>()))
+            .ReturnsAsync(new ApiResponse<PaymentVerificationResponseDto>
+            {
+                Data = new PaymentVerificationResponseDto
+                {
+                    IsSuccessful = successful, AmountReceived = amount, Currency = currency
+                }
+            });
+
+        var act = () => _sut.CreateOrderAsync(userId, new CreateOrderRequestDto
+        {
+            AddressId = addressId, TransactionId = "pi_invalid", PaymentMethod = "card"
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        product.Quantity.Should().Be(10);
+        _orderRepoMock.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Never);
+        _cartItemRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<CartItem>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateOrderAsync_Anonymous_DoesNotReadAnyCart()
+    {
+        var act = () => _sut.CreateOrderAsync(null, new CreateOrderRequestDto());
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        _cartRepoMock.Verify(r => r.Query(), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateOrderAsync_UnconfiguredCardGateway_DoesNotSave()
+    {
+        var (userId, addressId, _) = SetupValidOrderScenario();
+        _paymentGatewayMock.SetupGet(p => p.IsConfigured).Returns(false);
+        var act = () => _sut.CreateOrderAsync(userId, new CreateOrderRequestDto
+        {
+            AddressId = addressId, TransactionId = "pi_unconfigured", PaymentMethod = "card"
+        });
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _orderRepoMock.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Never);
+    }
 
     [Fact]
     public async Task ChangeOrderStatusAsync_ValidStatus_Updates()

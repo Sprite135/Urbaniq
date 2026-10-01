@@ -127,6 +127,11 @@ namespace Ecommerce.Application.Services.Orders
 
 public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto)
         {
+            if (!userId.HasValue || userId.Value == Guid.Empty)
+                throw new UnauthorizedAccessException("Please sign in before placing an order.");
+            if (string.IsNullOrWhiteSpace(dto.TransactionId))
+                throw new ArgumentException("A transaction ID is required.");
+
             var paymentMethod = dto.PaymentMethod?.Trim().ToLowerInvariant();
             var allowedPaymentMethods = new[] { "card", "cod", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo" };
             if (!allowedPaymentMethods.Contains(paymentMethod))
@@ -140,25 +145,6 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 if (string.IsNullOrWhiteSpace(dto.Ruc) || string.IsNullOrWhiteSpace(dto.RazonSocial))
                 {
                     throw new ArgumentException("RUC y razón social son requeridos para emitir factura.");
-                }
-            }
-
-            // Server-side payment verification for card payments. Without this, a client could
-            // place an order with a fake transaction id and receive goods without paying.
-            if (paymentMethod == "card")
-            {
-                if (string.IsNullOrWhiteSpace(dto.TransactionId))
-                {
-                    throw new ArgumentException("A Stripe transaction ID is required for card payments.");
-                }
-                if (!_paymentGateway.IsConfigured)
-                {
-                    throw new InvalidOperationException("Card payments are currently unavailable. Please choose another payment method.");
-                }
-                var verification = await _paymentGateway.VerifyPaymentAsync(dto.TransactionId);
-                if (verification.Data == null || !verification.Data.IsSuccessful)
-                {
-                    throw new InvalidOperationException($"Card payment could not be verified: {verification.Message}");
                 }
             }
 
@@ -183,7 +169,7 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
 
             var address = await _addressRepo.Query()
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.AddressId == dto.AddressId && (!userId.HasValue || s.UserId == userId.Value) && !s.IsDeleted);
+                .FirstOrDefaultAsync(s => s.AddressId == dto.AddressId && s.UserId == userId.Value && !s.IsDeleted);
             if (address == null) throw new ArgumentException("Cannot find the address");
 
             var cart = await _cartRepo.Query()
@@ -191,13 +177,14 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
                 .ThenInclude(v => v.Product)
                 .Include(c => c.CartItems).ThenInclude(ci => ci.Product).ThenInclude(p => p.Variants)
-                .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : c.SessionId != null);
+                .FirstOrDefaultAsync(c => c.UserId == userId.Value);
             if (cart == null || cart.CartItems == null || !cart.CartItems.Any())
             {
                 throw new ArgumentException("Your cart is empty");
             }
 
             EnsureAddressCanReceiveCart(cart, address.DeliveryZone);
+            ValidateStock(cart);
 
             var serverTotalPrice = cart.CartItems.Sum(c => c.Quantity * (c.Product.Price - c.Product.Discount));
 
@@ -247,10 +234,27 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
             order.ShippingCost = shippingCost;
             order.TotalPrice = discountedTotal + shippingCost;
 
-            ValidateStockAndDeductQuantities(cart);
+            // Verify the final server-calculated total before changing stock or saving the order.
+            if (paymentMethod == "card")
+            {
+                if (!_paymentGateway.IsConfigured)
+                    throw new InvalidOperationException("Card payments are currently unavailable. Please choose another payment method.");
+
+                var verification = await _paymentGateway.VerifyPaymentAsync(dto.TransactionId);
+                var expectedAmount = (long)decimal.Round(order.TotalPrice * 100, 0, MidpointRounding.AwayFromZero);
+                if (verification.Data == null || !verification.Data.IsSuccessful ||
+                    verification.Data.AmountReceived != expectedAmount ||
+                    !string.Equals(verification.Data.Currency, "pen", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Card payment does not match the order total or could not be verified.");
+
+                // A webhook may arrive before the order exists, so persist the verified state here.
+                order.IsPaid = true;
+                order.OrderStatus = OrderStatus.Processing;
+            }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
+                ValidateStockAndDeductQuantities(cart);
                 await _orderRepo.AddAsync(order);
                 _cartItemRepo.RemoveRange(cart.CartItems);
                 await _unitOfWork.SaveChangesAsync();
@@ -347,9 +351,12 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
 
 public async Task<bool> CanDeliverCartToAddressAsync(Guid? userId, Guid addressId)
         {
+            if (!userId.HasValue || userId.Value == Guid.Empty)
+                return false;
+
             var address = await _addressRepo.Query()
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(s => s.AddressId == addressId && (!userId.HasValue || s.UserId == userId.Value) && !s.IsDeleted);
+                .FirstOrDefaultAsync(s => s.AddressId == addressId && s.UserId == userId.Value && !s.IsDeleted);
             if (address == null)
             {
                 return false;
@@ -358,7 +365,7 @@ public async Task<bool> CanDeliverCartToAddressAsync(Guid? userId, Guid addressI
             var cart = await _cartRepo.Query()
                 .Include(c => c.CartItems).ThenInclude(ci => ci.Product)
                 .Include(c => c.CartItems).ThenInclude(ci => ci.ProductVariant)
-                .FirstOrDefaultAsync(c => userId.HasValue ? c.UserId == userId.Value : c.SessionId != null);
+                .FirstOrDefaultAsync(c => c.UserId == userId.Value);
             if (cart == null || !cart.CartItems.Any())
             {
                 return false;
@@ -409,19 +416,24 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
 
         private void ValidateStockAndDeductQuantities(Domain.Entities.Cart cart)
         {
+            ValidateStock(cart);
             foreach (var cartItem in cart.CartItems)
             {
-                if (cartItem.ProductVariant.Quantity < cartItem.Quantity)
-                {
-                    throw new ArgumentException($"Product '{cartItem.Product.ProductName}' is out of stock");
-                }
-
                 cartItem.ProductVariant.Quantity -= cartItem.Quantity;
                 cartItem.Product.Quantity = cartItem.Product.Variants.Sum(variant =>
                     variant.Id == cartItem.ProductVariantId ? cartItem.ProductVariant.Quantity : variant.Quantity);
                 
                 cartItem.Product.TotalSold += cartItem.Quantity;
                 _productRepo.Update(cartItem.Product);
+            }
+        }
+
+        private static void ValidateStock(Domain.Entities.Cart cart)
+        {
+            foreach (var cartItem in cart.CartItems)
+            {
+                if (cartItem.ProductVariant.Quantity < cartItem.Quantity)
+                    throw new ArgumentException($"Product '{cartItem.Product.ProductName}' is out of stock");
             }
         }
 

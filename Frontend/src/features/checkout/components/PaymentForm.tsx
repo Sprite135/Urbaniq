@@ -83,10 +83,10 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
   const finalAmount = cart.finalAmount;
 
-  const isProvince = address?.DeliveryZone !== 'LimaMetropolitana';
-  const shippingCost = calculateShippingCost(address?.DeliveryZone, finalAmount);
+  const isProvince = address?.deliveryZone !== 'LimaMetropolitana';
+  const shippingCost = calculateShippingCost(address?.deliveryZone, finalAmount);
   const orderTotal = finalAmount + shippingCost;
-  const shippingProvider = resolveShippingProvider(address?.DeliveryZone, agency);
+  const shippingProvider = resolveShippingProvider(address?.deliveryZone, agency);
 
   const paymentButtonText = useMemo(() => {
     if (paymentMethod === 'cod') return 'Realizar pedido (Pago contra entrega)';
@@ -106,6 +106,11 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
     }
 
     const isCardPayment = paymentMethod === 'card';
+
+    if (isCardPayment && !stripeEnabled) {
+      toast.error('El pago con tarjeta no está disponible. Elige otro método de pago.');
+      return;
+    }
 
     if (isCardPayment && stripeEnabled) {
       if (!stripe || !elements) {
@@ -173,11 +178,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
           paymentMethod: 'card',
         });
       } else {
-        const transactionId = isCardPayment
-          ? `CARD_DEMO_${Date.now()}`
-          : paymentMethod === 'cod'
-            ? `COD_${Date.now()}`
-            : `${paymentMethod.toUpperCase()}_${Date.now()}`;
+        const transactionId = `${paymentMethod.toUpperCase()}_${crypto.randomUUID()}`;
 
         const placed = await placeOrder({
           addressId,
@@ -303,9 +304,9 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
       {!stripeEnabled && (
         <div className="border border-amber-200 bg-amber-50 p-4 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-800">Modo demostración</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-800">Pago con tarjeta no disponible</p>
           <p className="mt-1 text-xs text-amber-700">
-            Stripe no está configurado. El pago con tarjeta se simula sin cargo real; los demás métodos funcionan con normalidad.
+            Puedes realizar tu pedido con pago contra entrega, Yape, Plin o transferencia.
           </p>
         </div>
       )}
@@ -322,6 +323,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
               <input
                 type="radio"
                 name="payment"
+                disabled={!stripeEnabled}
                 checked={paymentMethod === 'card'}
                 onChange={() => {
                   setPaymentMethod('card');
@@ -392,7 +394,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
             {paymentMethod === 'card' && !stripeEnabled && (
               <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-0 pl-9 sm:pl-10">
                 <p className="rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                  Modo demostración: Stripe no está configurado, por lo que el pago con tarjeta se simula sin un cargo real.
+                  El pago con tarjeta no está disponible. Elige otro método de pago.
                 </p>
               </div>
             )}
@@ -644,7 +646,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
             </div>
           ) : (
             <p className="mt-4 rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              Demo: coloca tu QR real de {paymentMethod === 'yape' ? 'Yape' : 'Plin'} en <code>wwwroot/uploads/payments/{paymentMethod}.png</code> para verlo aquí.
+              El código QR no está disponible. Consulta los datos del comercio antes de realizar el pago.
               Mientras tanto, escribe cualquier código de 6 dígitos para probar el flujo.
             </p>
           )}
@@ -794,10 +796,11 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean }> = (
 
 const PaymentForm: React.FC<PaymentFormProps> = (props) => {
   const { data: paymentConfig, isLoading } = useGetPaymentConfigQuery();
-  const stripeEnabled = Boolean(paymentConfig?.publishableKey);
+  const publishableKey = paymentConfig?.publishableKey;
+  const stripeEnabled = Boolean(publishableKey);
   const stripePromise = useMemo(
-    () => (stripeEnabled ? loadStripe(paymentConfig!.publishableKey) : null),
-    [stripeEnabled, paymentConfig?.publishableKey]
+    () => (publishableKey ? loadStripe(publishableKey) : null),
+    [publishableKey]
   );
 
   if (isLoading) {

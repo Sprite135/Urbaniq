@@ -2,7 +2,7 @@ import React from 'react';
 import { useGetAvailableCouponsQuery } from './couponApiSlice';
 import { useSelector } from 'react-redux';
 import { selectCartTotal } from '../cart/cartSlice';
-import { Tag, Clock, DollarSign, Percent, X } from 'lucide-react';
+import { Tag, Clock, DollarSign, Percent } from 'lucide-react';
 import type { RootState } from '@/app/store';
 
 const AvailableCoupons: React.FC = () => {

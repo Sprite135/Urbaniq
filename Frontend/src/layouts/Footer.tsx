@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Mail, Send } from 'lucide-react';
 
 const footerLinkClass =
   'text-[13px] text-[#6b7280] transition-colors hover:text-[#9d731e]';
@@ -26,14 +25,16 @@ export default function Footer() {
             </p>
             <div className="mt-6 flex items-center gap-3">
               {[
-                { label: 'Facebook', initial: 'FB' },
-                { label: 'Instagram', initial: 'IG' },
-                { label: 'Twitter', initial: 'X' },
-                { label: 'YouTube', initial: 'YT' },
-              ].map(({ label, initial }) => (
+                { label: 'Facebook', initial: 'FB', href: import.meta.env.VITE_FACEBOOK_URL },
+                { label: 'Instagram', initial: 'IG', href: import.meta.env.VITE_INSTAGRAM_URL },
+                { label: 'Twitter', initial: 'X', href: import.meta.env.VITE_TWITTER_URL },
+                { label: 'YouTube', initial: 'YT', href: import.meta.env.VITE_YOUTUBE_URL },
+              ].filter(({ href }) => href?.startsWith('https://')).map(({ label, initial, href }) => (
                 <a
                   key={label}
-                  href="#"
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={label}
                   className="grid h-9 w-9 place-items-center rounded-full border border-[#e5e7eb] text-[11px] font-black tracking-wide text-[#6b7280] transition-colors hover:border-[#9d731e] hover:text-[#9d731e]"
                 >
@@ -63,42 +64,22 @@ export default function Footer() {
               Ayuda
             </h3>
             <ul className="mt-5 space-y-3">
-              <li><a href="#" className={footerLinkClass}>Envíos y entregas</a></li>
-              <li><a href="#" className={footerLinkClass}>Devoluciones</a></li>
-              <li><a href="#" className={footerLinkClass}>Preguntas frecuentes</a></li>
-              <li><a href="#" className={footerLinkClass}>Términos y condiciones</a></li>
-              <li><a href="#" className={footerLinkClass}>Contáctanos</a></li>
+              <li><Link to="/help#shipping" className={footerLinkClass}>Envíos y entregas</Link></li>
+              <li><Link to="/help#payments" className={footerLinkClass}>Métodos de pago</Link></li>
+              <li><Link to="/help#faq" className={footerLinkClass}>Preguntas frecuentes</Link></li>
+              <li><Link to="/help#support" className={footerLinkClass}>Ayuda con pedidos</Link></li>
             </ul>
           </div>
 
           {/* Newsletter */}
           <div>
             <h3 className="text-[11px] font-black uppercase tracking-[0.28em] text-[#9d731e]">
-              Suscríbete
+              Tu cuenta
             </h3>
             <p className="mt-5 text-[13px] leading-6 text-[#6b7280]">
-              Recibe nuestras ofertas y novedades en tu correo.
+              Consulta tus pedidos, guarda tus favoritos y mantén tus direcciones actualizadas.
             </p>
-            <form
-              className="mt-4 flex items-center gap-2"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <div className="relative flex-1">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
-                <input
-                  type="email"
-                  placeholder="tu@correo.com"
-                  className="h-11 w-full border border-[#d1d5db] bg-white pl-9 pr-3 text-[13px] text-[#111827] placeholder:text-[#9ca3af] focus:border-[#9d731e] focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                aria-label="Suscribirse"
-                className="grid h-11 w-11 shrink-0 place-items-center bg-[#d7b46a] text-[#111827] transition-colors hover:bg-[#e2c77f]"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
+            <Link to="/account" className="mt-4 inline-flex min-h-11 items-center bg-[#d7b46a] px-5 text-sm font-bold text-[#111827] hover:bg-[#e2c77f]">Ir a mi cuenta</Link>
           </div>
         </div>
 

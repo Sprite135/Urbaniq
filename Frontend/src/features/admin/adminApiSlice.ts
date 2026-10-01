@@ -36,7 +36,7 @@ interface LowStockProduct {
   quantity: number;
 }
 
-interface Coupon {
+export interface Coupon {
   couponId: number;
   code: string;
   discountType: number;
@@ -72,15 +72,6 @@ interface UserCouponHistory {
   discountAmount: number;
   usedAt: string;
   orderId: string;
-}
-
-interface AvailableCouponSuggestion {
-  code: string;
-  description: string;
-  discountType: number;
-  value: number;
-  minOrderAmount?: number;
-  validUntil: string;
 }
 
 interface CouponUsageByPeriod {
