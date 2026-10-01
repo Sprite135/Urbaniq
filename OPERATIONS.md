@@ -45,4 +45,4 @@ Confirmar costos y plazos de envío, condiciones de devoluciones, datos del nego
 4. Validar tablas, cantidades y un pedido en la base restaurada antes de planificar la sustitución de producción.
 5. Para revertir código, desplegar un commit conocido mediante el workflow Azure; esto no revierte cambios en la base de datos.
 
-Las alertas con notificación por correo todavía requieren configurar y verificar una regla de Azure Monitor y su grupo de acciones. La comprobación de salud por sí sola no envía correo.
+Azure Monitor tiene configurados el grupo global `urbaniq-operaciones` (correo `spritesebastian@gmail.com`) y la regla `urbaniq-salud-appservice`, para cambios de Resource Health del App Service, incluidos incidentes y recuperación. Esto supervisa eventos de plataforma; no sustituye una alerta de fallos HTTP o del endpoint `/health`. La recepción del correo todavía debe verificarse con el propietario.
