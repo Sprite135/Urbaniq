@@ -1,0 +1,48 @@
+# Operación de Urbaniq
+
+## Estado verificado el 1 de octubre de 2026
+
+- Aplicación Azure: `urbaniq-backend-jesus2024`, grupo `urbaniq-rg`.
+- Tienda y API: https://urbaniq-backend-jesus2024-b0d6huewaubghcg7.brazilsouth-01.azurewebsites.net
+- App Service tiene comprobación de estado habilitada en `/health`, con umbral de 10 minutos. El endpoint comprueba SQL y Redis. Con una instancia, Azure puede reemplazarla tras una hora de fallos continuos.
+- SQL `urbaniqDb`: retención PITR de 7 días, diferenciales cada 24 horas; primer punto disponible observado: 2026-09-30 23:17 UTC. No hay retención a largo plazo configurada. Se verificó la disponibilidad en el portal; no se ha ejecutado una restauración de prueba.
+- Prueba de integración: registro con verificación simulada, login, dirección, carrito, pedido contra entrega, consulta y cancelación. Comprueba descuento de stock, vaciado del carrito y devolución de stock una sola vez. Usa base de datos de pruebas y correo simulado; no demuestra entrega SMTP ni cobro real.
+
+## Correo Gmail
+
+En App Service → Variables de entorno, configurar:
+
+| Variable | Valor |
+| --- | --- |
+| `EmailSettings__Host` | `smtp.gmail.com` |
+| `EmailSettings__Port` | `587` |
+| `EmailSettings__Username` | `spritesebastian@gmail.com` |
+| `EmailSettings__FromAddress` | `spritesebastian@gmail.com` |
+| `EmailSettings__FromName` | `Urbaniq` |
+| `EmailSettings__Password` | Contraseña de aplicación de Google, ingresada directamente por el propietario |
+| `EmailSettings__FrontendUrl` | URL de la tienda indicada arriba |
+
+Google requiere verificación en dos pasos para usar contraseñas de aplicación: https://support.google.com/accounts/answer/185833
+No guardar secretos en Git ni enviarlos por chat. Tras guardar la contraseña, probar registro, recepción del código, verificación y recuperación de contraseña con una cuenta controlada por el propietario.
+El frontend publica el correo de contacto mediante `VITE_SUPPORT_EMAIL` en los workflows de Azure y Vercel.
+
+## Stripe pendiente
+
+Configurar en Azure `StripeSettings__PublishableKey`, `StripeSettings__SecretKey` y `StripeSettings__WebhookSecret`, con claves del mismo entorno. Empezar con un sandbox de Stripe.
+Registrar el webhook `https://urbaniq-backend-jesus2024-b0d6huewaubghcg7.brazilsouth-01.azurewebsites.net/api/v1/Payment/webhook` y el evento `payment_intent.succeeded`.
+Referencia: https://docs.stripe.com/webhooks
+Validar un pago de prueba, firma del webhook, importe/moneda, estado pagado y repetición del evento sin duplicar efectos. No se ha realizado esta prueba con Stripe real.
+
+## Información comercial pendiente
+
+Confirmar costos y plazos de envío, condiciones de devoluciones, datos del negocio y destinos reales de Yape/Plin/transferencia antes de publicar políticas definitivas.
+
+## Incidentes y restauración
+
+1. Consultar `/health`, estado del App Service y Secuencia de registro.
+2. Si SQL falla, revisar disponibilidad y conectividad de `urbaniqDb`. Si Redis falla, revisar el recurso y `ConnectionStrings__Redis`.
+3. Para restaurar SQL: servidor SQL → Copias de seguridad → Restaurar. Elegir un punto y un nombre nuevo para una base de pruebas. La restauración crea otro recurso y puede generar costo; acordar presupuesto antes de ejecutarla.
+4. Validar tablas, cantidades y un pedido en la base restaurada antes de planificar la sustitución de producción.
+5. Para revertir código, desplegar un commit conocido mediante el workflow Azure; esto no revierte cambios en la base de datos.
+
+Las alertas con notificación por correo todavía requieren configurar y verificar una regla de Azure Monitor y su grupo de acciones. La comprobación de salud por sí sola no envía correo.

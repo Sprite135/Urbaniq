@@ -29,6 +29,7 @@ jobs:
         working-directory: Frontend
         env:
           VITE_API_BASE_URL: /api/v1
+          VITE_SUPPORT_EMAIL: spritesebastian@gmail.com
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY }}
         run: |
           npm ci

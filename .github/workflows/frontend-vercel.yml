@@ -21,6 +21,7 @@ env:
   VERCEL_ORG_ID: team_lO4Mgd7l3XAweOodhTfLGJDB
   VERCEL_PROJECT_ID: prj_l6DpSEJT1xyJMRHtv4Jo6ClfWvMq
   VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://urbaniq-backend-jesus2024-b0d6huewaubghcg7.brazilsouth-01.azurewebsites.net/api/v1' }}
+  VITE_SUPPORT_EMAIL: spritesebastian@gmail.com
   VITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
 
 jobs:

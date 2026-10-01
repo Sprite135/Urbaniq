@@ -52,7 +52,7 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
     // ==================== Cart Tests ====================
 
     [Fact]
-    public async Task Checkout_CashOnDelivery_CreatesOrderAndClearsCart()
+    public async Task Checkout_CashOnDelivery_CancelRestoresStockOnlyOnce()
     {
         var token = await GetAuthTokenAsync();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -93,6 +93,25 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
 
         var emptyCart = await _client.GetFromJsonAsync<JsonElement>("/api/v1/Cart");
         emptyCart.GetProperty("items").GetArrayLength().Should().Be(0);
+
+        var detailResponse = await _client.GetAsync($"/api/v1/Order/{orderId}");
+        detailResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var cancelResponse = await _client.PostAsJsonAsync($"/api/v1/Order/{orderId}/cancel", new
+        {
+            reason = "Integration test cancellation"
+        });
+        cancelResponse.StatusCode.Should().Be(HttpStatusCode.OK, await cancelResponse.Content.ReadAsStringAsync());
+        await db.Entry(variant).ReloadAsync();
+        variant.Quantity.Should().Be(originalStock);
+
+        var repeatResponse = await _client.PostAsJsonAsync($"/api/v1/Order/{orderId}/cancel", new
+        {
+            reason = "Repeat cancellation must not increase stock"
+        });
+        repeatResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await db.Entry(variant).ReloadAsync();
+        variant.Quantity.Should().Be(originalStock);
     }
 
     [Fact]
