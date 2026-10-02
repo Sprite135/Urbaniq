@@ -20,8 +20,8 @@ export default function HelpPage() {
       <div className="mt-8 space-y-10 leading-7">
         <section id="shipping" className="scroll-mt-36">
           <h2 className="text-xl font-bold">Envíos y entregas</h2>
-          <p className="mt-3">La dirección determina la zona de entrega. Para provincias, selecciona una agencia disponible durante el checkout. Coordinaremos el costo y el plazo antes del despacho.</p>
-          <p>Revisa el resumen del pedido para consultar el costo de envío antes de confirmar.</p>
+          <p className="mt-3">La dirección determina la zona de entrega. Para provincias, selecciona una agencia durante el checkout. Consulta con atención al cliente la cobertura y el plazo para tu dirección antes de pagar.</p>
+          <p>El resumen muestra por separado los productos, el envío y el total que cobra la tienda. No se garantiza entrega en 24 horas.</p>
         </section>
         <section id="payments" className="scroll-mt-36">
           <h2 className="text-xl font-bold">Métodos de pago</h2>

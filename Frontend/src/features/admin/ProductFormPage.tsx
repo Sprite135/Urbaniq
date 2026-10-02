@@ -542,7 +542,7 @@ const ProductFormPage = () => {
                   className="mt-2 w-full resize-none border border-[#d8cdbb] px-3 py-2 text-sm outline-none focus:border-[#9d731e]"
                   placeholder="150101, 150102, 150103"
                 />
-                <p className="mt-2 text-xs text-[#7c7467]">Opcional. El envío se determina por zona: Lima Metropolitana (24h) y resto del Perú vía Shalom/Marvisur contra entrega.</p>
+                <p className="mt-2 text-xs text-[#7c7467]">Opcional. El envío se determina por zona. Confirma la cobertura, las tarifas y los plazos reales antes de publicarlos.</p>
               </label>
             </div>
           </section>

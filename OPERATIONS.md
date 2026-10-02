@@ -57,6 +57,8 @@ El cliente puede subir un comprobante o referencia desde el detalle del pedido. 
 
 ## Incidentes y restauración
 
+Pendiente comercial: confirmar con el propietario los costos y plazos de Lima/Callao y provincias. Las tarifas publicadas siguen en S/0; no interpretar esa configuración como aprobación de envío gratuito. Se retiraron las promesas genéricas de entrega en 24 horas, envío gratis y devolución en 30 días del producto y checkout. El resumen de compra muestra siempre el importe de envío, incluso si es cero. La prueba integrada de Yape recorre creación, comprobante, confirmación exclusiva del administrador y seguimiento hasta entregado, con notificaciones simuladas; no reemplaza verificar un abono y correos reales en producción.
+
 Actualización del 2 de octubre de 2026: el propietario confirmó que `939810000`, titular `Sebastian Cumpa`, recibe Yape. La configuración de producción habilita únicamente Yape; Plin sigue pendiente de confirmación. Se utiliza pago directo al número y no se publica el QR existente, cuyo destinatario no se ha verificado. El pago se confirma manualmente después de comprobar el abono. Verificar `/api/v1/Payment/merchant-methods` tras el despliegue; las variables de Azure pueden sobrescribir el archivo de configuración.
 
 1. Consultar `/health`, estado del App Service y Secuencia de registro.

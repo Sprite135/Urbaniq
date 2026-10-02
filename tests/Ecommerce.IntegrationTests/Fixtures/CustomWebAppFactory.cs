@@ -23,6 +23,7 @@ namespace Ecommerce.IntegrationTests.Fixtures;
 public class CustomWebAppFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"EcommerceTestDb_{Guid.NewGuid():N}";
+    public Mock<INotificationService> Notifications { get; } = new();
 
     public async Task VerifyEmailAsync(string email)
     {
@@ -51,7 +52,7 @@ public class CustomWebAppFactory : WebApplicationFactory<Program>
         {
             var notifications = services.SingleOrDefault(d => d.ServiceType == typeof(INotificationService));
             if (notifications != null) services.Remove(notifications);
-            services.AddScoped(_ => Mock.Of<INotificationService>());
+            services.AddScoped(_ => Notifications.Object);
             // ===== Remove the real SQL Server DbContext registration =====
             var dbDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));

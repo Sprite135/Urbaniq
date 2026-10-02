@@ -734,13 +734,13 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
         )}
       </div>
 
-      {/* Envío (modelo peruano: Lima gratis / provincias contra entrega vía agencia) */}
+      {/* Envío calculado con las tarifas del servidor */}
       <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-[#ece7dd]">Envío</h3>
         <p className="mt-2 text-sm text-gray-600 dark:text-[#9a9388]">
           {isProvince
-            ? 'Provincias: contra entrega vía agencia de transporte. Pagas el envío al recoger en destino.'
-            : 'Lima Metropolitana: envío gratis con flota propia (entrega al siguiente día).'}
+            ? 'Provincias: selecciona la agencia y consulta la cobertura y el plazo antes de pagar.'
+            : 'Lima Metropolitana y Callao: consulta la cobertura y el plazo para tu dirección antes de pagar.'}
         </p>
         {isProvince && (
           <div className="mt-3">
@@ -762,11 +762,9 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-[#9a9388]">Monto a pagar</p>
-            {shippingCost > 0 && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-[#9a9388]">
+            <p className="mt-1 text-sm text-gray-500 dark:text-[#9a9388]">
                 Productos: S/ {finalAmount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Envío: S/ {shippingCost.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            )}
+            </p>
             <p className="mt-1 text-2xl font-black text-gray-900 dark:text-[#ece7dd]">S/ {orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <Lock className="h-5 w-5 text-gray-300" />

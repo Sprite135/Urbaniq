@@ -7,6 +7,9 @@ using FluentAssertions;
 using Ecommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Ecommerce.Application.DTOs.Orders;
+using Ecommerce.Domain.Enums;
+using Moq;
 
 namespace Ecommerce.IntegrationTests.Controllers;
 
@@ -29,27 +32,127 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
     /// <summary>
     /// Helper: Registers a user, logs in, and returns their JWT access token.
     /// </summary>
-    private async Task<string> GetAuthTokenAsync()
+    private async Task<string> GetAuthTokenAsync(bool admin = false, CustomWebAppFactory? factory = null)
     {
+        var authFactory = factory ?? _factory;
+        using var authClient = authFactory.CreateClient();
         var email = $"cart_test_{Guid.NewGuid():N}@gmail.com";
 
-        await _client.PostAsJsonAsync("/api/v1/Auth/register", new
+        var registration = await authClient.PostAsJsonAsync("/api/v1/Auth/register", new
         {
             name = "Cart Tester", email, password = "Password123!"
         });
 
-        await _factory.VerifyEmailAsync(email);
-        var loginResponse = await _client.PostAsJsonAsync("/api/v1/Auth/login", new
+        registration.StatusCode.Should().Be(HttpStatusCode.OK, await registration.Content.ReadAsStringAsync());
+        await authFactory.VerifyEmailAsync(email);
+        if (admin)
+        {
+            using var scope = authFactory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var user = await db.Users.SingleAsync(u => u.Email == email);
+            user.Role = UserRole.Admin;
+            await db.SaveChangesAsync();
+        }
+        var loginResponse = await authClient.PostAsJsonAsync("/api/v1/Auth/login", new
         {
             email, password = "Password123!"
         });
 
         var content = await loginResponse.Content.ReadAsStringAsync();
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK, content);
         var json = JsonSerializer.Deserialize<JsonElement>(content, _jsonOptions);
         return json.GetProperty("accessToken").GetString()!;
     }
 
     // ==================== Cart Tests ====================
+
+    [Fact]
+    public async Task Checkout_Yape_ProofRequiresStaffConfirmationAndTracksDelivery()
+    {
+        // Isolate the complete two-account workflow from the shared login rate-limit window.
+        using var factory = new CustomWebAppFactory();
+        using var customer = factory.CreateClient();
+        customer.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await GetAuthTokenAsync(factory: factory));
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var product = await db.Products.Include(p => p.Variants).FirstAsync(p => p.Variants.Any(v => v.Quantity > 0));
+        var variant = product.Variants.First(v => v.Quantity > 0);
+        var originalStock = variant.Quantity;
+
+        var addressResponse = await customer.PostAsJsonAsync("/api/v1/Address/add", new
+        {
+            fullName = "Yape Tester", phoneNumber = "999111222", department = "Lima",
+            province = "Lima", district = "Miraflores", postalCode = "150122",
+            houseName = "Test 123", place = "Lima", reference = "Test reference", landMark = "Test landmark"
+        });
+        addressResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var address = await addressResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var addressId = address.GetProperty("data").GetProperty("addressId").GetGuid();
+        (await customer.PostAsJsonAsync("/api/v1/Cart/add", new
+        {
+            productId = product.Id, productVariantId = variant.Id, quantity = 1
+        })).StatusCode.Should().Be(HttpStatusCode.OK);
+        var placedResponse = await customer.PostAsJsonAsync("/api/v1/Order/place-order", new
+        {
+            addressId, transactionId = $"YAPE_{Guid.NewGuid():N}", paymentMethod = "yape"
+        });
+        placedResponse.StatusCode.Should().Be(HttpStatusCode.OK, await placedResponse.Content.ReadAsStringAsync());
+        var placed = await placedResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var orderId = placed.GetProperty("orderId").GetGuid();
+        var detail = await customer.GetFromJsonAsync<OrderDetailsResponseDto>($"/api/v1/Order/{orderId}");
+        detail!.PaymentMethod.Should().Be("yape");
+        detail.IsPaid.Should().BeFalse();
+        detail.OrderStatus.Should().Be("Pending");
+        detail.TotalPrice.Should().Be(product.Price - product.Discount);
+        factory.Notifications.Verify(n => n.SendOrderConfirmationEmailAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.Is<OrderDetailsResponseDto>(o => o.OrderId == orderId)), Times.Once);
+        await db.Entry(variant).ReloadAsync();
+        variant.Quantity.Should().Be(originalStock - 1);
+        var cart = await customer.GetFromJsonAsync<JsonElement>("/api/v1/Cart");
+        cart.GetProperty("items").GetArrayLength().Should().Be(0);
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent(new byte[] { 1, 2, 3 }), "file", "test-receipt.pdf");
+        var uploaded = await customer.PostAsync("/api/v1/Payment/upload-voucher", form);
+        uploaded.StatusCode.Should().Be(HttpStatusCode.OK);
+        var upload = await uploaded.Content.ReadFromJsonAsync<JsonElement>();
+        var url = upload.GetProperty("url").GetString()!;
+        var storage = scope.ServiceProvider.GetRequiredService<Ecommerce.Api.Services.PaymentReceiptStorage>();
+        try
+        {
+            (await customer.PostAsJsonAsync($"/api/v1/Order/{orderId}/voucher", new { url, approvalCode = "123456" }))
+                .StatusCode.Should().Be(HttpStatusCode.OK);
+            detail = await customer.GetFromJsonAsync<OrderDetailsResponseDto>($"/api/v1/Order/{orderId}");
+            detail!.PaymentReceiptUrl.Should().Be(url);
+            detail.PaymentApprovalCode.Should().Be("123456");
+            detail.IsPaid.Should().BeFalse();
+            detail.OrderStatus.Should().Be("Pending");
+            (await customer.PostAsync($"/api/v1/Order/{orderId}/mark-paid", null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+            using var staff = factory.CreateClient();
+            staff.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await GetAuthTokenAsync(admin: true, factory: factory));
+            (await staff.PostAsync($"/api/v1/Order/{orderId}/mark-paid", null)).StatusCode.Should().Be(HttpStatusCode.OK);
+            (await staff.PostAsync($"/api/v1/Order/{orderId}/mark-paid", null)).StatusCode.Should().Be(HttpStatusCode.OK);
+            detail = await customer.GetFromJsonAsync<OrderDetailsResponseDto>($"/api/v1/Order/{orderId}");
+            detail!.IsPaid.Should().BeTrue();
+            detail.OrderStatus.Should().Be("Processing");
+            foreach (var status in new[] { "Shipped", "Delivered" })
+            {
+                (await staff.PutAsJsonAsync($"/api/v1/Order/change-status/{orderId}", new { status })).StatusCode.Should().Be(HttpStatusCode.OK);
+                detail = await customer.GetFromJsonAsync<OrderDetailsResponseDto>($"/api/v1/Order/{orderId}");
+                detail!.OrderStatus.Should().Be(status);
+                detail.IsPaid.Should().BeTrue();
+                factory.Notifications.Verify(n => n.SendOrderStatusUpdateEmailAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), orderId.ToString(), status), Times.Once);
+            }
+            await db.Entry(variant).ReloadAsync();
+            variant.Quantity.Should().Be(originalStock - 1);
+        }
+        finally
+        {
+            File.Delete(Path.Combine(storage.DirectoryPath, Path.GetFileName(url)));
+        }
+    }
 
     [Fact]
     public async Task PaymentVoucher_UploadStoresAndServesExactFile()

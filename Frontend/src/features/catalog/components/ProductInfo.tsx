@@ -171,14 +171,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             Detalles de entrega
           </h3>
           <p className="text-sm text-gray-500 dark:text-[#9a9388]">
-            Envíos a Lima Metropolitana en 24h y al resto del Perú vía Shalom / Marvisur contra entrega.
+            Consulta la cobertura y el plazo para tu dirección antes de pagar. El costo de envío se muestra en el resumen de compra.
           </p>
        </div>
 
       <div className="grid grid-cols-3 gap-4 border-t border-gray-100 dark:border-[#26282e] pt-8">
         <div className="flex flex-col items-center space-y-1 text-center">
           <RotateCcw className="h-6 w-6 text-gray-400" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#9a9388]">Devolución 30 días</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#9a9388]">Consulta devoluciones</span>
         </div>
         <div className="flex flex-col items-center space-y-1 text-center">
           <ShieldCheck className="h-6 w-6 text-gray-400" />
@@ -186,7 +186,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
         </div>
         <div className="flex flex-col items-center space-y-1 text-center">
           <Truck className="h-6 w-6 text-gray-400" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#9a9388]">Envío gratis</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#9a9388]">Seguimiento del pedido</span>
         </div>
       </div>
     </div>
