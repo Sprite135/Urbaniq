@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag, Flame } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, Tag, Flame, Search, Package, Truck, Headphones, Pause, Play } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   useGetHomeProductCardsQuery,
   useGetTopSellingProductsQuery,
@@ -39,8 +39,12 @@ const scrollRail = (railId: string, direction: 'left' | 'right') => {
 
 const Home: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [search, setSearch] = useState('');
+  const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
 
-  const { data: homeProductCards, isLoading: isHomeCardsLoading } = useGetHomeProductCardsQuery(HOME_PRODUCT_CARD_COUNT);
+  const { data: homeProductCards, isLoading: isHomeCardsLoading, isError: catalogError, refetch: retryCatalog } = useGetHomeProductCardsQuery(HOME_PRODUCT_CARD_COUNT);
   const { data: topSellingProductsData, isLoading: isTopSellingLoading } = useGetTopSellingProductsQuery(10);
 
   const products = useMemo(() => homeProductCards || [], [homeProductCards]);
@@ -70,28 +74,12 @@ const Home: React.FC = () => {
     if (!slideProducts.length) {
       return [
         {
-          title: 'Laptops profesionales',
+          title: 'Tecnología para ti',
           eyebrow: 'Catálogo de tecnología',
-          copy: 'Equipos impecables y esenciales según tus categorías de productos, listos para la oficina y el hogar.',
-          image: '/uploads/products/laptop-lenovo-loq-15irx9-core-i7-16gb-512gb-rtx-3050.jpg',
+          copy: 'Explora laptops, monitores y componentes. Compara sus características y encuentra lo que necesitas para trabajar, estudiar o jugar.',
+          image: '/product-images/placeholder.svg',
           href: '/catalog',
-          cta: 'Comprar laptops',
-        },
-        {
-          title: 'Componentes elegantes',
-          eyebrow: 'Edición de trabajo',
-          copy: 'Componentes de alto rendimiento y combinaciones inteligentes seleccionados para una tecnología pulida de diario.',
-          image: '/uploads/products/tarjeta-de-video-nvidia-rtx-4060-8gb.jpg',
-          href: '/catalog',
-          cta: 'Explorar componentes',
-        },
-        {
-          title: 'Edición de gaming',
-          eyebrow: 'Listo para gaming',
-          copy: 'Equipos de alto rendimiento para gaming, trabajo y creatividad con estilo impecable.',
-          image: '/uploads/products/monitor-asus-rog-27-oled-2k-540hz.jpg',
-          href: '/catalog',
-          cta: 'Ver gaming',
+          cta: 'Explorar catálogo',
         },
       ];
     }
@@ -99,7 +87,7 @@ const Home: React.FC = () => {
     return slideProducts.map((product, index) => ({
       title: product.categoryName || product.productName,
       eyebrow: index === 0 ? 'Novedades' : product.subCategoryName || 'Destacado',
-      copy: `Productos premium de ${product.categoryName || 'tecnología'} seleccionados del catálogo de Urbaniq para un equipo pensado para el día a día.`,
+      copy: `${product.productName}. Consulta sus características, disponibilidad y precio en el catálogo.`,
       image: getProductImage(product)!,
       href: `/product/${product.slug}`,
       cta: index === 0 ? 'Comprar ahora' : 'Ver producto',
@@ -113,14 +101,14 @@ const Home: React.FC = () => {
   }, [activeSlide, heroSlides.length]);
 
   useEffect(() => {
-    if (heroSlides.length <= 1) return;
+    if (heroSlides.length <= 1 || paused || reduceMotion) return;
 
     const timer = window.setInterval(() => {
       setActiveSlide((current) => (current + 1) % heroSlides.length);
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [heroSlides.length]);
+  }, [heroSlides.length, paused, reduceMotion]);
 
 
 
@@ -128,7 +116,7 @@ const Home: React.FC = () => {
     const grouped = new Map<string, HomeDisplayProduct[]>();
 
     products.forEach((product) => {
-      const categoryName = product.categoryName || 'Featured Products';
+      const categoryName = product.categoryName || 'Productos destacados';
       const currentProducts = grouped.get(categoryName) || [];
       grouped.set(categoryName, [...currentProducts, product]);
     });
@@ -193,7 +181,7 @@ const Home: React.FC = () => {
                   >
                     <Link
                       to={currentSlide?.href || '/catalog'}
-                      className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] dark:text-[#ece7dd] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
+                      className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-3 bg-[#d7b46a] px-8 text-[11px] font-black uppercase tracking-[0.18em] text-[#111827] transition-all duration-200 hover:bg-[#e2c77f] hover:shadow-md"
                     >
                       {currentSlide?.cta || 'Comprar ahora'}
                       <ArrowRight className="h-4 w-4" />
@@ -211,6 +199,14 @@ const Home: React.FC = () => {
                     </Link>
                   </motion.div>
                 </div>
+                <form role="search" aria-label="Buscar productos en el catálogo" onSubmit={(event) => {
+                  event.preventDefault();
+                  if (search.trim()) navigate(`/catalog?search=${encodeURIComponent(search.trim())}`);
+                }} className="mx-auto mt-6 flex max-w-lg rounded-xl border border-gray-300 bg-white p-1 shadow-sm dark:border-gray-700 dark:bg-[#16181d] md:mx-0">
+                  <label htmlFor="home-search" className="sr-only">¿Qué estás buscando?</label>
+                  <input id="home-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Busca laptops, monitores, componentes…" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm outline-none" />
+                  <button type="submit" aria-label="Buscar" className="rounded-lg bg-[#111827] px-4 text-white dark:bg-[#d7b46a] dark:text-[#111827]"><Search className="h-5 w-5" /></button>
+                </form>
               </div>
             </div>
 
@@ -223,7 +219,7 @@ const Home: React.FC = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300 }}
-                className="absolute left-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
+                className="absolute bottom-6 right-32 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
               >
                 <ChevronLeft className="h-6 w-6" />
               </motion.button>
@@ -234,18 +230,22 @@ const Home: React.FC = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 300 }}
-                className="absolute right-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/84 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
+                className="absolute bottom-6 right-6 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[#111827] dark:text-[#ece7dd] shadow-lg transition hover:bg-white dark:bg-[#16181d]"
               >
                 <ChevronRight className="h-6 w-6" />
               </motion.button>
-              <div className="absolute bottom-7 left-1/2 flex -translate-x-1/2 items-center gap-3">
+              <button type="button" aria-label={paused || reduceMotion ? 'Reanudar banners' : 'Pausar banners'} disabled={Boolean(reduceMotion)} onClick={() => setPaused(!paused)} className="absolute bottom-6 right-[4.75rem] grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[#111827] dark:bg-[#16181d] dark:text-[#ece7dd]">
+                {paused || reduceMotion ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              </button>
+              <div className="absolute bottom-10 left-4 flex items-center gap-2 sm:left-1/2 sm:-translate-x-1/2">
                 {heroSlides.map((slide, index) => (
                   <button
                     key={`${slide.title}-${index}`}
                     type="button"
                     aria-label={`Mostrar banner ${index + 1}`}
+                    aria-pressed={activeSlide === index}
                     onClick={() => setActiveSlide(index)}
-                    className={`h-1.5 rounded-full transition-all ${activeSlide === index ? 'w-12 bg-[#d7b46a]' : 'w-8 bg-white/72'}`}
+                    className={`h-1.5 rounded-full transition-all ${activeSlide === index ? 'w-8 bg-[#9d731e]' : 'w-4 bg-gray-400'}`}
                   />
                 ))}
               </div>
@@ -253,6 +253,23 @@ const Home: React.FC = () => {
           )}
         </div>
       </section>
+
+      <section aria-label="Compra y seguimiento" className="border-y border-gray-200 bg-white dark:border-[#26282e] dark:bg-[#16181d]">
+        <div className="container mx-auto grid gap-3 px-4 py-6 sm:grid-cols-3">
+          {[
+            { icon: Package, title: 'Sigue tu pedido', copy: 'Consulta el pago, la preparación y la entrega.', href: '/orders' },
+            { icon: Truck, title: 'Planifica tu entrega', copy: 'Revisa la zona y los costos antes de comprar.', href: '/help#shipping' },
+            { icon: Headphones, title: 'Te ayudamos a elegir', copy: 'Resuelve tus dudas antes y después de comprar.', href: '/help#support' },
+          ].map(({ icon: Icon, title, copy, href }) => (
+            <Link key={title} to={href} className="group flex items-center gap-4 rounded-xl border border-gray-100 p-4 transition hover:border-[#d7b46a] hover:bg-[#fbf8f1] dark:border-[#26282e] dark:hover:bg-[#26282e]">
+              <Icon className="h-6 w-6 shrink-0 text-[#9d731e]" />
+              <div><h2 className="text-sm font-bold text-[#111827] dark:text-[#ece7dd]">{title}</h2><p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">{copy}</p></div>
+              <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-gray-400" />
+            </Link>
+          ))}
+        </div>
+      </section>
+      {catalogError && <div role="alert" className="container mx-auto px-4 py-5 text-center text-sm text-red-700 dark:text-red-300">No pudimos cargar el catálogo. <button type="button" onClick={() => retryCatalog()} className="font-bold underline">Reintentar</button></div>}
 
 
 
@@ -278,7 +295,7 @@ const Home: React.FC = () => {
             railId="new-arrivals"
             products={newArrivalProducts}
             isLoading={isProductLoading}
-            emptyText="New arrivals will appear here after products are added."
+            emptyText="Pronto encontrarás novedades aquí. Explora el catálogo o consulta con nosotros."
           />
         </div>
       </section>

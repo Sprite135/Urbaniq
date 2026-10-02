@@ -15,6 +15,7 @@ import { calculateShippingCost, PROVINCE_AGENCIES, resolveShippingProvider } fro
 import { isMerchantPaymentConfigured } from '../merchantPayment';
 
 export interface OrderSuccessDetails {
+  orderId: string;
   cart: CartResponse;
   address?: Address | null;
   paymentMethod: PaymentMethod;
@@ -168,7 +169,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
           throw new Error('La verificación del pago falló. Por favor, contacta soporte si se descontó dinero.');
         }
 
-        await placeOrder({
+        const placed = await placeOrder({
           addressId,
           transactionId: paymentIntent.id,
           paymentMethod: 'card',
@@ -181,6 +182,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
         }).unwrap();
 
         onOrderSuccess({
+          orderId: placed.orderId,
           cart: { ...cart, items: cart.items.map((item) => ({ ...item })) },
           address,
           paymentMethod: 'card',
@@ -209,6 +211,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
         }
 
         onOrderSuccess({
+          orderId: placed.orderId,
           cart: { ...cart, items: cart.items.map((item) => ({ ...item })) },
           address,
           paymentMethod,

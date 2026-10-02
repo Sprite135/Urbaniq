@@ -19,6 +19,7 @@ using System.Threading.RateLimiting;
 using Sentry;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<Ecommerce.Api.Services.PaymentReceiptStorage>();
 
 // ===================== Logging =====================
 builder.Host.UseSerilog((context, config) =>
@@ -359,6 +360,14 @@ Console.WriteLine($"HasFrontendDist: {hasFrontendDist}");
 
 // ===================== Static Files & SPA =====================
 // Serve uploads from wwwroot (product images, payment QRs, etc.) FIRST
+var receiptStorage = app.Services.GetRequiredService<Ecommerce.Api.Services.PaymentReceiptStorage>();
+Directory.CreateDirectory(receiptStorage.DirectoryPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(receiptStorage.DirectoryPath),
+    RequestPath = "/uploads/payments",
+    OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = "no-store"
+});
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetOrderByIdQuery, useMarkOrderPaidMutation } from '../orders/orderApiSlice';
 import { useChangeOrderStatusMutation } from './adminApiSlice';
@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { CheckCircle, Clock, Package, Truck, XCircle, ArrowLeft, MapPin, User, Phone, Calendar } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
 import ProductImage from '@/features/catalog/components/ProductImage';
+import { getPaymentReceiptUrl } from '../orders/paymentReceiptUrl';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -44,9 +45,11 @@ const AdminOrderDetailPage: React.FC = () => {
   const { data: order, isLoading, isError } = useGetOrderByIdQuery(orderId!);
   const [changeStatus, { isLoading: isUpdating }] = useChangeOrderStatusMutation();
   const [markPaid, { isLoading: isMarkingPaid }] = useMarkOrderPaidMutation();
+  const [verifiedOrderId, setVerifiedOrderId] = useState<string | null>(null);
+  const paymentVerified = verifiedOrderId === orderId;
 
   const handleMarkPaid = async () => {
-    if (!order) return;
+    if (!order || !paymentVerified) return;
     try {
       await markPaid(order.orderId).unwrap();
       toast.success('Pedido marcado como pagado');
@@ -192,11 +195,11 @@ const AdminOrderDetailPage: React.FC = () => {
                   <p className="mt-1 text-xs text-[#7c7467]">Valídalo en tu app Yape/Plin (Validar operación).</p>
                 </div>
               )}
-              {order.paymentReceiptUrl && (
+              {getPaymentReceiptUrl(order.paymentReceiptUrl) && (
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Voucher</span>
                   <a
-                    href={order.paymentReceiptUrl}
+                    href={getPaymentReceiptUrl(order.paymentReceiptUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-1 block text-sm font-semibold text-[#9d731e] underline hover:text-[#7c5d12]"
@@ -205,15 +208,21 @@ const AdminOrderDetailPage: React.FC = () => {
                   </a>
                 </div>
               )}
-              {!order.isPaid && (
+              {!order.isPaid && !['cancelled', 'returned', 'refundinitiated', 'refunded'].includes(order.orderStatus.toLowerCase()) && (
+                <>
+                <label className="flex items-start gap-2 text-sm text-[#514b43]">
+                  <input type="checkbox" checked={paymentVerified} onChange={(event) => setVerifiedOrderId(event.target.checked ? orderId ?? null : null)} disabled={isMarkingPaid} className="mt-1" />
+                  Verifiqué en la cuenta bancaria el importe recibido y que corresponde a este pedido.
+                </label>
                 <button
                   type="button"
                   onClick={handleMarkPaid}
-                  disabled={isMarkingPaid}
+                  disabled={isMarkingPaid || !paymentVerified}
                   className="w-full bg-[#9d731e] py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#7c5d12] disabled:opacity-50"
                 >
                   {isMarkingPaid ? 'Marcando…' : 'Marcar como pagado'}
                 </button>
+                </>
               )}
             </div>
           </section>

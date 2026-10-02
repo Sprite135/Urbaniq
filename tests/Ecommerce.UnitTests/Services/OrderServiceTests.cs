@@ -91,6 +91,70 @@ public class OrderServiceTests
     private static Guid SetupUserId() => Guid.NewGuid();
 
     [Fact]
+    public async Task AttachVoucherAsync_RecordsProofWithoutConfirmingPayment()
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order { OrderId = Guid.NewGuid(), UserId = userId, OrderStatus = OrderStatus.Pending, PaymentMethod = "plin" };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+        var receiptUrl = $"/uploads/payments/{Guid.NewGuid()}.png";
+        await _sut.AttachVoucherAsync(order.OrderId, userId, false, receiptUrl, "123456");
+        order.PaymentReceiptUrl.Should().Be(receiptUrl);
+        order.PaymentApprovalCode.Should().Be("123456");
+        order.IsPaid.Should().BeFalse();
+        order.OrderStatus.Should().Be(OrderStatus.Pending);
+    }
+
+    [Fact]
+    public async Task AttachVoucherAsync_RejectsAnotherCustomersOrder()
+    {
+        var order = new Order { OrderId = Guid.NewGuid(), UserId = Guid.NewGuid() };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+        await FluentActions.Awaiting(() => _sut.AttachVoucherAsync(order.OrderId, Guid.NewGuid(), false, "/uploads/payments/receipt.png", null))
+            .Should().ThrowAsync<UnauthorizedAccessException>();
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("https://example.com/receipt.png")]
+    [InlineData("/uploads/payments/../aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png")]
+    public async Task AttachVoucherAsync_RejectsUnsafeLinks(string receiptUrl)
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order { OrderId = Guid.NewGuid(), UserId = userId };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+        await FluentActions.Awaiting(() => _sut.AttachVoucherAsync(order.OrderId, userId, false, receiptUrl, null))
+            .Should().ThrowAsync<ArgumentException>();
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Returned)]
+    [InlineData(OrderStatus.RefundInitiated)]
+    [InlineData(OrderStatus.Refunded)]
+    public async Task MarkOrderPaidByStaffAsync_RejectsClosedOrders(OrderStatus status)
+    {
+        var order = new Order { OrderId = Guid.NewGuid(), OrderStatus = status };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+        await FluentActions.Awaiting(() => _sut.MarkOrderPaidByStaffAsync(order.OrderId)).Should().ThrowAsync<InvalidOperationException>();
+        order.IsPaid.Should().BeFalse();
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task MarkOrderPaidByStaffAsync_ConfirmsManualPaymentOnlyOnce()
+    {
+        var order = new Order { OrderId = Guid.NewGuid(), OrderStatus = OrderStatus.Pending, PaymentMethod = "yape" };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new List<Order> { order }.AsQueryable().BuildMock());
+        await _sut.MarkOrderPaidByStaffAsync(order.OrderId);
+        await _sut.MarkOrderPaidByStaffAsync(order.OrderId);
+        order.IsPaid.Should().BeTrue();
+        order.OrderStatus.Should().Be(OrderStatus.Processing);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task MarkOrderPaidAsync_AdvancesPendingOrderOnlyOnce()
     {
         var order = new Order { OrderId = Guid.NewGuid(), TransactionId = "confirmed-payment", OrderStatus = OrderStatus.Pending };

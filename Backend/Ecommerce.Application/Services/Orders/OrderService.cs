@@ -321,7 +321,16 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 throw new UnauthorizedAccessException("You can only attach proof to your own order.");
 
             if (!string.IsNullOrWhiteSpace(url))
-                order.PaymentReceiptUrl = url.Trim();
+            {
+                var receiptUrl = url.Trim();
+                const string prefix = "/uploads/payments/";
+                var fileName = receiptUrl.StartsWith(prefix, StringComparison.Ordinal) ? receiptUrl[prefix.Length..] : "";
+                if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(fileName), "D", out _) ||
+                    fileName != Path.GetFileName(fileName) ||
+                    !new[] { ".png", ".jpg", ".jpeg", ".webp", ".pdf" }.Contains(Path.GetExtension(fileName).ToLowerInvariant()))
+                    throw new ArgumentException("Adjunta un comprobante subido desde la aplicación.");
+                order.PaymentReceiptUrl = receiptUrl;
+            }
 
             if (!string.IsNullOrWhiteSpace(approvalCode))
             {
@@ -340,6 +349,9 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
             var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId);
             if (order == null)
                 throw new KeyNotFoundException("Order not found.");
+
+            if (order.OrderStatus is OrderStatus.Cancelled or OrderStatus.Returned or OrderStatus.RefundInitiated or OrderStatus.Refunded)
+                throw new InvalidOperationException("No se puede confirmar el pago de un pedido cancelado, devuelto o reembolsado.");
 
             if (!order.IsPaid)
             {

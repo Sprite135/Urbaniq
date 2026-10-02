@@ -111,6 +111,10 @@ namespace Ecommerce.Api.Controllers.Orders
                 await _orderService.MarkOrderPaidByStaffAsync(orderId);
                 return Ok(new { message = "Order marked as paid" });
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { message = ex.Message });

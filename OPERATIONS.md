@@ -51,6 +51,10 @@ Pasos pendientes para automatizar: obtener cuenta de comercio y credenciales de 
 
 El tracker del cliente representa los estados del pedido, con consulta cada 30 segundos mientras la página está enfocada. No incorpora ubicación GPS ni guía de una agencia externa. El pago se muestra por separado. El checkout consulta `/api/v1/Payment/shipping-config` para utilizar las mismas tarifas que el servidor; los plazos comerciales deben confirmarse antes de prometer fechas de entrega.
 
+El propietario ahora prioriza una solución gratuita. Se prepara transferencia directa por Yape/Plin con revisión manual, sin añadir una pasarela de pago. Falta que confirme el número público y el titular de cada billetera; mientras haya marcadores de configuración, las opciones permanecen deshabilitadas. La cuenta/modalidad de Yape o del banco puede tener sus propias comisiones y límites: https://www.yape.com.pe/preguntas-frecuentes/enviar-y-recibir-yapeos/yape-cobra-comisiones. Para una alternativa automática, Culqi declara integración y afiliación gratuitas, con comisión por transacción exitosa: https://ayuda.culqi.com/portal/es/kb/articles/integrar-culqi-cuesta.
+
+El cliente puede subir un comprobante o referencia desde el detalle del pedido. Esto no confirma el pago; el administrador comprueba el abono y marca el pedido pagado. Los archivos nuevos se guardan en `$HOME/data/urbaniq/payment-receipts` en Azure App Service, fuera del paquete desplegado. El hosting existente sigue teniendo sus costos y límites de almacenamiento. Referencia de persistencia: https://github.com/Azure/app-service-linux-docs/blob/master/Things_You_Should_Know/things_you_should_know.md. El almacenamiento local de desarrollo continúa en `wwwroot/uploads/payments`. Los comprobantes se sirven con URL aleatoria; no publicar estas URLs ni datos financieros innecesarios.
+
 ## Incidentes y restauración
 
 1. Consultar `/health`, estado del App Service y Secuencia de registro.

@@ -63,6 +63,7 @@ const CheckoutPage: React.FC = () => {
       <div className="min-h-dvh bg-gray-50 dark:bg-[#0e0f12]">
         <div className="container mx-auto max-w-3xl px-4 py-8">
           <OrderSuccessScreen
+            orderId={orderSuccess.orderId}
             cart={orderSuccess.cart}
             address={orderSuccess.address}
             paymentMethod={orderSuccess.paymentMethod}

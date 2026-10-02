@@ -26,6 +26,7 @@ namespace Ecommerce.Api.Controllers.Payment
         private readonly ILogger<PaymentController> _logger;
         private readonly IWebHostEnvironment _env;
         private readonly ShippingSettings _shippingSettings;
+        private readonly Ecommerce.Api.Services.PaymentReceiptStorage _receiptStorage;
 
         public PaymentController(
             IPaymentGatewayService paymentGatewayService,
@@ -34,7 +35,8 @@ namespace Ecommerce.Api.Controllers.Payment
             IOptions<MerchantPaymentSettings> merchantSettings,
             ILogger<PaymentController> logger,
             IWebHostEnvironment env,
-            IOptions<ShippingSettings> shippingSettings)
+            IOptions<ShippingSettings> shippingSettings,
+            Ecommerce.Api.Services.PaymentReceiptStorage receiptStorage)
         {
             _paymentGatewayService = paymentGatewayService;
             _orderService = orderService;
@@ -43,6 +45,7 @@ namespace Ecommerce.Api.Controllers.Payment
             _logger = logger;
             _env = env;
             _shippingSettings = shippingSettings.Value;
+            _receiptStorage = receiptStorage;
         }
 
         [HttpGet("shipping-config")]
@@ -187,7 +190,7 @@ namespace Ecommerce.Api.Controllers.Payment
             if (file.Length > 5 * 1024 * 1024)
                 return BadRequest(new { message = "File too large (max 5 MB)." });
 
-            var folder = Path.Combine(_env.WebRootPath, "uploads", "payments");
+            var folder = _receiptStorage.DirectoryPath;
             Directory.CreateDirectory(folder);
             var fileName = $"{Guid.NewGuid()}{ext}";
             var path = Path.Combine(folder, fileName);

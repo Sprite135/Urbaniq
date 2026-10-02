@@ -11,12 +11,13 @@ const REDIRECT_SECONDS = 5;
 type PaymentMethod = 'card' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
 
 interface OrderSuccessScreenProps {
+  orderId: string;
   cart: CartResponse;
   address?: Address | null;
   paymentMethod: PaymentMethod;
 }
 
-const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, paymentMethod }) => {
+const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ orderId, cart, address, paymentMethod }) => {
   const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
   const isCard = paymentMethod === 'card';
@@ -37,14 +38,14 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
     }, 1000);
 
     const timeout = setTimeout(() => {
-      navigate('/orders', { replace: true });
+      navigate(`/orders/${orderId}`, { replace: true });
     }, REDIRECT_SECONDS * 1000);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [navigate]);
+  }, [navigate, orderId]);
 
   const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -90,7 +91,7 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
             ? 'Tu pago se procesó y tu pedido está confirmado.'
             : isCod
               ? 'Tu pedido está confirmado. Paga cuando llegue tu paquete.'
-              : 'Tu pedido está registrado. Confirmaremos tu pago al validar tu código de aprobación.'}
+              : 'Tu pedido está registrado y el pago está pendiente. Adjunta tu comprobante en el seguimiento; confirmaremos la recepción del dinero.'}
         </motion.p>
 
         <motion.div
@@ -168,15 +169,15 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ cart, address, 
           />
         </div>
         <p className="text-center text-xs text-gray-500 dark:text-[#9a9388]">
-          Te llevamos a <span className="font-bold text-gray-700">Mis pedidos</span> en{' '}
+          Te llevamos al <span className="font-bold text-gray-700">seguimiento de tu pedido</span> en{' '}
           <span className="font-black text-[#9d731e]">{secondsLeft}</span> segundo{secondsLeft === 1 ? '' : 's'}…
         </p>
         <button
           type="button"
-          onClick={() => navigate('/orders', { replace: true })}
+          onClick={() => navigate(`/orders/${orderId}`, { replace: true })}
           className="mt-4 w-full bg-[#111827] py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#1f2740]"
         >
-          Ver mis pedidos ahora
+          Seguir mi pedido
         </button>
       </div>
     </motion.div>

@@ -4,6 +4,8 @@ import { ArrowLeft, Package, CreditCard, CheckCircle, Circle, XCircle } from 'lu
 import { toast } from 'react-toastify';
 import { useCancelOrderMutation, useGetOrderByIdQuery } from './orderApiSlice';
 import ProductImage from '@/features/catalog/components/ProductImage';
+import PaymentProofForm from './PaymentProofForm';
+import { getPaymentReceiptUrl } from './paymentReceiptUrl';
 
 import { trackingSteps, getTrackingStepIndex, getOrderStatusLabel, getPaymentStatusLabel } from './orderTracking';
 
@@ -39,6 +41,7 @@ const OrderDetailPage: React.FC = () => {
   }
 
   const canCancel = ['pending', 'processing'].includes(order.orderStatus.toLowerCase());
+  const receiptUrl = getPaymentReceiptUrl(order.paymentReceiptUrl);
 
   const handleCancel = async () => {
     if (!reason.trim()) {
@@ -204,6 +207,9 @@ const OrderDetailPage: React.FC = () => {
               <span>S/ {order.totalPrice.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
+          {receiptUrl && <a href={receiptUrl} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-[#9d731e] underline">Ver comprobante enviado</a>}
+          {order.paymentApprovalCode && <p className="mt-3 text-sm">Referencia enviada: {order.paymentApprovalCode}</p>}
+          {!order.isPaid && canCancel && !['card', 'cod'].includes(order.paymentMethod.toLowerCase()) && <PaymentProofForm key={order.orderId} orderId={order.orderId} />}
         </div>
 
         <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">

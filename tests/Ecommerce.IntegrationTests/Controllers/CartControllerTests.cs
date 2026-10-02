@@ -52,6 +52,52 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
     // ==================== Cart Tests ====================
 
     [Fact]
+    public async Task PaymentVoucher_UploadStoresAndServesExactFile()
+    {
+        var token = await GetAuthTokenAsync();
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var bytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jBfQAAAAASUVORK5CYII=");
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(bytes);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "receipt.png");
+
+        var response = await client.PostAsync("/api/v1/Payment/upload-voucher", form);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var url = result.GetProperty("url").GetString()!;
+        var storedName = url["/uploads/payments/".Length..];
+        Guid.TryParseExact(Path.GetFileNameWithoutExtension(storedName), "D", out _).Should().BeTrue();
+
+        using var scope = _factory.Services.CreateScope();
+        var storage = scope.ServiceProvider.GetRequiredService<Ecommerce.Api.Services.PaymentReceiptStorage>();
+        var path = Path.Combine(storage.DirectoryPath, storedName);
+        try
+        {
+            (await File.ReadAllBytesAsync(path)).Should().Equal(bytes);
+            var download = await client.GetAsync(url);
+            download.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await download.Content.ReadAsByteArrayAsync()).Should().Equal(bytes);
+            download.Headers.CacheControl!.NoStore.Should().BeTrue();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task PaymentVoucher_RejectsAnonymousUpload()
+    {
+        using var client = _factory.CreateClient();
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent(new byte[] { 1 }), "file", "receipt.png");
+        var response = await client.PostAsync("/api/v1/Payment/upload-voucher", form);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task Checkout_CashOnDelivery_CancelRestoresStockOnlyOnce()
     {
         var token = await GetAuthTokenAsync();
