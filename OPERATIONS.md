@@ -1,5 +1,13 @@
 # Operación de Urbaniq
 
+## Cambios del 2 de octubre de 2026
+
+- Yape confirmado y habilitado, envío Lima/Callao S/10 y provincias S/25. Plin sigue deshabilitado.
+- Se retiró el proceso que marcaba pedidos enviados por antigüedad. Los despachos son confirmados por administración; no se permite saltar desde pendiente a enviado ni despachar una transferencia sin pago confirmado. Contra entrega mantiene su flujo de pago al recibir.
+- El cliente crea primero el pedido y paga luego desde su detalle. Cerrar la página no cancela un pedido ya creado. La cancelación antes del despacho repone stock, pero no transfiere dinero.
+- Se incorporó solicitud de devolución para pedidos entregados y pagados: motivo, fecha y estado ReturnRequested. Es una solicitud para revisar en administración; no es una devolución física ni un reembolso automático. No se repone stock por solicitarla.
+- Ver `PRUEBA_PRODUCCION.md` para prueba real, restauración y catálogo; `POLITICAS_BORRADOR.md` sigue pendiente de datos comerciales. No publicar un RUC o dirección inventados.
+
 ## Estado verificado el 1 de octubre de 2026
 
 - Aplicación Azure: `urbaniq-backend-jesus2024`, grupo `urbaniq-rg`.

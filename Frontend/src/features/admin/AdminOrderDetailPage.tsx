@@ -34,7 +34,7 @@ const statusIcons: Record<string, typeof Clock> = {
 
 const getAvailableStatuses = (currentStatus: string) => {
   const normalized = currentStatus.toLowerCase();
-  if (normalized === 'pending') return ['Pending', 'Processing', 'Shipped'];
+  if (normalized === 'pending') return ['Pending', 'Processing'];
   if (normalized === 'processing') return ['Processing', 'Shipped'];
   if (normalized === 'shipped') return ['Shipped', 'Delivered'];
   return [currentStatus]; // Delivered and Cancelled are terminal
@@ -136,6 +136,11 @@ const AdminOrderDetailPage: React.FC = () => {
           </section>
 
           {/* Cancellation Info */}
+          {order.returnReason && <section className="border border-amber-200 bg-amber-50 p-5">
+            <h3 className="font-bold">Solicitud de devolución</h3>
+            <p className="mt-2 whitespace-pre-wrap text-sm">{order.returnReason}</p>
+            <p className="mt-2 text-sm">Coordina la evaluación, recepción del producto y eventual reembolso con el cliente. Esta solicitud no confirma devolución física ni transferencia de dinero.</p>
+          </section>}
           {normalizedStatus === 'cancelled' && order.cancellationReason && (
              <section className="border border-red-200 bg-red-50 p-5">
                  <h3 className="text-sm font-black uppercase tracking-widest text-red-800">Detalles de cancelación</h3>

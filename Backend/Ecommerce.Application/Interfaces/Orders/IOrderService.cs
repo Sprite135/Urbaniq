@@ -14,6 +14,7 @@ namespace Ecommerce.Application.Interfaces.Orders
         Task<OrderDetailsResponseDto> GetOrderByIdAsync(Guid orderId, Guid? requestingUserId, bool isAdmin);
         Task<UpdateOrderStatusResponseDto> ChangeOrderStatusAsync(Guid orderId, string status);
         Task<UpdateOrderStatusResponseDto> CancelOrderAsync(Guid userId, Guid orderId, string reason);
+        Task<UpdateOrderStatusResponseDto> RequestReturnAsync(Guid userId, Guid orderId, string reason);
 
         Task<RevenueResponseDto> GetRevenueAsync();
         Task<bool> CanDeliverCartToAddressAsync(Guid? userId, Guid addressId);

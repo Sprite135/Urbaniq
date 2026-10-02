@@ -641,7 +641,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
             Paga con {paymentMethod === 'yape' ? 'Yape' : 'Plin'}
           </h3>
           <p className="mt-2 text-sm text-gray-600 dark:text-[#9a9388]">
-            Abre {paymentMethod === 'yape' ? 'Yape' : 'Plin'}, busca el número {activeMerchant.phone}, verifica que el titular sea {activeMerchant.ownerName} y paga{' '}
+            Confirma primero el pedido. Después abre su detalle y transfiere con {paymentMethod === 'yape' ? 'Yape' : 'Plin'} al número {activeMerchant.phone}, verificando el titular {activeMerchant.ownerName}. Importe:{' '}
             <span className="font-bold text-gray-900 dark:text-[#ece7dd]">
               S/ {orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>

@@ -7,7 +7,7 @@ import { getApiErrorMessage } from '@/app/apiError';
 
 const getAvailableStatuses = (currentStatus: string) => {
   const normalized = currentStatus.toLowerCase();
-  if (normalized === 'pending') return ['Pending', 'Processing', 'Shipped'];
+  if (normalized === 'pending') return ['Pending', 'Processing'];
   if (normalized === 'processing') return ['Processing', 'Shipped'];
   if (normalized === 'shipped') return ['Shipped', 'Delivered'];
   return [currentStatus]; // Delivered and Cancelled are terminal
@@ -79,6 +79,10 @@ const OrderManagementPage = () => {
           {statusParam ? `${statusParam} pedidos` : 'Pedidos'}
         </h2>
         <p className="mt-2 text-sm text-[#6f6659]">Rastrea referencias de pago, detalles de entrega del cliente y cambios de estado de envío.</p>
+        <div className="mt-3 flex gap-4 text-sm font-bold text-[#9d731e]">
+          <Link to="/admin/orders" onClick={() => setPage(1)} className="underline">Todos los pedidos</Link>
+          <Link to="/admin/orders?status=ReturnRequested" onClick={() => setPage(1)} className="underline">Solicitudes de devolución</Link>
+        </div>
       </div>
 
       <section className="border border-[#e1d5c2] bg-white">

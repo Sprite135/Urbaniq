@@ -39,6 +39,8 @@ export interface Order {
   transactionId: string;
   paymentMethod: string;
   cancellationReason?: string;
+  returnReason?: string;
+  returnRequestedAtUtc?: string;
   cancelledAtUtc?: string;
   refundedAtUtc?: string;
   address: Address;
@@ -107,6 +109,10 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       providesTags: (_result, _error, orderId) => [{ type: 'Order' as const, id: orderId }],
     }),
 
+    requestReturn: builder.mutation<{ orderStatus: string; message: string }, { orderId: string; reason: string }>({
+      query: ({ orderId, reason }) => ({ url: `/Order/${orderId}/return-request`, method: 'POST', body: { reason } }),
+      invalidatesTags: (_result, _error, { orderId }) => [{ type: 'Order', id: orderId }, { type: 'Order', id: 'LIST' }],
+    }),
     cancelOrder: builder.mutation<{ orderStatus: string; message: string }, { orderId: string; reason: string }>({
       query: ({ orderId, reason }) => ({
         url: `/Order/${orderId}/cancel`,
@@ -158,6 +164,7 @@ export const {
   useGetUserOrdersQuery,
   useGetOrderByIdQuery,
   useCancelOrderMutation,
+  useRequestReturnMutation,
   useAttachVoucherMutation,
   useMarkOrderPaidMutation,
   useValidateCouponMutation,

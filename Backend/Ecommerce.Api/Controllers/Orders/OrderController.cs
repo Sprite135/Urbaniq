@@ -64,9 +64,9 @@ namespace Ecommerce.Api.Controllers.Orders
         public async Task<IActionResult> ChangeOrderStatus(Guid orderId, [FromBody] ChangeOrderStatusRequestDto dto)
         {
             var result = await _orderService.ChangeOrderStatusAsync(orderId, dto.Status);
-            return result.Message == "invalidstatus"
-                ? BadRequest(new { message = "Invalid order status provided." })
-                : Ok(result);
+            return result.Message.Contains("updated successfully", StringComparison.OrdinalIgnoreCase)
+                ? Ok(result)
+                : BadRequest(new { message = result.Message });
         }
 
         [HttpPost("{orderId:guid}/cancel")]
@@ -100,6 +100,14 @@ namespace Ecommerce.Api.Controllers.Orders
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        [HttpPost("{orderId:guid}/return-request")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> RequestReturn(Guid orderId, [FromBody] OrderActionRequestDto dto)
+        {
+            var result = await _orderService.RequestReturnAsync(GetUserId()!.Value, orderId, dto.Reason);
+            return result.Message.Contains("successfully", StringComparison.OrdinalIgnoreCase) ? Ok(result) : BadRequest(result);
         }
 
         [HttpPost("{orderId:guid}/mark-paid")]

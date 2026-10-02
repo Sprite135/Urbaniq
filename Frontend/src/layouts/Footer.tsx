@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 const footerLinkClass =
   'text-[13px] text-[#6b7280] transition-colors hover:text-[#9d731e]';
 
-const paymentMethods = ['Visa', 'Mastercard', 'Yape', 'Plin', 'PagoEfectivo'];
+const paymentMethods = ['Métodos disponibles en el checkout'];
 
 export default function Footer() {
   return (
@@ -65,6 +65,7 @@ export default function Footer() {
             </h3>
             <ul className="mt-5 space-y-3">
               <li><Link to="/help#shipping" className={footerLinkClass}>Envíos y entregas</Link></li>
+              <li><Link to="/help#returns" className={footerLinkClass}>Cancelaciones y devoluciones</Link></li>
               <li><Link to="/help#payments" className={footerLinkClass}>Métodos de pago</Link></li>
               <li><Link to="/help#faq" className={footerLinkClass}>Preguntas frecuentes</Link></li>
               <li><Link to="/help#support" className={footerLinkClass}>Ayuda con pedidos</Link></li>

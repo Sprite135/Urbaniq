@@ -17,7 +17,7 @@ export default function HelpPage() {
       <h1 className="text-3xl font-black">Centro de ayuda</h1>
       <p className="mt-3 text-gray-600 dark:text-gray-300">Todo lo que necesitas para comprar y seguir tu pedido.</p>
       <nav aria-label="Temas de ayuda" className="mt-6 flex flex-wrap gap-2">
-        {[['payments', 'Pagos'], ['shipping', 'Envíos'], ['faq', 'Preguntas'], ['support', 'Contactar']].map(([id, label]) =>
+        {[['payments', 'Pagos'], ['shipping', 'Envíos'], ['returns', 'Cancelaciones y devoluciones'], ['faq', 'Preguntas'], ['support', 'Contactar']].map(([id, label]) =>
           <a key={id} href={`#${id}`} className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold hover:border-[#9d731e] dark:border-gray-700">{label}</a>)}
       </nav>
       <div className="mt-8 space-y-10 leading-7">
@@ -40,10 +40,19 @@ export default function HelpPage() {
           <p>Para pagos por transferencia, revisa los datos del comercio y conserva tu comprobante. Puedes adjuntar el comprobante o registrar el código desde el detalle de tu pedido.</p>
           <ol className="mt-4 list-decimal space-y-2 pl-5">
             <li>Selecciona Yape o Plin cuando aparezcan habilitados y comprueba el nombre del destinatario.</li>
-            <li>Transfiere el importe indicado y crea tu pedido.</li>
-            <li>Abre el seguimiento y envía el comprobante. El pago permanecerá pendiente mientras revisamos el abono.</li>
+            <li>Confirma primero el pedido y abre su detalle. Allí verás el importe y el número de cobro para realizar la transferencia.</li>
+            <li>Después de pagar, envía el comprobante desde el seguimiento. Si ya pagaste, no vuelvas a transferir. El pago permanecerá pendiente mientras revisamos el abono.</li>
           </ol>
           <p className="mt-3 font-semibold">Nunca ingreses aquí tu PIN ni los códigos que autorizan una compra.</p>
+        </section>
+        <section id="returns" className="scroll-mt-36">
+          <h2 className="text-xl font-bold">Cancelaciones y devoluciones</h2>
+          <p className="mt-3">Salir del checkout antes de confirmar no crea un pedido. Si el pedido ya se creó, lo encontrarás en Mis pedidos aunque cierres la página.</p>
+          <p>Mientras el pedido esté pendiente o en preparación, puedes cancelarlo desde su detalle indicando el motivo. La cancelación repone el stock una sola vez.</p>
+          <p>Si ya pagaste, cancelar no devuelve automáticamente el dinero. Contacta con atención al cliente indicando el número de pedido para coordinar el reembolso.</p>
+          <p>Para un pedido entregado con pago confirmado, abre su detalle y pulsa Enviar solicitud de devolución. El comercio revisará el motivo y coordinará contigo los siguientes pasos. No envíes el producto sin acordar antes la dirección y el procedimiento.</p>
+          <p>Si el pedido está en tránsito, el pago aún no aparece confirmado o no puedes usar el formulario, contacta con atención al cliente. La solicitud no confirma recepción del producto ni devolución de dinero.</p>
+          {supportEmail && <a href={`mailto:${supportEmail}`} className="underline">Consultar cancelación, devolución o garantía</a>}
         </section>
         <section id="faq" className="scroll-mt-36">
           <h2 className="text-xl font-bold">Preguntas frecuentes</h2>

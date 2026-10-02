@@ -88,6 +88,21 @@ namespace Ecommerce.Application.Services.Orders
                 return new UpdateOrderStatusResponseDto { Message = "Order not found" };
             }
 
+            if (order.OrderStatus == parsedStatus)
+                return new UpdateOrderStatusResponseDto { OrderStatus = order.OrderStatus.ToString(), Message = "Order status updated successfully" };
+
+            var validTransition = (order.OrderStatus, parsedStatus) switch
+            {
+                (OrderStatus.Pending, OrderStatus.Processing) => true,
+                (OrderStatus.Processing, OrderStatus.Shipped) => true,
+                (OrderStatus.Shipped, OrderStatus.Delivered) => true,
+                _ => false
+            };
+            if (!validTransition)
+                return new UpdateOrderStatusResponseDto { Message = "Invalid order status transition" };
+            if ((parsedStatus is OrderStatus.Shipped or OrderStatus.Delivered) && !order.IsPaid && !string.Equals(order.PaymentMethod, "cod", StringComparison.OrdinalIgnoreCase))
+                return new UpdateOrderStatusResponseDto { Message = "Confirm the payment before dispatching this order" };
+
             // Unidirectional flow enforcement
             if (order.OrderStatus == OrderStatus.Delivered || order.OrderStatus == OrderStatus.Cancelled)
             {
@@ -704,6 +719,8 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
 
         public async Task<UpdateOrderStatusResponseDto> CancelOrderAsync(Guid userId, Guid orderId, string reason)
         {
+            if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 1000)
+                return new UpdateOrderStatusResponseDto { Message = "Provide a cancellation reason of at most 1000 characters" };
             var order = await _orderRepo.Query()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.ProductVariant)
@@ -751,6 +768,25 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                 OrderStatus = order.OrderStatus.ToString(),
                 Message = "Order cancelled successfully"
             };
+        }
+
+        public async Task<UpdateOrderStatusResponseDto> RequestReturnAsync(Guid userId, Guid orderId, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 1000)
+                return new UpdateOrderStatusResponseDto { Message = "Provide a return reason of at most 1000 characters" };
+            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+            if (order == null)
+                return new UpdateOrderStatusResponseDto { Message = "Order not found" };
+            if (order.OrderStatus == OrderStatus.ReturnRequested)
+                return new UpdateOrderStatusResponseDto { OrderStatus = order.OrderStatus.ToString(), Message = "Return requested successfully" };
+            if (order.OrderStatus != OrderStatus.Delivered || !order.IsPaid)
+                return new UpdateOrderStatusResponseDto { Message = "Only delivered and paid orders can request a return here; contact support for other cases" };
+            order.OrderStatus = OrderStatus.ReturnRequested;
+            order.ReturnReason = reason.Trim();
+            order.ReturnRequestedAtUtc = DateTime.UtcNow;
+            _orderRepo.Update(order);
+            await _unitOfWork.SaveChangesAsync();
+            return new UpdateOrderStatusResponseDto { OrderStatus = order.OrderStatus.ToString(), Message = "Return requested successfully" };
         }
 
 

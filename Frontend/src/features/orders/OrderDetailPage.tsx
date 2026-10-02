@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import { useCancelOrderMutation, useGetOrderByIdQuery } from './orderApiSlice';
 import ProductImage from '@/features/catalog/components/ProductImage';
 import PaymentProofForm from './PaymentProofForm';
+import ReturnRequestForm from './ReturnRequestForm';
+import OfflinePaymentInstructions from './OfflinePaymentInstructions';
 import { getPaymentReceiptUrl } from './paymentReceiptUrl';
 
 import { trackingSteps, getTrackingStepIndex, getOrderStatusLabel, getPaymentStatusLabel } from './orderTracking';
@@ -161,13 +163,23 @@ const OrderDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {!order.isPaid && canCancel && ['yape', 'plin'].includes(order.paymentMethod.toLowerCase()) && <OfflinePaymentInstructions method={order.paymentMethod} total={order.totalPrice} />}
+        {order.orderStatus.toLowerCase() === 'delivered' && order.isPaid && <ReturnRequestForm key={order.orderId} orderId={order.orderId} />}
+        {order.returnReason && <div className="mb-4 border border-gray-200 p-5 dark:border-gray-700 dark:text-[#ece7dd]">
+          <h3 className="font-bold">Solicitud de devolución registrada</h3>
+          <p className="mt-2 whitespace-pre-wrap text-sm">{order.returnReason}</p>
+          <p className="mt-2 text-sm">Pendiente de revisión y coordinación con el comercio. <Link className="underline" to="/help#returns">Consultar ayuda</Link></p>
+        </div>}
+        {order.isPaid && order.orderStatus.toLowerCase() === 'cancelled' && !order.refundedAtUtc && <p className="mb-4 border border-amber-300 p-4 text-sm dark:text-[#ece7dd]">Pedido cancelado con pago registrado. La devolución del dinero requiere coordinación con el comercio; no se realiza automáticamente. <Link to="/help#returns" className="underline">Contactar para el reembolso</Link></p>}
         {canCancel && (
           <div className="mb-4 border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
             <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Ayuda del pedido</h3>
+            {order.isPaid && <p className="mb-3 text-sm text-gray-600 dark:text-gray-300">Cancelar el pedido no devuelve automáticamente el dinero. Contacta con el comercio para coordinar el reembolso.</p>}
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
+              maxLength={1000}
               className="w-full resize-none border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#111827]"
               placeholder="Motivo de cancelación"
             />

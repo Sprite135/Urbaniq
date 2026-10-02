@@ -147,6 +147,16 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
             }
             await db.Entry(variant).ReloadAsync();
             variant.Quantity.Should().Be(originalStock - 1);
+            var returnResponse = await customer.PostAsJsonAsync($"/api/v1/Order/{orderId}/return-request", new { reason = "Producto defectuoso en prueba" });
+            returnResponse.StatusCode.Should().Be(HttpStatusCode.OK, await returnResponse.Content.ReadAsStringAsync());
+            (await customer.PostAsJsonAsync($"/api/v1/Order/{orderId}/return-request", new { reason = "Repetido" })).StatusCode.Should().Be(HttpStatusCode.OK);
+            detail = await customer.GetFromJsonAsync<OrderDetailsResponseDto>($"/api/v1/Order/{orderId}");
+            detail!.OrderStatus.Should().Be("ReturnRequested");
+            detail.ReturnReason.Should().Be("Producto defectuoso en prueba");
+            detail.IsPaid.Should().BeTrue();
+            detail.RefundedAtUtc.Should().BeNull();
+            await db.Entry(variant).ReloadAsync();
+            variant.Quantity.Should().Be(originalStock - 1);
         }
         finally
         {

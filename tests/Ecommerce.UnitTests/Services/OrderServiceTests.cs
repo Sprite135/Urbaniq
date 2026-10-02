@@ -467,7 +467,7 @@ public class OrderServiceTests
         // Arrange
         var orderId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var order = new Order { OrderId = orderId, UserId = userId, OrderStatus = OrderStatus.Pending };
+        var order = new Order { OrderId = orderId, UserId = userId, OrderStatus = OrderStatus.Processing, IsPaid = true };
         var orders = new List<Order> { order }.AsQueryable().BuildMock();
         _orderRepoMock.Setup(r => r.Query()).Returns(orders);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
@@ -492,6 +492,53 @@ public class OrderServiceTests
 
         // Assert
         result.Message.Should().Be("invalidstatus");
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Pending, true)]
+    [InlineData(OrderStatus.Processing, false)]
+    [InlineData(OrderStatus.Cancelled, true)]
+    public async Task ChangeOrderStatusAsync_RejectsSkippedOrUnpaidDispatch(OrderStatus status, bool paid)
+    {
+        var order = new Order { OrderId = Guid.NewGuid(), OrderStatus = status, IsPaid = paid, PaymentMethod = "yape" };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new[] { order }.AsQueryable().BuildMock());
+        var result = await _sut.ChangeOrderStatusAsync(order.OrderId, "Shipped");
+        result.Message.Should().NotContain("successfully");
+        order.OrderStatus.Should().Be(status);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
+    }
+
+    [Fact]
+    public async Task RequestReturnAsync_RecordsRequestOnlyOnceWithoutRefundOrStockChange()
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order { OrderId = Guid.NewGuid(), UserId = userId, OrderStatus = OrderStatus.Delivered, IsPaid = true };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new[] { order }.AsQueryable().BuildMock());
+        await _sut.RequestReturnAsync(userId, order.OrderId, "Producto defectuoso");
+        await _sut.RequestReturnAsync(userId, order.OrderId, "Intento repetido");
+        order.OrderStatus.Should().Be(OrderStatus.ReturnRequested);
+        order.ReturnReason.Should().Be("Producto defectuoso");
+        order.ReturnRequestedAtUtc.Should().NotBeNull();
+        order.RefundedAtUtc.Should().BeNull();
+        order.IsPaid.Should().BeTrue();
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+        _productRepoMock.Verify(r => r.Update(It.IsAny<Product>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true, OrderStatus.Delivered, true, "")]
+    [InlineData(false, OrderStatus.Delivered, true, "Motivo")]
+    [InlineData(true, OrderStatus.Pending, true, "Motivo")]
+    [InlineData(true, OrderStatus.Delivered, false, "Motivo")]
+    public async Task RequestReturnAsync_RejectsWrongOwnerOrIneligibleOrder(bool owner, OrderStatus status, bool paid, string reason)
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order { OrderId = Guid.NewGuid(), UserId = userId, OrderStatus = status, IsPaid = paid };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new[] { order }.AsQueryable().BuildMock());
+        var result = await _sut.RequestReturnAsync(owner ? userId : Guid.NewGuid(), order.OrderId, reason);
+        result.Message.Should().NotContain("successfully");
+        order.OrderStatus.Should().Be(status);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
 
     // ==================== GetOrderById Access Control ====================

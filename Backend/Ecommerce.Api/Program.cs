@@ -237,7 +237,7 @@ if (!builder.Environment.IsEnvironment("Testing"))
 // ===================== Controllers & Swagger =====================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHostedService<Ecommerce.Api.HostedServices.AutoShipBackgroundService>();
+// Dispatch is confirmed by staff after actual handoff to a carrier, never by a timer.
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo 
