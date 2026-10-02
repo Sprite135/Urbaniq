@@ -641,7 +641,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
             Paga con {paymentMethod === 'yape' ? 'Yape' : 'Plin'}
           </h3>
           <p className="mt-2 text-sm text-gray-600 dark:text-[#9a9388]">
-            Escanea el código QR con tu app {paymentMethod === 'yape' ? 'Yape' : 'Plin'} y paga{' '}
+            Abre {paymentMethod === 'yape' ? 'Yape' : 'Plin'}, busca el número {activeMerchant.phone}, verifica que el titular sea {activeMerchant.ownerName} y paga{' '}
             <span className="font-bold text-gray-900 dark:text-[#ece7dd]">
               S/ {orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
@@ -659,7 +659,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
             </div>
           ) : (
             <p className="mt-4 rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              El código QR no está disponible. Consulta los datos del comercio antes de realizar el pago.
+              Puedes pagar directamente al número indicado. Verifica el titular en tu app antes de confirmar.
             </p>
           )}
           <div className="mt-4 text-center text-sm text-gray-600 dark:text-[#9a9388]">
@@ -669,7 +669,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; shipp
 
           <div className="mt-4">
             <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-[#9a9388]">
-              Código de aprobación (Yape/Plin)
+              Referencia de la transferencia (opcional)
             </label>
             <input
               type="text"
