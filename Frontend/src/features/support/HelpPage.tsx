@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useGetShippingConfigQuery } from '@/features/checkout/paymentApiSlice';
 
 export default function HelpPage() {
   const { hash } = useLocation();
   const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL;
+  const { data: shipping, isLoading: shippingLoading, isError: shippingError } = useGetShippingConfigQuery();
+  const formatFee = (fee: number) => fee.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
@@ -20,6 +23,14 @@ export default function HelpPage() {
       <div className="mt-8 space-y-10 leading-7">
         <section id="shipping" className="scroll-mt-36">
           <h2 className="text-xl font-bold">Envíos y entregas</h2>
+          {shippingLoading && <p className="mt-3" role="status">Consultando tarifas de envío…</p>}
+          {shippingError && <p className="mt-3" role="alert">No pudimos consultar las tarifas. Confirma el costo con atención al cliente antes de pagar.</p>}
+          {shipping && <div className="mt-3 rounded border border-gray-300 p-4 dark:border-gray-700">
+            <p>Lima Metropolitana y Callao: S/ {formatFee(shipping.limaMetropolitanaFee)}.</p>
+            <p>Provincias: S/ {formatFee(shipping.provinceFee)}.</p>
+            {shipping.freeShippingThreshold > 0 && <p>Envío sin costo desde S/ {formatFee(shipping.freeShippingThreshold)} en productos.</p>}
+            <p>El envío se incluye en el total del pedido. No tienes que pagarlo nuevamente como parte de esta compra.</p>
+          </div>}
           <p className="mt-3">La dirección determina la zona de entrega. Para provincias, selecciona una agencia durante el checkout. Consulta con atención al cliente la cobertura y el plazo para tu dirección antes de pagar.</p>
           <p>El resumen muestra por separado los productos, el envío y el total que cobra la tienda. No se garantiza entrega en 24 horas.</p>
         </section>
