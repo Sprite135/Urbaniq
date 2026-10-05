@@ -6,6 +6,7 @@ import { selectCartCount } from '../features/cart/cartSlice';
 import { selectCurrentUser, selectIsAuthenticated, logout } from '../features/auth/authSlice';
 import VerifyEmailPromptModal from '../features/auth/VerifyEmailPromptModal';
 import Footer from './Footer';
+import CompareBar from '@/features/catalog/components/CompareBar';
 
 import { useGetMeQuery } from '../features/auth/authApiSlice';
 import { catalogApiSlice, useSearchSuggestionsQuery, useGetCategoriesQuery, type Category } from '../features/catalog/catalogApiSlice';
@@ -16,6 +17,8 @@ const smartNavItems = [
   { label: 'Novedades', href: '/catalog?newArrivals=true' },
   { label: 'Gaming', href: '/catalog?search=gaming' },
   { label: 'Ofertas', href: '/catalog?isSale=true' },
+  { label: 'Asesor', href: '/advisor' },
+  { label: 'Comparador', href: '/compare' },
 ];
 
 const MIN_SEARCH_QUERY_LENGTH = 2;
@@ -462,6 +465,7 @@ export default function MainLayout() {
         <Outlet />
       </main>
 
+      <CompareBar />
       <Footer />
 
       {/* Mobile Menu Overlay */}

@@ -6,6 +6,7 @@ import WishlistHeartButton from '@/features/wishlist/WishlistHeartButton';
 import { toast } from 'react-toastify';
 import { catalogApiSlice } from '../catalogApiSlice';
 import ProductImage from './ProductImage';
+import CompareButton from './CompareButton';
 
 export interface ProductCardProduct {
   id: string;
@@ -159,6 +160,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <p className="mt-1 text-[11px] font-medium text-[#6b7280] dark:text-[#8a8478]">Precio incluye IGV</p>
         </div>
       </div>
+      <CompareButton id={product.id} name={product.productName} />
     </motion.article>
   );
 };
