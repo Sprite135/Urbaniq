@@ -1,0 +1,1 @@
+var e=e=>!!(e?.ownerName?.trim()&&/^9\d{8}$/.test((e?.phone??``).replace(/^\+51\s*/,``).replace(/\s/g,``)));export{e as t};

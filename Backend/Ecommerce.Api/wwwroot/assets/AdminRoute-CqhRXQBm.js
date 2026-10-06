@@ -1,0 +1,1 @@
+import{I as e,i as t,r as n,z as r}from"./authSlice-4croAXpS.js";import{H as i,V as a}from"./index-CrPwd76d.js";var o=r(),s=()=>{let r=e(t),s=e(n);return r?s?.role===`Admin`?(0,o.jsx)(i,{}):(0,o.jsx)(a,{to:`/`,replace:!0}):(0,o.jsx)(a,{to:`/admin-login`,replace:!0})};export{s as default};

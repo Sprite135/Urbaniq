@@ -1,0 +1,14 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#F3EBDD"/>
+  <rect x="220" y="320" width="460" height="200" rx="20" fill="#202631"/>
+  <rect x="252" y="352" width="396" height="136" rx="12" fill="#141923"/>
+  <rect x="288" y="388" width="150" height="64" rx="8" fill="#28313F"/>
+  <rect x="462" y="388" width="150" height="64" rx="8" fill="#C8A24A"/>
+  <g stroke="#9D731E" stroke-width="12" stroke-linecap="round">
+    <path d="M360 660v60M360 740h120M480 740v-60"/>
+  </g>
+  <rect x="300" y="780" width="300" height="22" rx="6" fill="#9D731E"/>
+  <text x="450" y="850" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" letter-spacing="8" fill="#9D731E">URBANIQ PC</text>
+  <text x="450" y="908" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="800" fill="#111827">ALMACENAMIENTO</text>
+  <text x="450" y="952" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="4" fill="#514B43">SSD / DISCO</text>
+</svg>

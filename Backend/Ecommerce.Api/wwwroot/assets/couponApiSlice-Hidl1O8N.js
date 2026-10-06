@@ -1,0 +1,1 @@
+import{t as e}from"./apiSlice-MZcm5VXK.js";var{useGetAvailableCouponsQuery:t,useGetUserCouponHistoryQuery:n}=e.injectEndpoints({endpoints:e=>({getAvailableCoupons:e.query({query:({cartTotal:e})=>`/Coupons/available?cartTotal=${e}`,providesTags:[`Coupon`]}),getUserCouponHistory:e.query({query:()=>`/Coupons/history`,providesTags:[`Coupon`]})})});export{n,t};

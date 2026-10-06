@@ -1,0 +1,8 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#EFE7D8"/>
+  <rect x="250" y="300" width="400" height="400" rx="24" fill="#E2D8C4"/>
+  <circle cx="450" cy="450" r="92" fill="none" stroke="#9D731E" stroke-width="14"/>
+  <path d="M450 392v116M414 450h72" stroke="#9D731E" stroke-width="14" stroke-linecap="round"/>
+  <text x="450" y="780" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" letter-spacing="6" fill="#9D731E">URBANIQ</text>
+  <text x="450" y="836" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" letter-spacing="3" fill="#514B43">IMAGEN NO DISPONIBLE</text>
+</svg>

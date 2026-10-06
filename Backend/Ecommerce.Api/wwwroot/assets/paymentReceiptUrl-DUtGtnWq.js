@@ -1,0 +1,1 @@
+var e=e=>{if(!(!e||!/^\/uploads\/payments\/[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}\.(?:png|jpe?g|webp|pdf)$/i.test(e)))return new URL(e,new URL(`/api/v1`,window.location.origin)).href};export{e as t};

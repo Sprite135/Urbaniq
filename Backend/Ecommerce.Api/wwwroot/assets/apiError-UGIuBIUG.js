@@ -1,0 +1,1 @@
+var e=e=>typeof e==`object`&&!!e,t=(t,n)=>{if(!e(t))return n;let r=t;return typeof r.data==`string`?r.data:e(r.data)&&typeof r.data.message==`string`?r.data.message:typeof r.message==`string`?r.message:n};export{t};
