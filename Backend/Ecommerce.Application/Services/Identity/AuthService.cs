@@ -88,9 +88,9 @@ namespace Ecommerce.Application.Services.Identity
             user.UserId = Guid.NewGuid();
             user.Role = parsedRole;
 
-            // Generate an email verification token so the new account can confirm its address.
+            // Automatically mark email as verified on registration so users can log in immediately.
             var verificationToken = CreateUrlSafeToken();
-            user.IsEmailVerified = false;
+            user.IsEmailVerified = true;
             user.EmailVerificationTokenHash = ComputeSha256Hash(verificationToken);
             user.EmailVerificationTokenExpiresUtc = DateTime.UtcNow.AddHours(24);
 
