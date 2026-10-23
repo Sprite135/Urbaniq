@@ -37,7 +37,7 @@ Urbaniq es una plataforma de e-commerce completa con:
 - **Frontend:** SPA moderna con React 19 + TypeScript + Vite 8
 - **Base de Datos:** SQL Server con Entity Framework Core
 - **Caching:** Redis con fallback a DistributedMemoryCache
-- **Pagos:** Stripe y Mercado Pago; Yape/Plin como flujo de comprobante manual de demostración
+- **Pagos:** Stripe, Mercado Pago y Yape sandbox automático; Yape/Plin manual para comprobantes de demostración
 - **Admin Panel:** Panel de administración completo
 
 Ideal para portafolio profesional y demostración de habilidades técnicas para posiciones junior en Perú.
@@ -50,7 +50,7 @@ Ideal para portafolio profesional y demostración de habilidades técnicas para 
 - ✅ Catálogo de productos con filtros y búsqueda
 - ✅ Carrito de compras completo
 - ✅ Checkout multi-paso
-- ✅ Múltiples métodos de pago (Stripe, Yape, Plin, Contra Entrega)
+- ✅ Múltiples métodos de pago (Stripe, Mercado Pago, Yape sandbox, Yape/Plin manual y Contra Entrega)
 - ✅ Sistema de cupones avanzado
 - ✅ Reviews y calificaciones
 - ✅ Wishlist
@@ -216,8 +216,10 @@ Editar `Backend/Ecommerce.Api/appsettings.LocalDb.json`:
     "WebhookSecret": "whsec_tu_clave_webhook"
   },
   "MercadoPagoSettings": {
-    "AccessToken": "TEST-tu_access_token",
-    "WebhookSecret": "tu_firma_secreta_webhook"
+    "AccessToken": "APP_USR-tu_access_token_de_prueba",
+    "PublicKey": "APP_USR-tu_public_key",
+    "WebhookSecret": "tu_firma_secreta_webhook",
+    "SandboxMode": true
   }
 }
 ```
@@ -232,7 +234,9 @@ export ConnectionStrings__DefaultConnection="Server=tu_servidor;Database=Urbaniq
 export Jwt__Key="tu_clave_secreta"
 export StripeSettings__SecretKey="sk_live_tu_clave"
 export MercadoPagoSettings__AccessToken="APP_USR-tu_access_token"
+export MercadoPagoSettings__PublicKey="APP_USR-tu_public_key"
 export MercadoPagoSettings__WebhookSecret="tu_firma_secreta_webhook"
+export MercadoPagoSettings__SandboxMode="false"
 ```
 
 ### Frontend Configuration

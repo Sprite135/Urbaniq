@@ -9,7 +9,7 @@ Estado verificado: 23 de octubre de 2026.
 - Dirección: **Av. de la Innovación 123, Lima, Perú (ficticia)**
 - Correo: **soporte@urbaniq.example**
 - Comprobantes: referencias de boleta/factura de demostración, sin emisión SUNAT ni validez fiscal.
-- Pagos: Stripe debe usarse únicamente en modo de prueba. Los datos Yape/Plin locales son ficticios.
+- Pagos: Stripe debe usarse únicamente en modo de prueba. Los datos Yape/Plin locales son ficticios. Yape automático usa el sandbox oficial de Mercado Pago y no mueve dinero.
 
 ## Trabajo completado
 
@@ -23,6 +23,7 @@ Estado verificado: 23 de octubre de 2026.
 - El administrador inicial ya no recupera privilegios, desbloqueo o contraseña durante cada arranque.
 - Los correos usan una outbox persistente con reintentos. El panel **Operaciones** permite revisar la cola y la bitácora.
 - Se añadieron SEO compatible con React 19, página 404, recuperación ante errores de render y páginas de términos, privacidad y reclamaciones demo.
+- Se añadió Yape sandbox automático mediante MercadoPago.js y validación del pago en el servidor; las credenciales de prueba se guardan fuera de Git.
 - El pipeline principal usa Node 24, compila la solución oficial, ejecuta todas las pruebas y publica el backend con `dotnet publish`.
 - La caché admite invalidación distribuida por prefijo mediante generaciones compartidas.
 
@@ -30,7 +31,7 @@ Estado verificado: 23 de octubre de 2026.
 
 | Verificación | Resultado |
 |---|---:|
-| Backend, pruebas unitarias | 116/116 |
+| Backend, pruebas unitarias | 118/118 |
 | Backend, pruebas de integración | 21/21 |
 | Frontend, Vitest | 52/52 en 13 archivos |
 | E2E y visuales | 10/10 en escritorio y móvil |
@@ -66,4 +67,4 @@ La opción `Database:ApplyMigrations` permite aplicar migraciones al arrancar cu
 
 ## Límites conscientes de la entrega
 
-La aplicación está lista para una demostración académica local. Una operación comercial real todavía requiere credenciales y cuentas reales, homologación fiscal, pruebas con SQL Server y Stripe sandbox del propietario, SMTP, respaldo/restauración, revisión legal y un despliegue verificado. Estos puntos dependen de servicios y decisiones externas y no deben simularse como si fueran producción.
+La aplicación está lista para una demostración académica local. Una operación comercial real todavía requiere credenciales productivas y cuentas verificadas, homologación fiscal, pruebas con SQL Server, webhooks de pagos, SMTP, respaldo/restauración, revisión legal y un despliegue verificado. Estos puntos dependen de servicios y decisiones externas y no deben simularse como si fueran producción.

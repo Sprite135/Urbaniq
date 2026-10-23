@@ -67,14 +67,18 @@ namespace Ecommerce.Api.Controllers.Payment
                 return Ok(new PaymentConfigResponseDto
                 {
                     PublishableKey = "", // Empty string indicates Stripe not configured
-                    MercadoPagoEnabled = _mercadoPagoService.IsConfigured
+                    MercadoPagoEnabled = _mercadoPagoService.IsWebhookConfigured,
+                    MercadoPagoPublicKey = _mercadoPagoService.PublicKey,
+                    YapeSandboxEnabled = _mercadoPagoService.IsYapeSandboxConfigured
                 });
             }
 
             return Ok(new PaymentConfigResponseDto
             {
                 PublishableKey = _stripeSettings.PublishableKey,
-                MercadoPagoEnabled = _mercadoPagoService.IsConfigured
+                MercadoPagoEnabled = _mercadoPagoService.IsWebhookConfigured,
+                MercadoPagoPublicKey = _mercadoPagoService.PublicKey,
+                YapeSandboxEnabled = _mercadoPagoService.IsYapeSandboxConfigured
             });
         }
 
@@ -87,6 +91,25 @@ namespace Ecommerce.Api.Controllers.Payment
                 Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
                 baseUri);
             return Ok(result);
+        }
+
+        [HttpPost("mercadopago/yape-sandbox")]
+        public async Task<IActionResult> CreateYapeSandboxPayment([FromBody] MercadoPagoYapeRequestDto request)
+        {
+            if (!_mercadoPagoService.IsYapeSandboxConfigured)
+                return BadRequest(new { message = "Yape sandbox no está configurado." });
+
+            var payment = await _orderService.StartYapeSandboxPaymentAsync(
+                request.OrderId,
+                Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+                request.Token,
+                request.PhoneNumber);
+            return Ok(new MercadoPagoYapeResponseDto
+            {
+                PaymentId = payment.PaymentId,
+                Status = payment.Status,
+                IsSuccessful = string.Equals(payment.Status, "approved", StringComparison.OrdinalIgnoreCase)
+            });
         }
 
         [HttpPost("mercadopago/webhook")]

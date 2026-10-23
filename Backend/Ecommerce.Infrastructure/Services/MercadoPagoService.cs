@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -21,11 +22,17 @@ public sealed class MercadoPagoService : IMercadoPagoService
         _settings = settings.Value;
         var validToken = _settings.AccessToken.StartsWith("APP_USR-", StringComparison.Ordinal) ||
                          _settings.AccessToken.StartsWith("TEST-", StringComparison.Ordinal);
-        IsConfigured = validToken && !string.IsNullOrWhiteSpace(_settings.WebhookSecret) &&
-                       !_settings.WebhookSecret.Contains("SET_VIA", StringComparison.OrdinalIgnoreCase);
+        IsConfigured = validToken;
+        IsWebhookConfigured = validToken && !string.IsNullOrWhiteSpace(_settings.WebhookSecret) &&
+                              !_settings.WebhookSecret.Contains("SET_VIA", StringComparison.OrdinalIgnoreCase);
+        IsYapeSandboxConfigured = validToken && _settings.SandboxMode &&
+                                  _settings.PublicKey.StartsWith("APP_USR-", StringComparison.Ordinal);
     }
 
     public bool IsConfigured { get; }
+    public bool IsWebhookConfigured { get; }
+    public bool IsYapeSandboxConfigured { get; }
+    public string PublicKey => IsYapeSandboxConfigured ? _settings.PublicKey : string.Empty;
 
     public async Task<MercadoPagoCheckoutResponseDto> CreateCheckoutAsync(decimal amount, Guid orderId, Uri applicationBaseUri)
     {
@@ -74,10 +81,90 @@ public sealed class MercadoPagoService : IMercadoPagoService
         };
     }
 
+    public async Task<MercadoPagoPaymentDto> CreateYapePaymentAsync(string token, decimal amount, Guid orderId, string phoneNumber)
+    {
+        if (!IsYapeSandboxConfigured)
+            throw new InvalidOperationException("Yape sandbox no está configurado.");
+        if (string.IsNullOrWhiteSpace(token))
+            throw new ArgumentException("Mercado Pago no devolvió un token de Yape.", nameof(token));
+        if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != 9 || !phoneNumber.All(char.IsDigit))
+            throw new ArgumentException("El número Yape debe contener 9 dígitos.", nameof(phoneNumber));
+
+        var amountText = amount.ToString("0.00", CultureInfo.InvariantCulture);
+        var payload = new
+        {
+            type = "online",
+            external_reference = orderId.ToString(),
+            processing_mode = "automatic",
+            total_amount = amountText,
+            payer = new
+            {
+                email = "test_user_pe@testuser.com",
+                entity_type = "individual",
+                phone = new { area_code = "51", number = phoneNumber }
+            },
+            config = new { location = new { state_id = "PE-LIM" } },
+            transactions = new
+            {
+                payments = new[]
+                {
+                    new
+                    {
+                        amount = amountText,
+                        payment_method = new { id = "yape", type = "debit_card", token }
+                    }
+                }
+            }
+        };
+        using var request = CreateRequest(HttpMethod.Post, "v1/orders", payload, $"yape-sandbox-{orderId}");
+        using var response = await _httpClient.SendAsync(request);
+        var json = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Mercado Pago no pudo procesar el Yape de prueba ({(int)response.StatusCode}).");
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        var status = root.GetProperty("status").GetString() ?? string.Empty;
+        var statusDetail = root.GetProperty("status_detail").GetString() ?? string.Empty;
+        var approved = string.Equals(status, "processed", StringComparison.OrdinalIgnoreCase) &&
+                       string.Equals(statusDetail, "accredited", StringComparison.OrdinalIgnoreCase);
+        return new MercadoPagoPaymentDto
+        {
+            PaymentId = root.GetProperty("id").ToString(),
+            Status = approved ? "approved" : status,
+            ExternalReference = root.TryGetProperty("external_reference", out var reference) ? reference.GetString() ?? string.Empty : string.Empty,
+            TransactionAmount = ReadDecimal(root.GetProperty("total_paid_amount")),
+            CurrencyId = root.GetProperty("currency").GetString() ?? string.Empty
+        };
+    }
+
     public async Task RefundAsync(string paymentId, decimal amount, string idempotencyKey)
     {
         EnsureConfigured();
-        using var request = CreateRequest(HttpMethod.Post, $"v1/payments/{Uri.EscapeDataString(paymentId)}/refunds", new { amount }, idempotencyKey);
+        var escapedId = Uri.EscapeDataString(paymentId);
+        if (paymentId.StartsWith("ORD", StringComparison.OrdinalIgnoreCase))
+        {
+            using var orderRequest = CreateRequest(HttpMethod.Get, $"v1/orders/{escapedId}");
+            using var orderResponse = await _httpClient.SendAsync(orderRequest);
+            if (!orderResponse.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Mercado Pago no pudo consultar la orden antes del reembolso ({(int)orderResponse.StatusCode}).");
+
+            var order = await orderResponse.Content.ReadFromJsonAsync<JsonElement>();
+            var transactionId = order.GetProperty("transactions").GetProperty("payments")[0].GetProperty("id").ToString();
+            var orderPayload = new
+            {
+                transactions = new[]
+                {
+                    new { id = transactionId, amount = amount.ToString("0.00", CultureInfo.InvariantCulture) }
+                }
+            };
+            using var orderRefundRequest = CreateRequest(HttpMethod.Post, $"v1/orders/{escapedId}/refund", orderPayload, idempotencyKey);
+            using var orderRefundResponse = await _httpClient.SendAsync(orderRefundRequest);
+            if (!orderRefundResponse.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Mercado Pago no pudo reembolsar la orden ({(int)orderRefundResponse.StatusCode}).");
+            return;
+        }
+
+        using var request = CreateRequest(HttpMethod.Post, $"v1/payments/{escapedId}/refunds", new { amount }, idempotencyKey);
         using var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
             throw new InvalidOperationException($"Mercado Pago no pudo reembolsar el pago ({(int)response.StatusCode}).");
@@ -111,4 +198,9 @@ public sealed class MercadoPagoService : IMercadoPagoService
     {
         if (!IsConfigured) throw new InvalidOperationException("Mercado Pago no está configurado.");
     }
+
+    private static decimal ReadDecimal(JsonElement element) =>
+        element.ValueKind == JsonValueKind.String
+            ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+            : element.GetDecimal();
 }

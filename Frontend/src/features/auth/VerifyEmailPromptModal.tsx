@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { Mail, X } from 'lucide-react';
 import { selectCurrentUser, selectIsAuthenticated } from './authSlice';
 import { useSendEmailVerificationMutation } from './authApiSlice';
@@ -7,6 +8,7 @@ import { useSendEmailVerificationMutation } from './authApiSlice';
 const VerifyEmailPromptModal: React.FC = () => {
   const user = useSelector(selectCurrentUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -15,23 +17,28 @@ const VerifyEmailPromptModal: React.FC = () => {
   const [sendEmailVerification, { isLoading: isSendingEmail }] = useSendEmailVerificationMutation();
 
   useEffect(() => {
+    const userId = user?.userId;
+    const isCheckout = location.pathname.startsWith('/checkout');
+
     // If the email is verified (e.g. from background auto-tracking), close the modal immediately
-    if (user?.isEmailVerified) {
+    if (!isAuthenticated || !userId || user?.isEmailVerified || isCheckout) {
       setIsOpen(false);
       return;
     }
 
     // Only show if logged in, email not verified, and we haven't dismissed it this session
-    if (isAuthenticated && user && !user.isEmailVerified) {
-      const dismissed = sessionStorage.getItem(`verify_prompt_dismissed_${user.userId}`);
-      if (!dismissed) {
-        const timer = setTimeout(() => {
+    const dismissalKey = `verify_prompt_dismissed_${userId}`;
+    const dismissed = sessionStorage.getItem(dismissalKey);
+    if (!dismissed) {
+      const timer = window.setTimeout(() => {
+        // The user may dismiss another scheduled instance before this callback runs.
+        if (!sessionStorage.getItem(dismissalKey)) {
           setIsOpen(true);
-        }, 3000); // 3 seconds delay
-        return () => clearTimeout(timer);
-      }
+        }
+      }, 3000); // 3 seconds delay
+      return () => window.clearTimeout(timer);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, location.pathname, user?.isEmailVerified, user?.userId]);
 
   const handleClose = () => {
     if (user) {

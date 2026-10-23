@@ -8,7 +8,7 @@ import ProductImage from '@/features/catalog/components/ProductImage';
 
 const REDIRECT_SECONDS = 6;
 
-type PaymentMethod = 'card' | 'mercadopago' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
+type PaymentMethod = 'card' | 'mercadopago' | 'yape-sandbox' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
 
 interface OrderSuccessScreenProps {
   orderId: string;
@@ -20,11 +20,11 @@ interface OrderSuccessScreenProps {
 const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ orderId, cart, address, paymentMethod }) => {
   const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
-  const isCard = paymentMethod === 'card' || paymentMethod === 'mercadopago';
+  const isCard = paymentMethod === 'card' || paymentMethod === 'mercadopago' || paymentMethod === 'yape-sandbox';
   const isCod = paymentMethod === 'cod';
   const isPendingTransfer = !isCard && !isCod;
   const methodLabel = isCard
-    ? paymentMethod === 'mercadopago' ? 'Mercado Pago' : 'Tarjeta de Crédito / Débito'
+    ? paymentMethod === 'yape-sandbox' ? 'Yape de prueba (Mercado Pago)' : paymentMethod === 'mercadopago' ? 'Mercado Pago' : 'Tarjeta de Crédito / Débito'
     : isCod
       ? 'Pago Contra Entrega'
       : paymentMethod === 'yape'

@@ -325,11 +325,11 @@ if (!app.Environment.IsDevelopment())
         if (app.Environment.IsProduction())
         {
             var csp = "default-src 'self'; " +
-                      "script-src 'self' https://js.stripe.com https://checkout.stripe.com; " +
+                      "script-src 'self' https://js.stripe.com https://checkout.stripe.com https://sdk.mercadopago.com; " +
                       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
                       "img-src 'self' data: https: blob: https://res.cloudinary.com; " +
                       "font-src 'self' data:; " +
-                      "connect-src 'self' https://api.stripe.com https://checkout.stripe.com; " +
+                      "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://api.mercadopago.com; " +
                       "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
                       "base-uri 'self'; " +
                       "form-action 'self';";

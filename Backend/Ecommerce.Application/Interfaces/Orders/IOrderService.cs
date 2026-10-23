@@ -29,6 +29,7 @@ namespace Ecommerce.Application.Interfaces.Orders
         Task<ApiResponse<Ecommerce.Application.DTOs.Payment.PaymentIntentResponseDto>> StartCardPaymentAsync(Guid orderId, Guid userId);
         Task ConfirmCardPaymentAsync(Guid orderId, Guid userId, string paymentIntentId);
         Task<Ecommerce.Application.DTOs.Payment.MercadoPagoCheckoutResponseDto> StartMercadoPagoPaymentAsync(Guid orderId, Guid userId, Uri applicationBaseUri);
+        Task<Ecommerce.Application.DTOs.Payment.MercadoPagoPaymentDto> StartYapeSandboxPaymentAsync(Guid orderId, Guid userId, string token, string phoneNumber);
         Task ConfirmMercadoPagoPaymentAsync(Ecommerce.Application.DTOs.Payment.MercadoPagoPaymentDto payment);
         Task ExpirePendingOrderAsync(Guid orderId);
         Task RefundOrderAsync(Guid orderId, decimal amount, string reason);

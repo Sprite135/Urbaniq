@@ -4,5 +4,7 @@ namespace Ecommerce.Application.DTOs.Payment
     {
         public string PublishableKey { get; set; } = null!;
         public bool MercadoPagoEnabled { get; set; }
+        public string MercadoPagoPublicKey { get; set; } = string.Empty;
+        public bool YapeSandboxEnabled { get; set; }
     }
 }

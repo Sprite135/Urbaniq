@@ -8,6 +8,17 @@ namespace Ecommerce.Application.Services.Orders;
 
 public partial class OrderService
 {
+    public async Task<MercadoPagoPaymentDto> StartYapeSandboxPaymentAsync(Guid orderId, Guid userId, string token, string phoneNumber)
+    {
+        var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId)
+            ?? throw new KeyNotFoundException("Pedido no encontrado.");
+        if (order.PaymentMethod != "mercadopago" || order.IsPaid || order.OrderStatus != OrderStatus.Pending || order.PaymentDueAtUtc <= DateTime.UtcNow)
+            throw new InvalidOperationException("Este pedido ya no admite un pago Yape de prueba.");
+        var payment = await _mercadoPagoService.CreateYapePaymentAsync(token, order.TotalPrice, order.OrderId, phoneNumber);
+        await ConfirmMercadoPagoPaymentAsync(payment);
+        return payment;
+    }
+
     public async Task<MercadoPagoCheckoutResponseDto> StartMercadoPagoPaymentAsync(Guid orderId, Guid userId, Uri applicationBaseUri)
     {
         var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId)

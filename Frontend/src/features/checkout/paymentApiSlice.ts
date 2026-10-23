@@ -32,11 +32,19 @@ export interface PaymentVerifyResponse {
 export interface PaymentConfigResponse {
   publishableKey: string;
   mercadoPagoEnabled: boolean;
+  mercadoPagoPublicKey: string;
+  yapeSandboxEnabled: boolean;
 }
 
 export interface MercadoPagoCheckoutResponse {
   preferenceId: string;
   checkoutUrl: string;
+}
+
+export interface YapeSandboxResponse {
+  paymentId: string;
+  status: string;
+  isSuccessful: boolean;
 }
 
 export interface ShippingConfig {
@@ -103,6 +111,14 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    createYapeSandboxPayment: builder.mutation<YapeSandboxResponse, { orderId: string; token: string; phoneNumber: string }>({
+      query: (body) => ({
+        url: '/Payment/mercadopago/yape-sandbox',
+        method: 'POST',
+        body,
+      }),
+    }),
+
     /** Verifies a payment using its PaymentIntent ID */
     verifyPayment: builder.mutation<PaymentVerifyResponse, VerifyPaymentRequest>({
       query: (body) => ({
@@ -121,5 +137,6 @@ export const {
   useUploadVoucherMutation,
   useCreatePaymentIntentMutation,
   useCreateMercadoPagoCheckoutMutation,
+  useCreateYapeSandboxPaymentMutation,
   useVerifyPaymentMutation,
 } = paymentApiSlice;
