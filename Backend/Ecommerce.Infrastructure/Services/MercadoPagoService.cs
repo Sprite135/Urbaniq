@@ -23,6 +23,7 @@ public sealed class MercadoPagoService : IMercadoPagoService
         var validToken = _settings.AccessToken.StartsWith("APP_USR-", StringComparison.Ordinal) ||
                          _settings.AccessToken.StartsWith("TEST-", StringComparison.Ordinal);
         IsConfigured = validToken;
+        IsSandboxMode = validToken && _settings.SandboxMode;
         IsWebhookConfigured = validToken && !string.IsNullOrWhiteSpace(_settings.WebhookSecret) &&
                               !_settings.WebhookSecret.Contains("SET_VIA", StringComparison.OrdinalIgnoreCase);
         IsYapeSandboxConfigured = validToken && _settings.SandboxMode &&
@@ -31,6 +32,7 @@ public sealed class MercadoPagoService : IMercadoPagoService
 
     public bool IsConfigured { get; }
     public bool IsWebhookConfigured { get; }
+    public bool IsSandboxMode { get; }
     public bool IsYapeSandboxConfigured { get; }
     public string PublicKey => IsYapeSandboxConfigured ? _settings.PublicKey : string.Empty;
 
@@ -56,10 +58,13 @@ public sealed class MercadoPagoService : IMercadoPagoService
             throw new InvalidOperationException($"Mercado Pago no pudo crear el checkout ({(int)response.StatusCode}).");
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
+        var checkoutProperty = IsSandboxMode && root.TryGetProperty("sandbox_init_point", out var sandboxCheckout)
+            ? sandboxCheckout
+            : root.GetProperty("init_point");
         return new MercadoPagoCheckoutResponseDto
         {
             PreferenceId = root.GetProperty("id").GetString() ?? throw new InvalidOperationException("Mercado Pago no devolvió el ID de preferencia."),
-            CheckoutUrl = root.GetProperty("init_point").GetString() ?? throw new InvalidOperationException("Mercado Pago no devolvió la URL de pago.")
+            CheckoutUrl = checkoutProperty.GetString() ?? throw new InvalidOperationException("Mercado Pago no devolvió la URL de pago.")
         };
     }
 

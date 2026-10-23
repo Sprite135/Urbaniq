@@ -32,7 +32,7 @@ interface PaymentFormProps {
   onOrderSuccess: (details: OrderSuccessDetails) => void;
 }
 
-const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; mercadoPagoEnabled?: boolean; mercadoPagoPublicKey?: string; yapeSandboxEnabled?: boolean; shippingConfig: ShippingConfig }> = ({
+const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; mercadoPagoEnabled?: boolean; mercadoPagoSandboxMode?: boolean; mercadoPagoPublicKey?: string; yapeSandboxEnabled?: boolean; shippingConfig: ShippingConfig }> = ({
   cart,
   addressId,
   address,
@@ -40,6 +40,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
   onOrderSuccess,
   stripeEnabled = true,
   mercadoPagoEnabled = false,
+  mercadoPagoSandboxMode = false,
   mercadoPagoPublicKey = '',
   yapeSandboxEnabled = false,
   shippingConfig,
@@ -144,9 +145,10 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
 
   const paymentButtonText = useMemo(() => {
     if (paymentMethod === 'cod') return 'Realizar pedido (Pago contra entrega)';
+    if (paymentMethod === 'mercadopago' && mercadoPagoSandboxMode) return 'Continuar con tarjeta de prueba';
     if (isOfflineTransfer) return 'Confirmar pedido';
     return `Pagar S/ ${orderTotal.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }, [paymentMethod, isOfflineTransfer, orderTotal]);
+  }, [paymentMethod, isOfflineTransfer, mercadoPagoSandboxMode, orderTotal]);
 
   const invoiceSelectedClass = 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]';
   const invoiceUnselectedClass = 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]';
@@ -461,15 +463,57 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
                 onChange={() => setPaymentMethod('mercadopago')}
                 className="accent-[#9d731e]"
               />
-              <Wallet className="h-5 w-5 text-[#009ee3]" />
+              {mercadoPagoSandboxMode
+                ? <CreditCard className="h-5 w-5 text-[#009ee3]" />
+                : <Wallet className="h-5 w-5 text-[#009ee3]" />}
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Mercado Pago</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">
+                    {mercadoPagoSandboxMode ? 'Tarjetas de prueba' : 'Mercado Pago'}
+                  </p>
+                  {mercadoPagoSandboxMode && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                      Sin dinero real
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 dark:text-[#9a9388]">
-                  Tarjetas y Yape con confirmación automática
+                  {mercadoPagoSandboxMode
+                    ? 'Visa y Mastercard ficticias mediante el checkout oficial de Mercado Pago'
+                    : 'Tarjetas y Yape con confirmación automática'}
                 </p>
               </div>
             </label>
           </div>
+          )}
+
+          {paymentMethod === 'mercadopago' && mercadoPagoSandboxMode && (
+            <div className="rounded-xl border border-[#009ee3]/25 bg-[#f2faff] p-4 dark:border-[#009ee3]/30 dark:bg-[#10202a]">
+              <div className="flex items-start gap-3">
+                <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-[#009ee3]" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-gray-900 dark:text-[#ece7dd]">Datos oficiales para aprobar la prueba</p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-[#b8b0a5]">
+                    Usa una de estas tarjetas en la pantalla de Mercado Pago. Son datos ficticios del Sandbox.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {[
+                      { brand: 'Mastercard crédito', number: '5031 7557 3453 0604' },
+                      { brand: 'Visa crédito', number: '4009 1753 3280 6176' },
+                    ].map(card => (
+                      <div key={card.number} className="rounded-lg border border-white/80 bg-white p-3 shadow-sm dark:border-[#30343d] dark:bg-[#16181d]">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-[#009ee3]">{card.brand}</p>
+                        <p className="mt-1 break-all font-mono text-sm font-bold text-gray-900 dark:text-[#ece7dd]">{card.number}</p>
+                        <p className="mt-2 text-[11px] text-gray-600 dark:text-[#b8b0a5]">Vence 11/30 · CVV 123</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                    Titular <strong>APRO</strong> · Documento <strong>123456789</strong> · Resultado: pago aprobado
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
           {stripeEnabled && (
           <div
@@ -1035,6 +1079,7 @@ const PaymentForm: React.FC<PaymentFormProps> = (props) => {
   const publishableKey = paymentConfig?.publishableKey;
   const stripeEnabled = Boolean(publishableKey);
   const mercadoPagoEnabled = Boolean(paymentConfig?.mercadoPagoEnabled);
+  const mercadoPagoSandboxMode = Boolean(paymentConfig?.mercadoPagoSandboxMode);
   const mercadoPagoPublicKey = paymentConfig?.mercadoPagoPublicKey ?? '';
   const yapeSandboxEnabled = Boolean(paymentConfig?.yapeSandboxEnabled && mercadoPagoPublicKey);
   const stripePromise = useMemo(
@@ -1062,7 +1107,7 @@ const PaymentForm: React.FC<PaymentFormProps> = (props) => {
 
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutForm {...props} stripeEnabled={stripeEnabled} mercadoPagoEnabled={mercadoPagoEnabled} mercadoPagoPublicKey={mercadoPagoPublicKey} yapeSandboxEnabled={yapeSandboxEnabled} shippingConfig={shippingConfig} />
+      <CheckoutForm {...props} stripeEnabled={stripeEnabled} mercadoPagoEnabled={mercadoPagoEnabled} mercadoPagoSandboxMode={mercadoPagoSandboxMode} mercadoPagoPublicKey={mercadoPagoPublicKey} yapeSandboxEnabled={yapeSandboxEnabled} shippingConfig={shippingConfig} />
     </Elements>
   );
 };

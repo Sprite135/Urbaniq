@@ -65,6 +65,33 @@ public sealed class MercadoPagoServiceTests
     }
 
     [Fact]
+    public async Task CreateCheckout_InSandbox_ReturnsSandboxCheckoutUrl()
+    {
+        var handler = new StubHandler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Created)
+        {
+            Content = new StringContent("""
+                {
+                  "id":"PREF-TEST",
+                  "init_point":"https://www.mercadopago.com.pe/checkout/prod",
+                  "sandbox_init_point":"https://sandbox.mercadopago.com.pe/checkout/test"
+                }
+                """, Encoding.UTF8, "application/json")
+        }));
+        var service = CreateService(new MercadoPagoSettings
+        {
+            AccessToken = "APP_USR-test-access-token",
+            PublicKey = "APP_USR-public-key",
+            SandboxMode = true
+        }, handler);
+
+        var result = await service.CreateCheckoutAsync(99.90m, Guid.NewGuid(), new Uri("https://urbaniq.example/"));
+
+        service.IsSandboxMode.Should().BeTrue();
+        result.PreferenceId.Should().Be("PREF-TEST");
+        result.CheckoutUrl.Should().Be("https://sandbox.mercadopago.com.pe/checkout/test");
+    }
+
+    [Fact]
     public async Task Refund_OrderPayment_UsesOrdersApiAndItsTransactionId()
     {
         var requests = new List<(HttpMethod Method, string Path, string Body)>();

@@ -67,7 +67,8 @@ namespace Ecommerce.Api.Controllers.Payment
                 return Ok(new PaymentConfigResponseDto
                 {
                     PublishableKey = "", // Empty string indicates Stripe not configured
-                    MercadoPagoEnabled = _mercadoPagoService.IsWebhookConfigured,
+                    MercadoPagoEnabled = _mercadoPagoService.IsWebhookConfigured || _mercadoPagoService.IsSandboxMode,
+                    MercadoPagoSandboxMode = _mercadoPagoService.IsSandboxMode,
                     MercadoPagoPublicKey = _mercadoPagoService.PublicKey,
                     YapeSandboxEnabled = _mercadoPagoService.IsYapeSandboxConfigured
                 });
@@ -76,7 +77,8 @@ namespace Ecommerce.Api.Controllers.Payment
             return Ok(new PaymentConfigResponseDto
             {
                 PublishableKey = _stripeSettings.PublishableKey,
-                MercadoPagoEnabled = _mercadoPagoService.IsWebhookConfigured,
+                MercadoPagoEnabled = _mercadoPagoService.IsWebhookConfigured || _mercadoPagoService.IsSandboxMode,
+                MercadoPagoSandboxMode = _mercadoPagoService.IsSandboxMode,
                 MercadoPagoPublicKey = _mercadoPagoService.PublicKey,
                 YapeSandboxEnabled = _mercadoPagoService.IsYapeSandboxConfigured
             });

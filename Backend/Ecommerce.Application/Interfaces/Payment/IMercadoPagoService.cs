@@ -6,6 +6,7 @@ public interface IMercadoPagoService
 {
     bool IsConfigured { get; }
     bool IsWebhookConfigured { get; }
+    bool IsSandboxMode { get; }
     bool IsYapeSandboxConfigured { get; }
     string PublicKey { get; }
     Task<MercadoPagoCheckoutResponseDto> CreateCheckoutAsync(decimal amount, Guid orderId, Uri applicationBaseUri);

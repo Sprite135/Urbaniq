@@ -32,6 +32,7 @@ export interface PaymentVerifyResponse {
 export interface PaymentConfigResponse {
   publishableKey: string;
   mercadoPagoEnabled: boolean;
+  mercadoPagoSandboxMode: boolean;
   mercadoPagoPublicKey: string;
   yapeSandboxEnabled: boolean;
 }

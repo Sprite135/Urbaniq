@@ -101,6 +101,13 @@ test('cliente completa una compra contra entrega y queda fuera del panel adminis
   await page.getByRole('button', { name: 'Continuar al pago' }).click();
 
   await expect(page.getByText('Solo métodos disponibles')).toBeVisible();
+  const sandboxCard = page.getByText('Tarjetas de prueba', { exact: true });
+  if (await sandboxCard.count()) {
+    await sandboxCard.click();
+    await expect(page.getByText('5031 7557 3453 0604')).toBeVisible();
+    await expect(page.getByText('4009 1753 3280 6176')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar con tarjeta de prueba' })).toBeVisible();
+  }
   await page.getByText('Pago contra entrega', { exact: true }).click();
   const orderResponsePromise = page.waitForResponse(response =>
     response.url().includes('/api/v1/Order/place-order') && response.request().method() === 'POST'
