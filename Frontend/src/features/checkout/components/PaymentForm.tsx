@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, CreditCard, Lock, ShieldCheck, X, XCircle, Smartphone, QrCode, Building2, Wallet } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, Lock, ShieldCheck, X, XCircle, Smartphone, QrCode, Wallet } from 'lucide-react';
 import { useCreateMercadoPagoCheckoutMutation, useCreatePaymentIntentMutation, useCreateYapeSandboxPaymentMutation, useGetMerchantMethodsQuery, useGetPaymentConfigQuery, useGetShippingConfigQuery, useVerifyPaymentMutation } from '../paymentApiSlice';
 import type { ShippingConfig } from '../paymentApiSlice';
 import { useAttachVoucherMutation, usePlaceOrderMutation } from '@/features/orders/orderApiSlice';
@@ -412,29 +412,23 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
         </motion.div>
       )}
 
-      {!stripeEnabled && (
-        <div className="border border-amber-200 bg-amber-50 p-4 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-800">Pago con tarjeta no disponible</p>
-          <p className="mt-1 text-xs text-amber-700">
-            Elige un método de pago habilitado para realizar tu pedido.
-          </p>
-        </div>
-      )}
-
       <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
-        <h3 className="mb-5 text-xs font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Elige el método de pago</h3>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Elige el método de pago</h3>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Solo métodos disponibles</span>
+        </div>
         <div className="space-y-3">
+          {yapeSandboxEnabled && (
           <div
-            onClick={() => yapeSandboxEnabled && setPaymentMethod('yape-sandbox')}
+            onClick={() => setPaymentMethod('yape-sandbox')}
             className={`border transition-colors ${
               paymentMethod === 'yape-sandbox' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } ${yapeSandboxEnabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+            } cursor-pointer`}
           >
             <label className="flex cursor-pointer items-center gap-3 p-3 sm:gap-4 sm:p-4">
               <input
                 type="radio"
                 name="payment"
-                disabled={!yapeSandboxEnabled}
                 checked={paymentMethod === 'yape-sandbox'}
                 onChange={() => setPaymentMethod('yape-sandbox')}
                 className="accent-[#9d731e]"
@@ -446,22 +440,23 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
                   <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">Sin dinero real</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-[#9a9388]">
-                  {yapeSandboxEnabled ? 'Sandbox oficial de Mercado Pago para una demostración ficticia' : 'Disponible solo cuando las credenciales de prueba están configuradas'}
+                  Sandbox oficial de Mercado Pago para una demostración ficticia
                 </p>
               </div>
             </label>
           </div>
+          )}
+          {mercadoPagoEnabled && (
           <div
-            onClick={() => mercadoPagoEnabled && setPaymentMethod('mercadopago')}
+            onClick={() => setPaymentMethod('mercadopago')}
             className={`border transition-colors ${
               paymentMethod === 'mercadopago' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } ${mercadoPagoEnabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+            } cursor-pointer`}
           >
             <label className="flex cursor-pointer items-center gap-3 p-3 sm:gap-4 sm:p-4">
               <input
                 type="radio"
                 name="payment"
-                disabled={!mercadoPagoEnabled}
                 checked={paymentMethod === 'mercadopago'}
                 onChange={() => setPaymentMethod('mercadopago')}
                 className="accent-[#9d731e]"
@@ -470,26 +465,26 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
               <div>
                 <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Mercado Pago</p>
                 <p className="text-xs text-gray-500 dark:text-[#9a9388]">
-                  {mercadoPagoEnabled ? 'Tarjetas y Yape con confirmación automática' : 'Pendiente de configuración del comercio'}
+                  Tarjetas y Yape con confirmación automática
                 </p>
               </div>
             </label>
           </div>
+          )}
+          {stripeEnabled && (
           <div
             onClick={() => {
-              if (!stripeEnabled) return;
               setPaymentMethod('card');
               setCardErrors({ number: null, expiry: null, cvc: null });
             }}
             className={`border transition-colors ${
               paymentMethod === 'card' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } ${stripeEnabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+            } cursor-pointer`}
           >
             <label className="flex cursor-pointer items-start gap-3 sm:gap-4 p-3 sm:p-4">
               <input
                 type="radio"
                 name="payment"
-                disabled={!stripeEnabled}
                 checked={paymentMethod === 'card'}
                 onChange={() => {
                   setPaymentMethod('card');
@@ -506,7 +501,7 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
               </div>
             </label>
 
-            {paymentMethod === 'card' && stripeEnabled && (
+            {paymentMethod === 'card' && (
               <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-0 pl-9 sm:pl-10">
                 <div className="space-y-4">
                   <div>
@@ -557,14 +552,8 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
                 </div>
               </div>
             )}
-            {paymentMethod === 'card' && !stripeEnabled && (
-              <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-0 pl-9 sm:pl-10">
-                <p className="rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                  El pago con tarjeta no está disponible. Elige otro método de pago.
-                </p>
-              </div>
-            )}
           </div>
+          )}
 
           <div
             onClick={() => {
@@ -596,18 +585,18 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
             </label>
           </div>
 
+          {isMerchantPaymentConfigured(merchantMethods?.yape) && (
           <div
-            onClick={() => isMerchantPaymentConfigured(merchantMethods?.yape) && setPaymentMethod('yape')}
+            onClick={() => setPaymentMethod('yape')}
             className={`border transition-colors ${
               paymentMethod === 'yape' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } ${isMerchantPaymentConfigured(merchantMethods?.yape) ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+            } cursor-pointer`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
               <input
                 type="radio"
                 name="payment"
                 checked={paymentMethod === 'yape'}
-                disabled={!isMerchantPaymentConfigured(merchantMethods?.yape)}
                 onChange={() => {
                   setPaymentMethod('yape');
                   setCardErrors({ number: null, expiry: null, cvc: null });
@@ -620,24 +609,25 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Yape</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">{isMerchantPaymentConfigured(merchantMethods?.yape) ? 'Transferencia con verificación del comercio' : 'Pendiente de habilitación'}</p>
+                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Transferencia con verificación del comercio</p>
                 </div>
               </div>
             </label>
           </div>
+          )}
 
+          {isMerchantPaymentConfigured(merchantMethods?.plin) && (
           <div
-            onClick={() => isMerchantPaymentConfigured(merchantMethods?.plin) && setPaymentMethod('plin')}
+            onClick={() => setPaymentMethod('plin')}
             className={`border transition-colors ${
               paymentMethod === 'plin' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } ${isMerchantPaymentConfigured(merchantMethods?.plin) ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+            } cursor-pointer`}
           >
             <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
               <input
                 type="radio"
                 name="payment"
                 checked={paymentMethod === 'plin'}
-                disabled={!isMerchantPaymentConfigured(merchantMethods?.plin)}
                 onChange={() => {
                   setPaymentMethod('plin');
                   setCardErrors({ number: null, expiry: null, cvc: null });
@@ -650,156 +640,13 @@ const CheckoutForm: React.FC<PaymentFormProps & { stripeEnabled?: boolean; merca
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Plin</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">{isMerchantPaymentConfigured(merchantMethods?.plin) ? 'Transferencia con verificación del comercio' : 'Pendiente de habilitación'}</p>
+                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Transferencia con verificación del comercio</p>
                 </div>
               </div>
             </label>
           </div>
+          )}
 
-          <div
-            className={`border transition-colors ${
-              paymentMethod === 'bcp' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } cursor-not-allowed opacity-60`}
-          >
-            <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'bcp'}
-                disabled
-                onChange={() => {
-                  setPaymentMethod('bcp');
-                  setCardErrors({ number: null, expiry: null, cvc: null });
-                }}
-                className="accent-[#9d731e]"
-              />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">Banca móvil BCP</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Próximamente: falta configurar este medio de pago</p>
-                </div>
-              </div>
-            </label>
-          </div>
-
-          <div
-            className={`border transition-colors ${
-              paymentMethod === 'interbank' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } cursor-not-allowed opacity-60`}
-          >
-            <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'interbank'}
-                disabled
-                onChange={() => {
-                  setPaymentMethod('interbank');
-                  setCardErrors({ number: null, expiry: null, cvc: null });
-                }}
-                className="accent-[#9d731e]"
-              />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
-                  <Building2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">App Interbank</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Próximamente: falta configurar este medio de pago</p>
-                </div>
-              </div>
-            </label>
-          </div>
-
-          <div
-            className={`border transition-colors ${
-              paymentMethod === 'bbva' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } cursor-not-allowed opacity-60`}
-          >
-            <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'bbva'}
-                disabled
-                onChange={() => {
-                  setPaymentMethod('bbva');
-                  setCardErrors({ number: null, expiry: null, cvc: null });
-                }}
-                className="accent-[#9d731e]"
-              />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">App BBVA</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Próximamente: falta configurar este medio de pago</p>
-                </div>
-              </div>
-            </label>
-          </div>
-
-          <div
-            className={`border transition-colors ${
-              paymentMethod === 'scotiabank' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } cursor-not-allowed opacity-60`}
-          >
-            <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'scotiabank'}
-                disabled
-                onChange={() => {
-                  setPaymentMethod('scotiabank');
-                  setCardErrors({ number: null, expiry: null, cvc: null });
-                }}
-                className="accent-[#9d731e]"
-              />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100">
-                  <Building2 className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">App Scotiabank</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Próximamente: falta configurar este medio de pago</p>
-                </div>
-              </div>
-            </label>
-          </div>
-
-          <div
-            className={`border transition-colors ${
-              paymentMethod === 'pagoefectivo' ? 'border-[#111827] bg-[#f3ecdf]/60 dark:bg-[#9d731e]/20 dark:border-[#9d731e]' : 'border-gray-200 hover:border-gray-300 dark:border-[#33363d] dark:hover:border-[#9d731e]'
-            } cursor-not-allowed opacity-60`}
-          >
-            <label className="flex cursor-pointer items-center gap-3 sm:gap-4 p-3 sm:p-4">
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'pagoefectivo'}
-                disabled
-                onChange={() => {
-                  setPaymentMethod('pagoefectivo');
-                  setCardErrors({ number: null, expiry: null, cvc: null });
-                }}
-                className="accent-[#9d731e]"
-              />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-[#26282e]">
-                  <Wallet className="h-5 w-5 text-[#9d731e]" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-[#ece7dd]">PagoEfectivo</p>
-                  <p className="text-xs text-gray-500 dark:text-[#9a9388]">Próximamente: falta configurar este medio de pago</p>
-                </div>
-              </div>
-            </label>
-          </div>
         </div>
       </div>
 

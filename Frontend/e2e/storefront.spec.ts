@@ -1,10 +1,56 @@
 import { expect, test } from '@playwright/test';
 
+const expectBasicAccessibility = async (page: import('@playwright/test').Page) => {
+  const audit = await page.evaluate(() => {
+    const getName = (element: Element) => {
+      const labelledBy = element.getAttribute('aria-labelledby');
+      const labelledText = labelledBy
+        ?.split(/\s+/)
+        .map(id => document.getElementById(id)?.textContent?.trim() ?? '')
+        .join(' ')
+        .trim();
+      const labels = 'labels' in element
+        ? Array.from((element as HTMLInputElement).labels ?? []).map(label => label.textContent?.trim() ?? '').join(' ').trim()
+        : '';
+      return (
+        element.getAttribute('aria-label')?.trim()
+        || labelledText
+        || labels
+        || element.getAttribute('title')?.trim()
+        || element.textContent?.trim()
+        || element.querySelector('img')?.getAttribute('alt')?.trim()
+        || ''
+      );
+    };
+
+    const controls = Array.from(document.querySelectorAll('button, a[href], input:not([type="hidden"]), select, textarea'))
+      .filter(element => element.getAttribute('aria-hidden') !== 'true' && !element.hasAttribute('disabled'))
+      .filter(element => !getName(element))
+      .map(element => element.outerHTML.slice(0, 180));
+    const imagesWithoutAlt = Array.from(document.querySelectorAll('img:not([alt])'))
+      .map(element => element.outerHTML.slice(0, 180));
+
+    return {
+      language: document.documentElement.lang,
+      title: document.title.trim(),
+      unnamedControls: controls,
+      imagesWithoutAlt,
+    };
+  });
+
+  expect(audit.language).toBe('es');
+  expect(audit.title.length).toBeGreaterThan(0);
+  expect(audit.unnamedControls).toEqual([]);
+  expect(audit.imagesWithoutAlt).toEqual([]);
+};
+
 const publicRoutes = [
   { path: '/', name: 'inicio' },
   { path: '/catalog', name: 'catalogo' },
   { path: '/help', name: 'ayuda' },
   { path: '/legal/terms', name: 'terminos' },
+  { path: '/login', name: 'inicio-sesion' },
+  { path: '/register', name: 'registro' },
 ];
 
 for (const route of publicRoutes) {
@@ -23,6 +69,7 @@ for (const route of publicRoutes) {
     }));
     expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport + 1);
     expect(pageErrors).toEqual([]);
+    await expectBasicAccessibility(page);
 
     const screenshot = await page.screenshot({
       fullPage: true,

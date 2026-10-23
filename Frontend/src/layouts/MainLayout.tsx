@@ -282,6 +282,7 @@ export default function MainLayout() {
                 onFocus={() => setIsSearchOpen(true)}
                 onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
                 placeholder="Buscar productos..."
+                aria-label="Buscar productos"
                 className="w-full bg-white dark:bg-[#0e0f12] border border-[#d1d5db] dark:border-[#33363d] h-10 pl-10 pr-4 text-[11px] font-black uppercase tracking-[0.1em] text-[#111827] dark:text-[#ece7dd] placeholder:text-[#9ca3af] dark:placeholder:text-[#6f6b63] dark:text-[#6f6b63] focus:outline-none focus:border-[#9d731e] transition-colors"
                 role="combobox"
                 aria-expanded={showDropdown}
@@ -408,6 +409,7 @@ export default function MainLayout() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 placeholder="Buscar productos..."
+                aria-label="Buscar productos"
                 className="w-full bg-white dark:bg-[#16181d] border border-[#d1d5db] dark:border-[#33363d] h-10 pl-10 pr-4 text-[11px] font-black uppercase tracking-[0.1em] text-[#111827] dark:text-[#ece7dd] placeholder:text-[#9ca3af] dark:placeholder:text-[#6f6b63] dark:text-[#6f6b63] focus:outline-none focus:border-[#9d731e]"
                 role="combobox"
                 aria-expanded={hasQuery}
