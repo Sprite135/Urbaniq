@@ -46,6 +46,9 @@ export interface Order {
   address: Address;
   orderItems: OrderItem[];
   isPaid?: boolean;
+  invoiceType?: string; ruc?: string; razonSocial?: string; fiscalAddress?: string;
+  shippingCost?: number; shippingProvider?: string; trackingNumber?: string; invoiceReference?: string;
+  shippedAtUtc?: string; paymentDueAtUtc?: string; refundedAmount?: number;
   paymentReceiptUrl?: string;
   paymentApprovalCode?: string;
 }
@@ -53,7 +56,7 @@ export interface Order {
 export interface CreateOrderRequest {
   addressId: string;
   transactionId: string;
-  paymentMethod: 'card' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
+  paymentMethod: 'card' | 'mercadopago' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
   invoiceType?: 'Boleta' | 'Factura';
   ruc?: string;
   razonSocial?: string;
@@ -81,9 +84,15 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Cart'],
+      invalidatesTags: ['Order'],
     }),
 
+    refundOrder: builder.mutation<void, { orderId: string; totalRefundedAmount: number; reason: string; offlineTransferConfirmed: boolean }>({
+      query: ({ orderId, ...body }) => ({ url: '/Order/' + orderId + '/refund', method: 'POST', body }), invalidatesTags: ['Order'],
+    }),
+    setFulfillment: builder.mutation<void, { orderId: string; trackingNumber?: string; invoiceReference?: string }>({
+      query: ({ orderId, ...body }) => ({ url: '/Order/' + orderId + '/fulfillment', method: 'PUT', body }), invalidatesTags: ['Order'],
+    }),
     validateDelivery: builder.query<{ canDeliver: boolean }, string>({
       query: (addressId) => `/Order/validate-delivery/${addressId}`,
     }),
@@ -159,6 +168,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
 
 export const {
   usePlaceOrderMutation,
+  useRefundOrderMutation,
+  useSetFulfillmentMutation,
   useValidateDeliveryQuery,
   useLazyValidateDeliveryQuery,
   useGetUserOrdersQuery,

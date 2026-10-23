@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 const SeoHead: React.FC = () => {
@@ -56,15 +55,17 @@ const SeoHead: React.FC = () => {
 
   const seo = getSeoInfo();
 
+  // React 19 hoists these elements into <head>, so a separate head manager is
+  // unnecessary and route metadata keeps working with lazy-loaded pages.
   return (
-    <Helmet>
+    <>
       <title>{seo.title}</title>
       <meta name="description" content={seo.description} />
       <meta name="keywords" content={seo.keywords} />
       <meta property="og:title" content={seo.title} />
       <meta property="og:description" content={seo.description} />
       <meta property="og:url" content={`https://urbaniq.com${location.pathname}`} />
-    </Helmet>
+    </>
   );
 };
 

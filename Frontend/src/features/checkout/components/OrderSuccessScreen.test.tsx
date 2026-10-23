@@ -14,8 +14,9 @@ describe('confirmación de transferencia', () => {
       </Routes>,
     );
     expect(screen.getByText(/el pago está pendiente/)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Pago pendiente de validación');
     expect(screen.queryByText('¡Pago exitoso!')).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Seguir mi pedido' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ver mis pedidos ahora' }));
     expect(screen.getByText('Seguimiento del pedido creado')).toBeInTheDocument();
   });
 });

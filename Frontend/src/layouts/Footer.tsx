@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { whatsappSupportUrl } from '@/features/support/whatsapp';
+import BrandLogo from '@/components/BrandLogo';
 
 const footerLinkClass =
   'text-[13px] text-[#6b7280] transition-colors hover:text-[#9d731e]';
@@ -13,11 +15,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <Link to="/" className="inline-block">
-              <img
-                src="/logo.jpeg"
-                alt="Urbaniq"
-                className="h-12 w-auto object-contain"
-              />
+              <BrandLogo />
             </Link>
             <p className="mt-5 max-w-xs text-[13px] leading-6 text-[#6b7280]">
               Tecnología de alta calidad para tu hogar y oficina. Envíos a todo
@@ -69,6 +67,10 @@ export default function Footer() {
               <li><Link to="/help#payments" className={footerLinkClass}>Métodos de pago</Link></li>
               <li><Link to="/help#faq" className={footerLinkClass}>Preguntas frecuentes</Link></li>
               <li><Link to="/help#support" className={footerLinkClass}>Ayuda con pedidos</Link></li>
+              <li><a href={whatsappSupportUrl} target="_blank" rel="noopener noreferrer" className={footerLinkClass}>Atención por WhatsApp</a></li>
+              <li><Link to="/legal/terms" className={footerLinkClass}>Términos de uso</Link></li>
+              <li><Link to="/legal/privacy" className={footerLinkClass}>Privacidad</Link></li>
+              <li><Link to="/legal/complaints" className={footerLinkClass}>Libro de reclamaciones (demo)</Link></li>
             </ul>
           </div>
 
@@ -86,7 +88,7 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col gap-6 border-t border-[#e5e7eb] pt-8 md:flex-row md:items-center md:justify-between">
           <p className="text-[12px] text-[#9ca3af]">
-            © {new Date().getFullYear()} Urbaniq. Todos los derechos reservados.
+            © {new Date().getFullYear()} Urbaniq Tecnología Académica S.A.C. — demostración universitaria.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {paymentMethods.map((method) => (

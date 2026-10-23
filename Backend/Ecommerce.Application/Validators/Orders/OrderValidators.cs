@@ -8,7 +8,7 @@ namespace Ecommerce.Application.Validators.Orders
     {
         private static readonly string[] AllowedPaymentMethods = 
         {
-            "card", "cod", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo"
+            "card", "mercadopago", "cod", "yape", "plin"
         };
 
         public CreateOrderRequestValidator()
@@ -18,7 +18,7 @@ namespace Ecommerce.Application.Validators.Orders
                 .WithMessage("TransactionId is required and must be under 100 characters");
             RuleFor(x => x.PaymentMethod)
                 .NotEmpty().WithMessage("Payment method is required")
-                .Must(method => AllowedPaymentMethods.Contains(method.ToLowerInvariant()))
+                .Must(method => !string.IsNullOrWhiteSpace(method) && AllowedPaymentMethods.Contains(method.Trim().ToLowerInvariant()))
                 .WithMessage($"Payment method must be one of: {string.Join(", ", AllowedPaymentMethods)}");
         }
     }

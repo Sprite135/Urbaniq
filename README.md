@@ -1,6 +1,8 @@
 # 🛒 Urbaniq - E-commerce Platform
 
-Plataforma de e-commerce completa desarrollada con arquitectura moderna Clean Architecture, diseñada para ser escalable, mantenible y profesional.
+Plataforma académica de e-commerce desarrollada con Clean Architecture. Los datos comerciales, pagos y comprobantes incluidos son de demostración y no tienen validez comercial ni fiscal.
+
+> **Empresa ficticia:** Urbaniq Tecnología Académica S.A.C. — RUC 20000000000 (no válido) — Av. de la Innovación 123, Lima (dirección ficticia) — soporte@urbaniq.example.
 
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![React](https://img.shields.io/badge/React-18+-blue)
@@ -32,10 +34,10 @@ Plataforma de e-commerce completa desarrollada con arquitectura moderna Clean Ar
 
 Urbaniq es una plataforma de e-commerce completa con:
 - **Backend:** API RESTful con .NET 8 siguiendo Clean Architecture
-- **Frontend:** SPA moderna con React + TypeScript + Vite
+- **Frontend:** SPA moderna con React 19 + TypeScript + Vite 8
 - **Base de Datos:** SQL Server con Entity Framework Core
 - **Caching:** Redis con fallback a DistributedMemoryCache
-- **Pagos:** Integración con Stripe, Yape, Plin y otros métodos peruanos
+- **Pagos:** Stripe y Mercado Pago; Yape/Plin como flujo de comprobante manual de demostración
 - **Admin Panel:** Panel de administración completo
 
 Ideal para portafolio profesional y demostración de habilidades técnicas para posiciones junior en Perú.
@@ -64,7 +66,7 @@ Ideal para portafolio profesional y demostración de habilidades técnicas para 
 - ✅ CORS configurado
 
 ### 📊 Calidad y Testing
-- ✅ 50+ tests automatizados (Unit + Integration)
+- ✅ 189 pruebas automatizadas entre backend, frontend y E2E
 - ✅ Clean Architecture
 - ✅ SOLID principles
 - ✅ Repository Pattern + Unit of Work
@@ -94,7 +96,7 @@ Ideal para portafolio profesional y demostración de habilidades técnicas para 
 - **Testing:** xUnit + Moq
 
 ### Frontend
-- **Framework:** React 18+ + TypeScript
+- **Framework:** React 19 + TypeScript
 - **Build Tool:** Vite
 - **State Management:** Redux Toolkit + RTK Query
 - **Routing:** React Router
@@ -103,12 +105,12 @@ Ideal para portafolio profesional y demostración de habilidades técnicas para 
 - **Icons:** Lucide React
 - **Forms:** React Hook Form
 - **Charts:** Recharts
-- **Payment:** Stripe React Integration
+- **Payment:** Stripe y Mercado Pago
 - **Notifications:** React Toastify
 
 ### DevOps
 - **Containerización:** Docker (preparado)
-- **CI/CD:** GitHub Actions (preparado)
+- **CI/CD:** GitHub Actions
 - **Source Control:** Git + GitHub
 
 ---
@@ -143,7 +145,7 @@ Ideal para portafolio profesional y demostración de habilidades técnicas para 
 - Git
 
 ### Frontend
-- [Node.js](https://nodejs.org/) 18+ o superior
+- [Node.js](https://nodejs.org/) 24 (versión usada por CI)
 - [npm](https://www.npmjs.com/) o [yarn](https://yarnpkg.com/)
 
 ### Herramientas Opcionales
@@ -173,9 +175,8 @@ dotnet restore
 # Configurar base de datos (ver sección Configuración)
 # Editar Ecommerce.Api/appsettings.LocalDb.json
 
-# Ejecutar migraciones
-cd Ecommerce.Api
-dotnet ef database update
+# Ejecutar migraciones desde la raíz
+dotnet ef database update --project Backend/Ecommerce.Infrastructure --startup-project Backend/Ecommerce.Api
 ```
 
 ### 3. Instalación del Frontend
@@ -202,23 +203,21 @@ Editar `Backend/Ecommerce.Api/appsettings.LocalDb.json`:
   "ConnectionStrings": {
     "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=UrbaniqDb;Trusted_Connection=True;MultipleActiveResultSets=true"
   },
-  "JwtSettings": {
-    "SecretKey": "TU_CLAVE_SECRETA_SUPER_LARGA_AQUI",
+  "Jwt": {
+    "Key": "TU_CLAVE_SECRETA_SUPER_LARGA_AQUI",
     "Issuer": "https://localhost:44320",
     "Audience": "https://localhost:44320",
     "ExpirationInMinutes": 60
   },
-  "Redis": {
-    "ConnectionString": "localhost:6379"
-  },
-  "Stripe": {
+  "ConnectionStrings": { "Redis": "localhost:6379" },
+  "StripeSettings": {
     "SecretKey": "sk_test_tu_clave_stripe",
-    "PublishableKey": "pk_test_tu_clave_stripe"
+    "PublishableKey": "pk_test_tu_clave_stripe",
+    "WebhookSecret": "whsec_tu_clave_webhook"
   },
-  "Cloudinary": {
-    "CloudName": "tu_cloud_name",
-    "ApiKey": "tu_api_key",
-    "ApiSecret": "tu_api_secret"
+  "MercadoPagoSettings": {
+    "AccessToken": "TEST-tu_access_token",
+    "WebhookSecret": "tu_firma_secreta_webhook"
   }
 }
 ```
@@ -230,8 +229,10 @@ Para producción, usa variables de entorno o `appsettings.Production.json`:
 ```bash
 # Backend
 export ConnectionStrings__DefaultConnection="Server=tu_servidor;Database=UrbaniqDb;..."
-export JwtSettings__SecretKey="tu_clave_secreta"
-export Stripe__SecretKey="sk_live_tu_clave"
+export Jwt__Key="tu_clave_secreta"
+export StripeSettings__SecretKey="sk_live_tu_clave"
+export MercadoPagoSettings__AccessToken="APP_USR-tu_access_token"
+export MercadoPagoSettings__WebhookSecret="tu_firma_secreta_webhook"
 ```
 
 ### Frontend Configuration
@@ -239,8 +240,8 @@ export Stripe__SecretKey="sk_live_tu_clave"
 Crear `Frontend/.env`:
 
 ```env
-VITE_API_URL=https://localhost:44320
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_tu_clave
+VITE_API_BASE_URL=/api/v1
+VITE_SUPPORT_EMAIL=soporte@urbaniq.example
 ```
 
 ---
@@ -312,28 +313,24 @@ cd Backend
 dotnet test
 ```
 
-### Ejecutar Tests por Proyecto
+### Ejecutar todas las pruebas
 
 ```bash
-# Tests de Domain
-dotnet test Ecommerce.Domain.Tests
-
-# Tests de Application
-dotnet test Ecommerce.Application.Tests
-
-# Tests de Infrastructure
-dotnet test Ecommerce.Infrastructure.Tests
-
-# Tests de API
-dotnet test Ecommerce.Api.Tests
+dotnet test Ecommerce.sln
+cd Frontend
+npm test -- --run --maxWorkers=1
+npm run test:e2e
 ```
 
-### Resultados Actuales
-- **Domain Tests:** 45/45 ✅
-- **Application Tests:** 2/2 ✅
-- **Infrastructure Tests:** 1/1 ✅
-- **API Tests:** 2/2 ✅
-- **Total:** 50/50 tests pasando
+### Resultados verificados el 23 de octubre de 2026
+
+- **Backend unitarias:** 116/116 ✅
+- **Backend integración:** 21/21 ✅
+- **Frontend:** 52/52 en 13 archivos ✅
+- **E2E y visuales:** 10/10 en escritorio y móvil ✅
+- **Compilación frontend y backend:** ✅
+- **ESLint:** ✅
+- **Imágenes publicadas:** 144/144 responden correctamente ✅
 
 ---
 
@@ -346,7 +343,8 @@ El proyecto incluye un pipeline de CI/CD automatizado con GitHub Actions.
 #### 1. Build and Test
 - ✅ Restaura dependencias .NET
 - ✅ Compila backend y frontend
-- ✅ Ejecuta 50 tests automatizados
+- ✅ Ejecuta pruebas de backend y frontend
+- ✅ Ejecuta ESLint y verifica que el frontend quede incluido en el paquete publicado
 - ✅ Sube artefactos de build
 
 #### 2. Docker Build (Solo en main)
@@ -484,15 +482,15 @@ Las contribuciones son bienvenidas. Por favor:
 
 ## 📝 Credenciales de Desarrollo
 
-⚠️ **IMPORTANTE:** Estas credenciales son SOLO para desarrollo local. Nunca las uses en producción.
+Estas credenciales son ficticias y se usan únicamente en la demostración local.
 
-### Admin User
-- **Email:** admin@urbaniq.com
-- **Password:** Urbaniq#2024!Secure
+### Admin de demostración local
+- **Email:** admin@urbaniq.example
+- **Password:** DemoUrbaniq#2026!
 
 ### Base de Datos Local
 - **Server:** (localdb)\mssqllocaldb
-- **Database:** UrbaniqDb
+- **Database:** EcommerceDb
 - **Authentication:** Windows Authentication
 
 ---

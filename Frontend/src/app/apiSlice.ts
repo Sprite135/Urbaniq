@@ -9,6 +9,7 @@ type AuthRefreshResponse = {
 };
 
 const baseQuery = fetchBaseQuery({
+  credentials: 'include',
   baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
   prepareHeaders: (headers, { getState }) => {
     // Break circular dependency by not importing RootState
@@ -21,43 +22,36 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+let refreshInFlight: Promise<boolean> | null = null;
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+  const originalToken = (api.getState() as { auth: { token: string | null } }).auth.token;
   let result = await baseQuery(args, api, extraOptions);
-
-  if (result.error && result.error.status === 401) {
-    const state = api.getState() as { auth: { refreshToken: string | null } };
-    const refreshToken = state.auth.refreshToken;
-    
-    if (refreshToken) {
-      const refreshResult = await baseQuery(
-        {
-          url: '/Auth/refresh-token',
-          method: 'POST',
-          body: { refreshToken }
-        },
-        api,
-        extraOptions
-      );
-
-      if (refreshResult.data) {
-        // Assume backend returns { accessToken, refreshToken, user, ... }
-        api.dispatch(setCredentials(refreshResult.data as AuthRefreshResponse));
-        // Retry the initial query
-        result = await baseQuery(args, api, extraOptions);
-      } else {
-        api.dispatch(logout());
-      }
-    } else {
-      api.dispatch(logout());
+  const path = typeof args === 'string' ? args : args.url;
+  if (result.error?.status === 401 && originalToken && !path.startsWith('/Auth/')) {
+    if ((api.getState() as { auth: { token: string | null } }).auth.token !== originalToken) return baseQuery(args, api, extraOptions);
+    if (!refreshInFlight) {
+      refreshInFlight = (async () => {
+        const refreshed = await baseQuery({ url: '/Auth/refresh-token', method: 'POST', body: {} }, api, extraOptions);
+        if ((api.getState() as { auth: { token: string | null } }).auth.token !== originalToken) return false;
+        if (refreshed.data) { api.dispatch(setCredentials(refreshed.data as AuthRefreshResponse)); return true; }
+        api.dispatch(logout()); return false;
+      })().finally(() => { refreshInFlight = null; });
     }
+    if (await refreshInFlight) result = await baseQuery(args, api, extraOptions);
   }
   return result;
 };
 
+export async function endBrowserSession() {
+  try { await fetch((import.meta.env.VITE_API_BASE_URL ?? '/api/v1') + '/Auth/revoke-token', {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}'
+  }); } catch { /* Local logout remains available without a connection. */ }
+}
+
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Product', 'Order', 'Category', 'Cart', 'User', 'Address', 'Wishlist', 'Coupon', 'Review'],
+  tagTypes: ['Product', 'Order', 'Category', 'Cart', 'User', 'Address', 'Wishlist', 'Coupon', 'Review', 'Operations'],
   refetchOnFocus: true,
   refetchOnReconnect: true,
   endpoints: () => ({}),

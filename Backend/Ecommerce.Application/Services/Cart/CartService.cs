@@ -37,7 +37,7 @@ namespace Ecommerce.Application.Services.Cart
 
         private async Task<Domain.Entities.Cart> GetOrCreateCartAsync(Guid? userId, string? sessionId)
         {
-            Domain.Entities.Cart cart = null;
+            Domain.Entities.Cart? cart = null;
 
             if (userId.HasValue)
             {

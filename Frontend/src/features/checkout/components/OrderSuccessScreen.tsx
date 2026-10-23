@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Banknote, CreditCard, Package, MapPin, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Banknote, CreditCard, Package, MapPin, ArrowRight, ShieldCheck, Clock3 } from 'lucide-react';
 import type { CartResponse } from '@/features/cart/cartApiSlice';
 import type { Address } from '../addressApiSlice';
 import ProductImage from '@/features/catalog/components/ProductImage';
 
 const REDIRECT_SECONDS = 6;
 
-type PaymentMethod = 'card' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
+type PaymentMethod = 'card' | 'mercadopago' | 'cod' | 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'scotiabank' | 'pagoefectivo';
 
 interface OrderSuccessScreenProps {
   orderId: string;
@@ -20,10 +20,11 @@ interface OrderSuccessScreenProps {
 const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ orderId, cart, address, paymentMethod }) => {
   const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
-  const isCard = paymentMethod === 'card';
+  const isCard = paymentMethod === 'card' || paymentMethod === 'mercadopago';
   const isCod = paymentMethod === 'cod';
+  const isPendingTransfer = !isCard && !isCod;
   const methodLabel = isCard
-    ? 'Tarjeta de Crédito / Débito'
+    ? paymentMethod === 'mercadopago' ? 'Mercado Pago' : 'Tarjeta de Crédito / Débito'
     : isCod
       ? 'Pago Contra Entrega'
       : paymentMethod === 'yape'
@@ -66,9 +67,9 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ orderId, cart, 
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
-          className="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 ring-8 ring-emerald-500/10 shadow-lg shadow-emerald-500/20"
+          className={`relative mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full ring-8 shadow-lg ${isPendingTransfer ? 'bg-amber-500/10 ring-amber-500/10 shadow-amber-500/20' : 'bg-emerald-500/10 ring-emerald-500/10 shadow-emerald-500/20'}`}
         >
-          <CheckCircle2 className="h-12 w-12 text-emerald-400" strokeWidth={2.2} />
+          {isPendingTransfer ? <Clock3 className="h-12 w-12 text-amber-400" strokeWidth={2.2} /> : <CheckCircle2 className="h-12 w-12 text-emerald-400" strokeWidth={2.2} />}
         </motion.div>
 
         {/* Título Principal */}
@@ -78,7 +79,7 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ orderId, cart, 
           transition={{ delay: 0.2 }}
           className="text-2xl font-extrabold uppercase tracking-tight text-white sm:text-3xl"
         >
-          {isCard ? '¡Pago Exitoso!' : '¡Pedido Realizado con Éxito!'}
+          {isCard ? '¡Pago exitoso!' : isCod ? '¡Pedido confirmado!' : '¡Pedido registrado!' }
         </motion.h2>
 
         {/* Subtítulo descriptivo */}
@@ -92,8 +93,14 @@ const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({ orderId, cart, 
             ? 'Tu transacción ha sido procesada de forma segura y tu pedido ya está en preparación.'
             : isCod
               ? 'Tu pedido está confirmado. Pagarás en efectivo o con QR cuando llegue tu paquete.'
-              : 'Tu pedido ha sido registrado. Puedes adjuntar tu comprobante de pago en el seguimiento.'}
+              : `Tu pedido está registrado, pero el pago está pendiente hasta que el comercio verifique tu transferencia. Adjunta el comprobante desde el seguimiento.`}
         </motion.p>
+
+        {isPendingTransfer && (
+          <div role="status" aria-live="polite" className="mx-auto mt-4 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-bold text-amber-200">
+            Pago pendiente de validación
+          </div>
+        )}
 
         {/* Badge de Método y Monto */}
         <motion.div

@@ -17,12 +17,12 @@ namespace Ecommerce.Domain.Entities
     public class AutoCouponRule : ISoftDeletable
     {
         public int RuleId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public AutoCouponTriggerType TriggerType { get; set; }
         
         // Coupon template settings
-        public string CouponPrefix { get; set; }
+        public string CouponPrefix { get; set; } = string.Empty;
         public CouponDiscountType DiscountType { get; set; }
         public decimal DiscountValue { get; set; }
         public decimal? MinOrderAmount { get; set; }

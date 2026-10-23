@@ -12,11 +12,12 @@ export interface PaymentIntentResponse {
 }
 
 interface CreatePaymentIntentRequest {
-  amount: number;
+  orderId: string;
 }
 
 interface VerifyPaymentRequest {
   paymentIntentId: string;
+  orderId: string;
 }
 
 export interface PaymentVerifyResponse {
@@ -30,6 +31,12 @@ export interface PaymentVerifyResponse {
 
 export interface PaymentConfigResponse {
   publishableKey: string;
+  mercadoPagoEnabled: boolean;
+}
+
+export interface MercadoPagoCheckoutResponse {
+  preferenceId: string;
+  checkoutUrl: string;
 }
 
 export interface ShippingConfig {
@@ -88,6 +95,14 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    createMercadoPagoCheckout: builder.mutation<MercadoPagoCheckoutResponse, CreatePaymentIntentRequest>({
+      query: (body) => ({
+        url: '/Payment/mercadopago/checkout',
+        method: 'POST',
+        body,
+      }),
+    }),
+
     /** Verifies a payment using its PaymentIntent ID */
     verifyPayment: builder.mutation<PaymentVerifyResponse, VerifyPaymentRequest>({
       query: (body) => ({
@@ -105,5 +120,6 @@ export const {
   useGetMerchantMethodsQuery,
   useUploadVoucherMutation,
   useCreatePaymentIntentMutation,
+  useCreateMercadoPagoCheckoutMutation,
   useVerifyPaymentMutation,
 } = paymentApiSlice;

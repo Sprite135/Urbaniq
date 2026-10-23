@@ -3,11 +3,13 @@ import { lazy, Suspense } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MainLayout from './layouts/MainLayout';
-// import SeoHead from './components/SeoHead'; // Temporarily disabled - React 19 compatibility issue
+import SeoHead from './components/SeoHead';
 
 // Lazy load components for code splitting
 const Home = lazy(() => import('./features/catalog/Home'));
 const HelpPage = lazy(() => import('./features/support/HelpPage'));
+const LegalPage = lazy(() => import('./features/support/LegalPage'));
+const NotFoundPage = lazy(() => import('./features/support/NotFoundPage'));
 const ComparePage = lazy(() => import('./features/catalog/ComparePage'));
 const AdvisorPage = lazy(() => import('./features/catalog/AdvisorPage'));
 const ProductListPage = lazy(() => import('./features/catalog/ProductListPage'));
@@ -36,6 +38,7 @@ const CategoryManagementPage = lazy(() => import('./features/admin/CategoryManag
 const CouponManagementPage = lazy(() => import('./features/admin/CouponManagementPage'));
 const CouponAnalyticsPage = lazy(() => import('./features/admin/CouponAnalyticsPage'));
 const UserManagementPage = lazy(() => import('./features/admin/UserManagementPage'));
+const OperationsPage = lazy(() => import('./features/admin/OperationsPage'));
 const AdminLoginPage = lazy(() => import('./features/admin/AdminLoginPage'));
 
 // Loading component for lazy-loaded routes
@@ -51,7 +54,7 @@ const PageLoader = () => (
 function App() {
   return (
     <>
-      {/* <SeoHead /> */}
+      <SeoHead />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Storefront Routes */}
@@ -59,6 +62,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="catalog" element={<ProductListPage />} />
             <Route path="help" element={<HelpPage />} />
+            <Route path="legal/:document" element={<LegalPage />} />
             <Route path="compare" element={<ComparePage />} />
             <Route path="advisor" element={<AdvisorPage />} />
             <Route path="product/:slug" element={<ProductDetailPage />} />
@@ -76,6 +80,7 @@ function App() {
               <Route path="orders/:orderId" element={<OrderDetailPage />} />
               <Route path="wishlist" element={<WishlistPage />} />
             </Route>
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
           {/* Admin Routes — protected by AdminRoute (requires Admin role) */}
@@ -94,6 +99,7 @@ function App() {
               <Route path="coupons" element={<CouponManagementPage />} />
               <Route path="coupons/analytics" element={<CouponAnalyticsPage />} />
               <Route path="users" element={<UserManagementPage />} />
+              <Route path="operations" element={<OperationsPage />} />
             </Route>
           </Route>
         </Routes>

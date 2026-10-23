@@ -25,6 +25,7 @@
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -48,5 +49,16 @@
       <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+
+  <Target Name="CopyFrontendDistToPublish" AfterTargets="Publish" Condition="Exists('$(MSBuildProjectDirectory)\..\..\Frontend\dist\index.html')">
+    <ItemGroup>
+      <FrontendDistFiles Include="$(MSBuildProjectDirectory)\..\..\Frontend\dist\**\*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(PublishDir)wwwroot\assets" />
+    <Copy
+      SourceFiles="@(FrontendDistFiles)"
+      DestinationFiles="@(FrontendDistFiles->'$(PublishDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

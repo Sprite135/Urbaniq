@@ -33,8 +33,10 @@ namespace Ecommerce.Application.Services.Admin
         public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
         {
             var totalRevenue = await _orderRepo.Query()
-                .Where(o => 
-                    (new[] { "card", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo" }.Contains(o.PaymentMethod) && o.OrderStatus != OrderStatus.Cancelled) ||
+                .Where(o =>
+                    (o.IsPaid && o.OrderStatus != OrderStatus.Cancelled &&
+                     o.OrderStatus != OrderStatus.ReturnRequested && o.OrderStatus != OrderStatus.Returned &&
+                     o.OrderStatus != OrderStatus.RefundInitiated && o.OrderStatus != OrderStatus.Refunded) ||
                     (o.PaymentMethod == "cod" && o.OrderStatus == OrderStatus.Delivered))
                 .SumAsync(o => o.TotalPrice);
             

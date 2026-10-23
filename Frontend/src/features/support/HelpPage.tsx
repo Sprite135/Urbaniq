@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useGetShippingConfigQuery } from '@/features/checkout/paymentApiSlice';
+import { whatsappSupportPhone, whatsappSupportUrl } from './whatsapp';
 
 export default function HelpPage() {
   const { hash } = useLocation();
@@ -36,7 +37,7 @@ export default function HelpPage() {
         </section>
         <section id="payments" className="scroll-mt-36">
           <h2 className="text-xl font-bold">Métodos de pago</h2>
-          <p className="mt-3">En el checkout encontrarás los métodos disponibles: contra entrega, Yape, Plin y transferencias. El pago con tarjeta aparece habilitado cuando el comercio tiene configurada su pasarela.</p>
+          <p className="mt-3">En el checkout encontrarás los métodos disponibles: Mercado Pago, contra entrega, Yape, Plin y transferencias. Los pagos automáticos aparecen habilitados cuando el comercio ha configurado su pasarela.</p>
           <p>Para pagos por transferencia, revisa los datos del comercio y conserva tu comprobante. Puedes adjuntar el comprobante o registrar el código desde el detalle de tu pedido.</p>
           <ol className="mt-4 list-decimal space-y-2 pl-5">
             <li>Selecciona Yape o Plin cuando aparezcan habilitados y comprueba el nombre del destinatario.</li>
@@ -65,6 +66,8 @@ export default function HelpPage() {
         </section>
         <section id="support" className="scroll-mt-36">
           <h2 className="text-xl font-bold">Ayuda con pedidos</h2>
+          <p className="mt-3">Escríbenos por WhatsApp para consultar productos, disponibilidad o el estado de tu pedido.</p>
+          <a href={whatsappSupportUrl} target="_blank" rel="noopener noreferrer" className="my-3 inline-flex min-h-11 items-center rounded-full bg-[#166534] px-5 py-2 text-sm font-bold text-white hover:bg-[#14532d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#166534]">WhatsApp: {whatsappSupportPhone}</a>
           <p className="mt-3">Ten a mano el número de pedido y el comprobante de pago para consultar con el comercio.</p>
           {supportEmail && <a href={`mailto:${supportEmail}`} className="underline">{supportEmail}</a>}
           <p><Link to="/orders" className="underline">Consultar mis pedidos</Link></p>

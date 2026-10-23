@@ -3,7 +3,7 @@ namespace Ecommerce.Application.DTOs.Coupons
     public class CouponResponseDto
     {
         public int CouponId { get; set; }
-        public string Code { get; set; }
+        public string Code { get; set; } = string.Empty;
         public int DiscountType { get; set; }
         public decimal Value { get; set; }
         public decimal? MinOrderAmount { get; set; }

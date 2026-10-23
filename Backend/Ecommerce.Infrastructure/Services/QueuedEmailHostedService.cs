@@ -1,60 +1,53 @@
 using Ecommerce.Application.Interfaces.Email;
+using Ecommerce.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Ecommerce.Infrastructure.Services
+namespace Ecommerce.Infrastructure.Services;
+
+public sealed class QueuedEmailHostedService(IServiceScopeFactory scopeFactory, ILogger<QueuedEmailHostedService> logger) : BackgroundService
 {
-    /// <summary>
-    /// Sends queued transactional emails with lightweight retries.
-    /// </summary>
-    public sealed class QueuedEmailHostedService : BackgroundService
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        private const int MaxAttempts = 3;
-        private readonly BackgroundEmailJobQueue _queue;
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ILogger<QueuedEmailHostedService> _logger;
-
-        public QueuedEmailHostedService(
-            BackgroundEmailJobQueue queue,
-            IServiceScopeFactory scopeFactory,
-            ILogger<QueuedEmailHostedService> logger)
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _queue = queue;
-            _scopeFactory = scopeFactory;
-            _logger = logger;
+            try { await SendNextAsync(stoppingToken); }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
+            catch (Exception ex) { logger.LogError(ex, "Email outbox processing failed"); }
+            try { await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken); }
+            catch (OperationCanceledException) { break; }
         }
+    }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    private async Task SendNextAsync(CancellationToken token)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        for (var count = 0; count < 20; count++)
         {
-            await foreach (var message in _queue.ReadAllAsync(stoppingToken))
+            var now = DateTime.UtcNow;
+            var email = await db.OutboxEmails.Where(e => e.SentAtUtc == null && e.Attempts < 8 && e.NextAttemptAtUtc <= now)
+                .OrderBy(e => e.CreatedAtUtc).FirstOrDefaultAsync(token);
+            if (email == null) return;
+            email.Attempts++;
+            email.NextAttemptAtUtc = now.AddMinutes(5);
+            try { await db.SaveChangesAsync(token); }
+            catch (DbUpdateConcurrencyException) { db.ChangeTracker.Clear(); continue; }
+            try
             {
-                await SendWithRetryAsync(message, stoppingToken);
+                await scope.ServiceProvider.GetRequiredService<IEmailSender>().SendAsync(email.Recipient, email.Subject, email.HtmlBody);
+                email.SentAtUtc = DateTime.UtcNow;
+                email.LastError = null;
             }
-        }
-
-        private async Task SendWithRetryAsync(EmailJobMessage message, CancellationToken cancellationToken)
-        {
-            for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+            catch (Exception ex)
             {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-                    await emailSender.SendAsync(message.ToEmail, message.Subject, message.HtmlBody);
-                    _logger.LogInformation("Queued email sent to {Recipient} with subject {Subject}", message.ToEmail, message.Subject);
-                    return;
-                }
-                catch (Exception ex) when (attempt < MaxAttempts)
-                {
-                    _logger.LogWarning(ex, "Queued email attempt {Attempt} failed for {Recipient}", attempt, message.ToEmail);
-                    await Task.Delay(TimeSpan.FromSeconds(2 * attempt), cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Queued email failed permanently for {Recipient}", message.ToEmail);
-                }
+                email.LastError = ex.GetType().Name;
+                email.NextAttemptAtUtc = DateTime.UtcNow.AddMinutes(Math.Min(60, Math.Pow(2, email.Attempts)));
+                logger.LogError(ex, "Outbox email {EmailId} failed on attempt {Attempt}", email.Id, email.Attempts);
             }
+            await db.SaveChangesAsync(token);
         }
     }
 }

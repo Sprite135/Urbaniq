@@ -28,5 +28,8 @@ namespace Ecommerce.Application.Interfaces.Payment
         /// Used by the frontend/backend to confirm if payment succeeded.
         /// </summary>
         Task<ApiResponse<PaymentVerificationResponseDto>> VerifyPaymentAsync(string paymentIntentId);
+        Task<ApiResponse<PaymentIntentResponseDto>> CreateOrderPaymentIntentAsync(decimal amount, Guid orderId, Guid userId);
+        Task CancelPaymentAsync(string paymentIntentId);
+        Task<string> RefundAsync(string paymentIntentId, decimal amount, string idempotencyKey);
     }
 }

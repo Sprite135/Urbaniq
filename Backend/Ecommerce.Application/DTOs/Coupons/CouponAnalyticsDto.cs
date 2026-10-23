@@ -3,7 +3,7 @@ namespace Ecommerce.Application.DTOs.Coupons
     public class CouponAnalyticsDto
     {
         public int CouponId { get; set; }
-        public string Code { get; set; }
+        public string Code { get; set; } = string.Empty;
         public decimal TotalDiscountGiven { get; set; }
         public int TotalUses { get; set; }
         public int UniqueUsers { get; set; }
@@ -16,17 +16,17 @@ namespace Ecommerce.Application.DTOs.Coupons
 
     public class CouponUsageByPeriodDto
     {
-        public string Period { get; set; }
+        public string Period { get; set; } = string.Empty;
         public int UsesCount { get; set; }
         public decimal TotalDiscount { get; set; }
     }
 
     public class CouponPerformanceDto
     {
-        public List<CouponAnalyticsDto> TopPerformingCoupons { get; set; }
-        public List<CouponUsageByPeriodDto> UsageByDay { get; set; }
-        public List<CouponUsageByPeriodDto> UsageByWeek { get; set; }
-        public List<CouponUsageByPeriodDto> UsageByMonth { get; set; }
+        public List<CouponAnalyticsDto> TopPerformingCoupons { get; set; } = new();
+        public List<CouponUsageByPeriodDto> UsageByDay { get; set; } = new();
+        public List<CouponUsageByPeriodDto> UsageByWeek { get; set; } = new();
+        public List<CouponUsageByPeriodDto> UsageByMonth { get; set; } = new();
         public decimal TotalDiscountGivenAllTime { get; set; }
         public int TotalCouponsActive { get; set; }
         public int TotalCouponsUsed { get; set; }

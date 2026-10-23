@@ -12,6 +12,17 @@ namespace Ecommerce.Application.DTOs.Orders
         public string? UserEmail { get; set; }
         public string PaymentMethod { get; set; } = null!;
         public bool IsPaid { get; set; }
+        public string InvoiceType { get; set; } = "Boleta";
+        public string? Ruc { get; set; }
+        public string? RazonSocial { get; set; }
+        public string? FiscalAddress { get; set; }
+        public decimal ShippingCost { get; set; }
+        public string? ShippingProvider { get; set; }
+        public string? TrackingNumber { get; set; }
+        public string? InvoiceReference { get; set; }
+        public DateTime? ShippedAtUtc { get; set; }
+        public DateTime? PaymentDueAtUtc { get; set; }
+        public decimal RefundedAmount { get; set; }
         public string? PaymentReceiptUrl { get; set; }
         public string? PaymentApprovalCode { get; set; }
         public string? CancellationReason { get; set; }

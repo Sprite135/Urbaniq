@@ -1,3 +1,4 @@
+import PaymentReceiptLink from './PaymentReceiptLink';
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Package, CreditCard, CheckCircle, Circle, XCircle } from 'lucide-react';
@@ -7,7 +8,7 @@ import ProductImage from '@/features/catalog/components/ProductImage';
 import PaymentProofForm from './PaymentProofForm';
 import ReturnRequestForm from './ReturnRequestForm';
 import OfflinePaymentInstructions from './OfflinePaymentInstructions';
-import { getPaymentReceiptUrl } from './paymentReceiptUrl';
+import ResumeCardPayment from './ResumeCardPayment';
 
 import { trackingSteps, getTrackingStepIndex, getOrderStatusLabel, getPaymentStatusLabel } from './orderTracking';
 
@@ -43,7 +44,6 @@ const OrderDetailPage: React.FC = () => {
   }
 
   const canCancel = ['pending', 'processing'].includes(order.orderStatus.toLowerCase());
-  const receiptUrl = getPaymentReceiptUrl(order.paymentReceiptUrl);
 
   const handleCancel = async () => {
     if (!reason.trim()) {
@@ -123,7 +123,7 @@ const OrderDetailPage: React.FC = () => {
         {activeStepIndex >= 0 && (
           <div className="mb-4 border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-6">
             <h3 className="mb-5 text-xs font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Seguimiento del pedido</h3>
-            <p className="mb-4 text-xs text-gray-500">El estado se actualiza cada 30 segundos mientras esta página está abierta.</p>
+            <p className="mb-4 text-xs text-gray-500">Consultamos cambios cada 30 segundos. La tienda actualiza cada etapa al preparar y despachar tu pedido; este seguimiento no muestra la ubicación GPS del transportista.</p>
             <div className="grid gap-4 sm:grid-cols-4">
               {trackingSteps.map((step, index) => {
                 const isDone = index <= activeStepIndex;
@@ -219,7 +219,8 @@ const OrderDetailPage: React.FC = () => {
               <span>S/ {order.totalPrice.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
-          {receiptUrl && <a href={receiptUrl} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-[#9d731e] underline">Ver comprobante enviado</a>}
+          <PaymentReceiptLink path={order.paymentReceiptUrl} />
+          {!order.isPaid && canCancel && order.paymentMethod.toLowerCase() === 'card' && <ResumeCardPayment orderId={order.orderId} />}
           {order.paymentApprovalCode && <p className="mt-3 text-sm">Referencia enviada: {order.paymentApprovalCode}</p>}
           {!order.isPaid && canCancel && !['card', 'cod'].includes(order.paymentMethod.toLowerCase()) && <PaymentProofForm key={order.orderId} orderId={order.orderId} />}
         </div>

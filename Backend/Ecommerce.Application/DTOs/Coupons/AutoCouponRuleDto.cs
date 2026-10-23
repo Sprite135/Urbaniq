@@ -6,10 +6,10 @@ namespace Ecommerce.Application.DTOs.Coupons
     {
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         [Required]
         [Range(1, 6)]
@@ -17,7 +17,7 @@ namespace Ecommerce.Application.DTOs.Coupons
 
         [Required]
         [StringLength(10)]
-        public string CouponPrefix { get; set; }
+        public string CouponPrefix { get; set; } = string.Empty;
 
         [Required]
         [Range(1, 2)]
@@ -50,10 +50,10 @@ namespace Ecommerce.Application.DTOs.Coupons
     public class AutoCouponRuleResponseDto
     {
         public int RuleId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public int TriggerType { get; set; }
-        public string CouponPrefix { get; set; }
+        public string CouponPrefix { get; set; } = string.Empty;
         public int DiscountType { get; set; }
         public decimal DiscountValue { get; set; }
         public decimal? MinOrderAmount { get; set; }

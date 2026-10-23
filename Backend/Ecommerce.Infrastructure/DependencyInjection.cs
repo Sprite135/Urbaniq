@@ -53,6 +53,12 @@ namespace Ecommerce.Infrastructure
                 services.AddScoped<ICloudImageService, CloudinaryImageService>();
             }
             services.AddScoped<IPaymentGatewayService, StripeGatewayService>();
+            services.Configure<MercadoPagoSettings>(configuration.GetSection("MercadoPagoSettings"));
+            services.AddHttpClient<IMercadoPagoService, MercadoPagoService>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.mercadopago.com/");
+                client.Timeout = TimeSpan.FromSeconds(20);
+            });
 
             // Email Service – SMTP via MailKit
             services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
@@ -60,6 +66,7 @@ namespace Ecommerce.Infrastructure
             services.AddSingleton<BackgroundEmailJobQueue>();
             services.AddSingleton<IEmailJobQueue>(provider => provider.GetRequiredService<BackgroundEmailJobQueue>());
             services.AddHostedService<QueuedEmailHostedService>();
+            services.AddHostedService<ReservationExpiryService>();
 
             // SMS Service - Twilio
             services.Configure<SmsSettings>(configuration.GetSection("SmsSettings"));

@@ -20,7 +20,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Application.Services.Orders
 {
-    public class OrderService : IOrderService
+    public partial class OrderService : IOrderService
     {
         private readonly IRepository<Order> _orderRepo;
         private readonly IRepository<Domain.Entities.Cart> _cartRepo;
@@ -33,6 +33,7 @@ namespace Ecommerce.Application.Services.Orders
         private readonly IMapper _mapper;
         private readonly IEmailJobQueue _emailJobQueue;
         private readonly IPaymentGatewayService _paymentGateway;
+        private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IHostEnvironment _environment;
         private readonly ShippingSettings _shippingSettings;
         private readonly ICouponService _couponService;
@@ -50,6 +51,7 @@ namespace Ecommerce.Application.Services.Orders
             IMapper mapper,
             IEmailJobQueue emailJobQueue,
             IPaymentGatewayService paymentGateway,
+            IMercadoPagoService mercadoPagoService,
             IHostEnvironment environment,
             IOptions<ShippingSettings> shippingSettings,
             ICouponService couponService,
@@ -66,21 +68,23 @@ namespace Ecommerce.Application.Services.Orders
             _mapper = mapper;
             _emailJobQueue = emailJobQueue;
             _paymentGateway = paymentGateway;
+            _mercadoPagoService = mercadoPagoService;
             _environment = environment;
             _shippingSettings = shippingSettings.Value;
             _couponService = couponService;
             _notificationService = notificationService;
         }
 
-        public async Task<UpdateOrderStatusResponseDto> ChangeOrderStatusAsync(Guid orderId, string status)
+        public async Task<UpdateOrderStatusResponseDto> ChangeOrderStatusAsync(Guid orderId, string status, string? reason = null)
         {
             if (!Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
             {
                 return new UpdateOrderStatusResponseDto { Message = "invalidstatus" };
             }
 
-            var order = await _orderRepo.Query()
+            var order = await _orderRepo.Query().IgnoreQueryFilters()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+                .Include(o => o.OrderItems).ThenInclude(oi => oi.ProductVariant)
                 .Include(o => o.Address)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
             if (order == null)
@@ -96,6 +100,8 @@ namespace Ecommerce.Application.Services.Orders
                 (OrderStatus.Pending, OrderStatus.Processing) => true,
                 (OrderStatus.Processing, OrderStatus.Shipped) => true,
                 (OrderStatus.Shipped, OrderStatus.Delivered) => true,
+                (OrderStatus.ReturnRequested, OrderStatus.Delivered) => true,
+                (OrderStatus.ReturnRequested, OrderStatus.Returned) => true,
                 _ => false
             };
             if (!validTransition)
@@ -117,7 +123,15 @@ namespace Ecommerce.Application.Services.Orders
                 return new UpdateOrderStatusResponseDto { Message = "Order in Shipped can only be changed to Delivered" };
             }
 
+            if (order.OrderStatus == OrderStatus.ReturnRequested)
+            {
+                if (string.IsNullOrWhiteSpace(reason) || reason.Length > 1000)
+                    return new UpdateOrderStatusResponseDto { Message = "Indica el motivo de la decisión (máximo 1000 caracteres)." };
+                order.ReturnDecisionReason = reason.Trim();
+            }
             order.OrderStatus = parsedStatus;
+            if (parsedStatus == OrderStatus.Shipped) order.ShippedAtUtc = DateTime.UtcNow;
+            if (parsedStatus == OrderStatus.Returned) RestoreStock(order);
             _orderRepo.Update(order);
             await _unitOfWork.SaveChangesAsync();
             
@@ -148,7 +162,7 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 throw new ArgumentException("A transaction ID is required.");
 
             var paymentMethod = dto.PaymentMethod?.Trim().ToLowerInvariant();
-            var allowedPaymentMethods = new[] { "card", "cod", "yape", "plin", "bcp", "interbank", "bbva", "scotiabank", "pagoefectivo" };
+            var allowedPaymentMethods = new[] { "card", "mercadopago", "cod", "yape", "plin" };
             if (!allowedPaymentMethods.Contains(paymentMethod))
             {
                 throw new ArgumentException("A valid payment method is required.");
@@ -163,9 +177,10 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 }
             }
 
-            var existingOrder = await _orderRepo.Query().AnyAsync(o => o.TransactionId == dto.TransactionId);
-            if (existingOrder)
+            var existingOrder = await _orderRepo.Query().IgnoreQueryFilters().FirstOrDefaultAsync(o => o.TransactionId == dto.TransactionId);
+            if (existingOrder != null)
             {
+                if (existingOrder.UserId == userId) return existingOrder.OrderId;
                 throw new ArgumentException("An order with this transaction ID already exists.");
             }
 
@@ -248,6 +263,8 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
             order.ShippingProvider = shippingProvider;
             order.ShippingCost = shippingCost;
             order.TotalPrice = discountedTotal + shippingCost;
+            order.AddressSnapshotJson = System.Text.Json.JsonSerializer.Serialize(_mapper.Map<AddressResponseDto>(address));
+            order.PaymentDueAtUtc = paymentMethod == "cod" ? null : DateTime.UtcNow.AddHours(24);
 
             // Verify the final server-calculated total before changing stock or saving the order.
             if (paymentMethod == "card")
@@ -255,16 +272,14 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 if (!_paymentGateway.IsConfigured)
                     throw new InvalidOperationException("Card payments are currently unavailable. Please choose another payment method.");
 
-                var verification = await _paymentGateway.VerifyPaymentAsync(dto.TransactionId);
-                var expectedAmount = (long)decimal.Round(order.TotalPrice * 100, 0, MidpointRounding.AwayFromZero);
-                if (verification.Data == null || !verification.Data.IsSuccessful ||
-                    verification.Data.AmountReceived != expectedAmount ||
-                    !string.Equals(verification.Data.Currency, "pen", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException("Card payment does not match the order total or could not be verified.");
-
-                // A webhook may arrive before the order exists, so persist the verified state here.
-                order.IsPaid = true;
-                order.OrderStatus = OrderStatus.Processing;
+                // Persist the reservation before exposing a client secret or charging a card.
+                order.PaymentDueAtUtc = DateTime.UtcNow.AddMinutes(30);
+            }
+            else if (paymentMethod == "mercadopago")
+            {
+                if (!_mercadoPagoService.IsConfigured)
+                    throw new InvalidOperationException("Mercado Pago no está disponible. Elige otro método de pago.");
+                order.PaymentDueAtUtc = DateTime.UtcNow.AddHours(24);
             }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -297,11 +312,17 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
             if (string.IsNullOrWhiteSpace(transactionId))
                 return;
 
-            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.TransactionId == transactionId);
+            var order = await _orderRepo.Query().IgnoreQueryFilters().FirstOrDefaultAsync(o => o.PaymentIntentId == transactionId || o.TransactionId == transactionId);
             if (order == null || order.IsPaid)
                 return;
+            if (order.OrderStatus == OrderStatus.Cancelled)
+            {
+                await _paymentGateway.RefundAsync(transactionId, order.TotalPrice, $"late-payment-{order.OrderId}");
+                return;
+            }
 
             order.IsPaid = true;
+            order.PaymentDueAtUtc = null;
             if (order.OrderStatus == OrderStatus.Pending)
                 order.OrderStatus = OrderStatus.Processing;
             _orderRepo.Update(order);
@@ -313,7 +334,7 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
             if (string.IsNullOrWhiteSpace(transactionId))
                 return;
 
-            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.TransactionId == transactionId);
+            var order = await _orderRepo.Query().IgnoreQueryFilters().FirstOrDefaultAsync(o => o.TransactionId == transactionId);
             if (order == null || order.OrderStatus == OrderStatus.Refunded)
                 return;
 
@@ -328,7 +349,7 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
             if (string.IsNullOrWhiteSpace(url) && string.IsNullOrWhiteSpace(approvalCode))
                 throw new ArgumentException("A voucher URL or approval code is required.");
 
-            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId);
+            var order = await _orderRepo.Query().IgnoreQueryFilters().FirstOrDefaultAsync(o => o.OrderId == orderId);
             if (order == null)
                 throw new KeyNotFoundException("Order not found.");
 
@@ -361,16 +382,18 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
 
         public async Task MarkOrderPaidByStaffAsync(Guid orderId)
         {
-            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId);
+            var order = await _orderRepo.Query().IgnoreQueryFilters().FirstOrDefaultAsync(o => o.OrderId == orderId);
             if (order == null)
                 throw new KeyNotFoundException("Order not found.");
 
             if (order.OrderStatus is OrderStatus.Cancelled or OrderStatus.Returned or OrderStatus.RefundInitiated or OrderStatus.Refunded)
                 throw new InvalidOperationException("No se puede confirmar el pago de un pedido cancelado, devuelto o reembolsado.");
+            if (order.PaymentMethod == "card") throw new InvalidOperationException("Los pagos con tarjeta se confirman desde la pasarela.");
 
             if (!order.IsPaid)
             {
                 order.IsPaid = true;
+                order.PaymentDueAtUtc = null;
                 if (order.OrderStatus == OrderStatus.Pending)
                     order.OrderStatus = OrderStatus.Processing;
                 _orderRepo.Update(order);
@@ -434,6 +457,9 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                     OrderItemId = Guid.NewGuid(),
                     ProductId = c.ProductId,
                     ProductVariantId = c.ProductVariantId,
+                    ProductNameSnapshot = c.Product.ProductName,
+                    ImageSnapshot = c.Product.Image,
+                    SkuSnapshot = c.Product.SKU,
                     Quantity = c.Quantity,
                     UnitPrice = c.Product.Price - c.Product.Discount,
                     TotalPrice = c.Quantity * (c.Product.Price - c.Product.Discount),
@@ -500,7 +526,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                 return;
             }
 
-            var populatedOrder = await _orderRepo.Query()
+            var populatedOrder = await _orderRepo.Query().IgnoreQueryFilters()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Address)
                 .AsNoTracking()
@@ -530,7 +556,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
             await _emailJobQueue.QueueAsync(new EmailJobMessage(user.Email, subject, body));
         }
 
-        private static string GenerateRichEmailHtml(Order order, string heading, string messageHtml, string? reasonHtml = null)
+        private string GenerateRichEmailHtml(Order order, string heading, string messageHtml, string? reasonHtml = null)
         {
             var itemsHtml = string.Join("", order.OrderItems.Select(item => $@"
                 <tr>
@@ -546,7 +572,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                                     <p style='margin:0;color:#374151;font-size:14px;'>Qty: {item.Quantity} × S/ {item.UnitPrice:N2}</p>
                                 </td>
                                 <td style='vertical-align:top;text-align:right;'>
-                                    <p style='margin:0;font-weight:700;color:#111827;font-size:16px;'>Rs. {item.TotalPrice:N0}</p>
+                                    <p style='margin:0;font-weight:700;color:#111827;font-size:16px;'>S/ {item.TotalPrice:N2}</p>
                                 </td>
                             </tr>
                         </table>
@@ -556,7 +582,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
             var address = order.Address;
             var addressHtml = address != null ? $@"
                 <div style='background-color:#f9fafb;padding:16px;border-radius:6px;margin-top:24px;border:1px solid #e5e7eb;'>
-                    <h3 style='margin:0 0 12px;font-size:16px;color:#111827;border-bottom:1px solid #e5e7eb;padding-bottom:8px;'>Delivery Address</h3>
+                    <h3 style='margin:0 0 12px;font-size:16px;color:#111827;border-bottom:1px solid #e5e7eb;padding-bottom:8px;'>Dirección de entrega</h3>
                     <p style='margin:0 0 4px;font-weight:600;color:#374151;'>{System.Net.WebUtility.HtmlEncode(address.FullName)}</p>
                     <p style='margin:0 0 4px;color:#4b5563;font-size:14px;'>{System.Net.WebUtility.HtmlEncode(address.HouseName)}</p>
                     <p style='margin:0 0 4px;color:#4b5563;font-size:14px;'>{System.Net.WebUtility.HtmlEncode(address.District)}, {System.Net.WebUtility.HtmlEncode(address.Province)} — {System.Net.WebUtility.HtmlEncode(address.Department)}</p>
@@ -565,15 +591,16 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
 
             var paymentMethodDisplay = order.PaymentMethod?.ToLowerInvariant() switch
             {
-                "cod" => "Cash on Delivery",
+                "cod" => "Contra entrega",
                 "yape" => "Yape",
                 "plin" => "Plin",
+                "mercadopago" => "Mercado Pago (tarjetas y Yape)",
                 "bcp" => "BCP Mobile Banking",
                 "interbank" => "Interbank App",
                 "bbva" => "BBVA App",
                 "scotiabank" => "Scotiabank App",
                 "pagoefectivo" => "PagoEfectivo",
-                _ => "Online Payment (Card)"
+                _ => "Tarjeta"
             };
 
             return $@"
@@ -605,12 +632,12 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                 </div>
 
                 <div style='background-color:#f9fafb;padding:16px;border-radius:6px;margin-bottom:24px;border:1px solid #e5e7eb;'>
-                    <p style='margin:0 0 8px;color:#4b5563;font-size:14px;'>Order ID: <strong style='color:#111827;'>{order.OrderId}</strong></p>
-                    <p style='margin:0 0 8px;color:#4b5563;font-size:14px;'>Order Date: <strong style='color:#111827;'>{order.OrderDate:dd MMM yyyy, hh:mm tt}</strong></p>
-                    <p style='margin:0;color:#4b5563;font-size:14px;'>Payment Method: <strong style='color:#111827;'>{paymentMethodDisplay}</strong></p>
+                    <p style='margin:0 0 8px;color:#4b5563;font-size:14px;'>Pedido: <strong style='color:#111827;'>{order.OrderId}</strong></p>
+                    <p style='margin:0 0 8px;color:#4b5563;font-size:14px;'>Fecha: <strong style='color:#111827;'>{order.OrderDate:dd MMM yyyy, hh:mm tt}</strong></p>
+                    <p style='margin:0;color:#4b5563;font-size:14px;'>Método de pago: <strong style='color:#111827;'>{paymentMethodDisplay}</strong></p>
                 </div>
 
-                <h3 style='margin:0 0 16px;font-size:18px;color:#111827;border-bottom:2px solid #111827;padding-bottom:8px;'>Order Details</h3>
+                <h3 style='margin:0 0 16px;font-size:18px;color:#111827;border-bottom:2px solid #111827;padding-bottom:8px;'>Detalle del pedido</h3>
                 <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
                     <tbody>
                         {itemsHtml}
@@ -618,7 +645,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                     <tfoot>
                         <tr>
                             <td style='padding:16px 0 0;text-align:right;'>
-                                <p style='margin:0;font-size:16px;color:#4b5563;'>Total Amount</p>
+                                <p style='margin:0;font-size:16px;color:#4b5563;'>Importe total</p>
                                 <p style='margin:4px 0 0;font-size:24px;font-weight:800;color:#111827;'>S/ {order.TotalPrice:N2}</p>
                             </td>
                         </tr>
@@ -628,13 +655,13 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                 {addressHtml}
                 
                 <div style='margin-top:32px;text-align:center;'>
-                    <a href='https://urbaniq.ddnsking.com/profile/orders' style='display:inline-block;background-color:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:4px;'>Track Your Order</a>
+                    <a href='{_shippingSettings.FrontendUrl.TrimEnd('/')}/orders/{order.OrderId}' style='display:inline-block;background-color:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:4px;'>Ver mi pedido</a>
                 </div>
             </div>
 
             <div style='background-color:#f9fafb;padding:24px;text-align:center;border-top:1px solid #e5e7eb;'>
-                <p style='margin:0 0 8px;color:#6b7280;font-size:13px;'>If you have any questions, please reply to this email or visit our help center.</p>
-                <p style='margin:0;color:#9ca3af;font-size:12px;'>&copy; {DateTime.UtcNow.Year} Urbaniq. All rights reserved.</p>
+                <p style='margin:0 0 8px;color:#6b7280;font-size:13px;'>Si tienes dudas, responde a este correo o visita nuestro centro de ayuda.</p>
+                <p style='margin:0;color:#9ca3af;font-size:12px;'>&copy; {DateTime.UtcNow.Year} Urbaniq. Todos los derechos reservados.</p>
             </div>
             
         </div>
@@ -645,7 +672,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
 
         public async Task<PagedResult<OrderDetailsResponseDto>> GetOrdersByUserIdAsync(Guid userId, int pageNumber = 1, int pageSize = 10)
         {
-            var query = _orderRepo.Query()
+            var query = _orderRepo.Query().IgnoreQueryFilters()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Address)
                 .Where(o => o.UserId == userId)
@@ -666,7 +693,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
 
         public async Task<PagedResult<OrderDetailsResponseDto>> GetAllOrdersAsync(int pageNumber = 1, int pageSize = 10, string? status = null)
         {
-            var query = _orderRepo.Query()
+            var query = _orderRepo.Query().IgnoreQueryFilters()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Address)
                 .Include(o => o.User)
@@ -694,7 +721,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
 
         public async Task<OrderDetailsResponseDto> GetOrderByIdAsync(Guid orderId, Guid? requestingUserId, bool isAdmin)
         {
-            var order = await _orderRepo.Query()
+            var order = await _orderRepo.Query().IgnoreQueryFilters()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Address)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
@@ -721,10 +748,9 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
         {
             if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 1000)
                 return new UpdateOrderStatusResponseDto { Message = "Provide a cancellation reason of at most 1000 characters" };
-            var order = await _orderRepo.Query()
+            var order = await _orderRepo.Query().IgnoreQueryFilters()
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.ProductVariant)
-                .ThenInclude(v => v.Product)
                 .Include(o => o.Address)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
 
@@ -738,18 +764,11 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                 return new UpdateOrderStatusResponseDto { Message = "This order can no longer be cancelled" };
             }
 
-            foreach (var item in order.OrderItems)
-            {
-                item.ProductVariant.Quantity += item.Quantity;
-                item.Product.Quantity += item.Quantity;
-                
-                if (item.Product.TotalSold >= item.Quantity)
-                {
-                    item.Product.TotalSold -= item.Quantity;
-                }
-
-                _productRepo.Update(item.Product);
-            }
+            if (order.PaymentMethod == "card" && !order.IsPaid && order.PaymentIntentId != null)
+                await _paymentGateway.CancelPaymentAsync(order.PaymentIntentId);
+            if (order.IsPaid && order.PaymentMethod == "card")
+                throw new InvalidOperationException("Este pedido está pagado. Solicita al comercio la cancelación y el reembolso.");
+            RestoreStock(order);
 
             order.OrderStatus = OrderStatus.Cancelled;
             order.CancellationReason = reason.Trim();
@@ -758,15 +777,15 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
             await _unitOfWork.SaveChangesAsync();
             await QueueOrderLifecycleEmailAsync(
                 order,
-                $"Order cancelled - {order.OrderId}",
-                "Order cancelled",
-                "Your cancellation request has been completed.",
+                $"Pedido cancelado - {order.OrderId}",
+                "Pedido cancelado",
+                "Tu pedido fue cancelado. Si tiene un pago registrado, el comercio debe coordinar su reembolso.",
                 order.CancellationReason);
 
             return new UpdateOrderStatusResponseDto
             {
                 OrderStatus = order.OrderStatus.ToString(),
-                Message = "Order cancelled successfully"
+                Message = "Pedido cancelado correctamente"
             };
         }
 
@@ -774,7 +793,7 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
         {
             if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 1000)
                 return new UpdateOrderStatusResponseDto { Message = "Provide a return reason of at most 1000 characters" };
-            var order = await _orderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+            var order = await _orderRepo.Query().IgnoreQueryFilters().FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
             if (order == null)
                 return new UpdateOrderStatusResponseDto { Message = "Order not found" };
             if (order.OrderStatus == OrderStatus.ReturnRequested)
@@ -812,13 +831,18 @@ private static Order CreateOrderFromCart(Guid? userId, CreateOrderRequestDto dto
                 ReturnRequestedAtUtc = order.ReturnRequestedAtUtc,
                 ReplacementRequestedAtUtc = order.ReplacementRequestedAtUtc,
                 RefundedAtUtc = order.RefundedAtUtc,
-                Address = _mapper.Map<AddressResponseDto>(order.Address),
+                Address = order.AddressSnapshotJson is { Length: > 0 } json && json != "null"
+                    ? System.Text.Json.JsonSerializer.Deserialize<AddressResponseDto>(json)! : _mapper.Map<AddressResponseDto>(order.Address),
+                InvoiceType = order.InvoiceType, Ruc = order.Ruc, RazonSocial = order.RazonSocial,
+                FiscalAddress = order.FiscalAddress, ShippingProvider = order.ShippingProvider, ShippingCost = order.ShippingCost,
+                TrackingNumber = order.TrackingNumber, InvoiceReference = order.InvoiceReference,
+                ShippedAtUtc = order.ShippedAtUtc, PaymentDueAtUtc = order.PaymentDueAtUtc, RefundedAmount = order.RefundedAmount,
                 OrderItems = order.OrderItems.Select(item => new OrderItemResponseDto
                 {
                     OrderItemId = item.OrderItemId,
-                    ProductId = item.ProductId,
-                    ProductName = item.Product.ProductName,
-                    ImageUrl = item.Product.Image,
+                    ProductId = item.ProductId ?? Guid.Empty,
+                    ProductName = item.ProductNameSnapshot ?? item.Product?.ProductName ?? "Producto no disponible",
+                    ImageUrl = item.ImageSnapshot ?? item.Product?.Image ?? string.Empty,
                     Price = item.UnitPrice,
                     Quantity = item.Quantity,
                     TotalAmount = item.TotalPrice,

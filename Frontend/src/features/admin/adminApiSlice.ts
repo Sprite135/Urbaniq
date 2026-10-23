@@ -152,11 +152,11 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ['Order'],
     }),
-    changeOrderStatus: builder.mutation<{ message: string; orderStatus: string }, { orderId: string; status: string }>({
-      query: ({ orderId, status }) => ({
+    changeOrderStatus: builder.mutation<{ message: string; orderStatus: string }, { orderId: string; status: string; reason?: string }>({
+      query: ({ orderId, status, reason }) => ({
         url: `/Order/change-status/${orderId}`,
         method: 'PUT',
-        body: { status },
+        body: { status, reason },
       }),
       invalidatesTags: ['Order'],
     }),

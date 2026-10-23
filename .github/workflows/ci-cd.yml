@@ -20,24 +20,20 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Restore dependencies
-      run: |
-        cd Backend
-        dotnet restore
+      run: dotnet restore Ecommerce.sln
 
     - name: Build Backend
-      run: |
-        cd Backend
-        dotnet build --no-restore
+      run: dotnet build Ecommerce.sln --configuration Release --no-restore
 
     - name: Run Backend Tests
-      run: |
-        cd Backend
-        dotnet test --no-build --verbosity normal
+      env:
+        ASPNETCORE_ENVIRONMENT: Testing
+      run: dotnet test Ecommerce.sln --configuration Release --no-build --verbosity normal
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '24'
 
     - name: Install Frontend Dependencies
       run: |
@@ -49,10 +45,26 @@ jobs:
         cd Frontend
         npm run build
 
-    - name: Run Frontend Tests (if any)
+    - name: Run Frontend Tests
       run: |
         cd Frontend
-        npm test -- --passWithNoTests
+        npm test -- --run --maxWorkers=1
+
+    - name: Lint Frontend
+      run: |
+        cd Frontend
+        npm run lint
+
+    - name: Publish Backend
+      run: dotnet publish Backend/Ecommerce.Api/Ecommerce.Api.csproj --configuration Release --no-build --output artifacts/backend
+
+    - name: Verify Frontend Is Bundled
+      shell: bash
+      run: |
+        test -f artifacts/backend/wwwroot/index.html
+        entry=$(grep -oE '/assets/index-[^" ]+\.js' artifacts/backend/wwwroot/index.html | head -1)
+        test -n "$entry"
+        test -f "artifacts/backend/wwwroot${entry}"
 
     - name: Upload Frontend Build Artifacts
       uses: actions/upload-artifact@v4
@@ -64,7 +76,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: backend-build
-        path: Backend/Ecommerce.Api/bin/Release/net8.0
+        path: artifacts/backend
 
   docker-build:
     runs-on: ubuntu-latest

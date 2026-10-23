@@ -8,6 +8,7 @@ namespace Ecommerce.Application.Common.Settings
     /// </summary>
     public class ShippingSettings
     {
+        public string FrontendUrl { get; set; } = "http://localhost:5173";
         /// <summary>Flat shipping fee for Lima Metropolitana. Default 0 (free).</summary>
         public decimal LimaMetropolitanaFee { get; set; } = 0m;
 

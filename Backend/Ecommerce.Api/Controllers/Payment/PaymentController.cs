@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Hosting;
 using Stripe;
 using System.IO;
+using System.Security.Claims;
 
 namespace Ecommerce.Api.Controllers.Payment
 {
@@ -20,6 +21,7 @@ namespace Ecommerce.Api.Controllers.Payment
     public class PaymentController : ControllerBase
     {
         private readonly IPaymentGatewayService _paymentGatewayService;
+        private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IOrderService _orderService;
         private readonly StripeSettings _stripeSettings;
         private readonly MerchantPaymentSettings _merchantSettings;
@@ -30,6 +32,7 @@ namespace Ecommerce.Api.Controllers.Payment
 
         public PaymentController(
             IPaymentGatewayService paymentGatewayService,
+            IMercadoPagoService mercadoPagoService,
             IOrderService orderService,
             IOptions<StripeSettings> stripeSettings,
             IOptions<MerchantPaymentSettings> merchantSettings,
@@ -39,6 +42,7 @@ namespace Ecommerce.Api.Controllers.Payment
             Ecommerce.Api.Services.PaymentReceiptStorage receiptStorage)
         {
             _paymentGatewayService = paymentGatewayService;
+            _mercadoPagoService = mercadoPagoService;
             _orderService = orderService;
             _stripeSettings = stripeSettings.Value;
             _merchantSettings = merchantSettings.Value;
@@ -62,14 +66,54 @@ namespace Ecommerce.Api.Controllers.Payment
             {
                 return Ok(new PaymentConfigResponseDto
                 {
-                    PublishableKey = "" // Empty string indicates Stripe not configured
+                    PublishableKey = "", // Empty string indicates Stripe not configured
+                    MercadoPagoEnabled = _mercadoPagoService.IsConfigured
                 });
             }
 
             return Ok(new PaymentConfigResponseDto
             {
-                PublishableKey = _stripeSettings.PublishableKey
+                PublishableKey = _stripeSettings.PublishableKey,
+                MercadoPagoEnabled = _mercadoPagoService.IsConfigured
             });
+        }
+
+        [HttpPost("mercadopago/checkout")]
+        public async Task<IActionResult> CreateMercadoPagoCheckout([FromBody] CreatePaymentIntentRequestDto request)
+        {
+            var baseUri = new Uri($"{Request.Scheme}://{Request.Host}/");
+            var result = await _orderService.StartMercadoPagoPaymentAsync(
+                request.OrderId,
+                Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
+                baseUri);
+            return Ok(result);
+        }
+
+        [HttpPost("mercadopago/webhook")]
+        [AllowAnonymous]
+        public async Task<IActionResult> MercadoPagoWebhook()
+        {
+            var dataId = Request.Query["data.id"].ToString();
+            var type = Request.Query["type"].ToString();
+            if (string.IsNullOrWhiteSpace(dataId))
+            {
+                using var document = await System.Text.Json.JsonDocument.ParseAsync(Request.Body);
+                var root = document.RootElement;
+                if (root.TryGetProperty("data", out var data) && data.TryGetProperty("id", out var id)) dataId = id.ToString();
+                if (root.TryGetProperty("type", out var bodyType)) type = bodyType.GetString() ?? type;
+            }
+            if (!string.Equals(type, "payment", StringComparison.OrdinalIgnoreCase)) return Ok();
+            if (!_mercadoPagoService.ValidateWebhookSignature(
+                    Request.Headers["x-signature"].ToString(),
+                    Request.Headers["x-request-id"].ToString(),
+                    dataId))
+            {
+                _logger.LogWarning("Mercado Pago webhook signature verification failed.");
+                return Unauthorized();
+            }
+            var payment = await _mercadoPagoService.GetPaymentAsync(dataId);
+            await _orderService.ConfirmMercadoPagoPaymentAsync(payment);
+            return Ok();
         }
 
         /// <summary>
@@ -79,7 +123,7 @@ namespace Ecommerce.Api.Controllers.Payment
         [HttpPost("create-intent")]
         public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentRequestDto request)
         {
-            var result = await _paymentGatewayService.CreatePaymentIntentAsync(request.Amount);
+            var result = await _orderService.StartCardPaymentAsync(request.OrderId, Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!));
             return StatusCode(result.StatusCode, result);
         }
 
@@ -89,8 +133,8 @@ namespace Ecommerce.Api.Controllers.Payment
         [HttpPost("verify")]
         public async Task<IActionResult> VerifyPayment([FromBody] VerifyPaymentRequestDto request)
         {
-            var result = await _paymentGatewayService.VerifyPaymentAsync(request.PaymentIntentId);
-            return StatusCode(result.StatusCode, result);
+            await _orderService.ConfirmCardPaymentAsync(request.OrderId, Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), request.PaymentIntentId);
+            return Ok(new { data = new { isSuccessful = true, status = "succeeded" } });
         }
 
         /// <summary>
@@ -145,7 +189,7 @@ namespace Ecommerce.Api.Controllers.Payment
                     var charge = stripeEvent.Data.Object as Charge;
                     if (charge != null && !string.IsNullOrWhiteSpace(charge.PaymentIntentId))
                     {
-                        await _orderService.MarkOrderRefundedAsync(charge.PaymentIntentId);
+                        await _orderService.RecordRefundAsync(charge.PaymentIntentId, charge.AmountRefunded / 100m);
                         _logger.LogInformation("Stripe charge.refunded processed for PaymentIntent {PaymentIntentId}", charge.PaymentIntentId);
                     }
                     break;
@@ -178,8 +222,10 @@ namespace Ecommerce.Api.Controllers.Payment
         /// Uploads a payment voucher (proof of Yape/Plin/transfer) and returns its public URL.
         /// </summary>
         [HttpPost("upload-voucher")]
-        public async Task<IActionResult> UploadVoucher(IFormFile file)
+        public async Task<IActionResult> UploadVoucher(IFormFile file, [FromForm] Guid orderId)
         {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _orderService.GetOrderByIdAsync(orderId, userId, User.IsInRole("Admin"));
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "No file provided." });
 
@@ -195,12 +241,38 @@ namespace Ecommerce.Api.Controllers.Payment
             var fileName = $"{Guid.NewGuid()}{ext}";
             var path = Path.Combine(folder, fileName);
 
+            using var content = new MemoryStream();
+            await file.CopyToAsync(content);
+            if (!Ecommerce.Api.Services.PaymentReceiptStorage.HasValidSignature(content.ToArray(), ext))
+                return BadRequest(new { message = "El contenido no corresponde al formato del comprobante." });
+            content.Position = 0;
             using (var stream = System.IO.File.Create(path))
             {
-                await file.CopyToAsync(stream);
+                await content.CopyToAsync(stream);
             }
+            await System.IO.File.WriteAllTextAsync(path + ".owner", userId.ToString());
+            var url = $"/uploads/payments/{fileName}";
+            await _orderService.AttachVoucherAsync(orderId, userId, User.IsInRole("Admin"), url, null);
+            return Ok(new { url });
+        }
 
-            return Ok(new { url = $"/uploads/payments/{fileName}" });
+        [HttpGet("/uploads/payments/{fileName}")]
+        public async Task<IActionResult> DownloadVoucher(string fileName, [FromServices] Ecommerce.Infrastructure.Data.AppDbContext db)
+        {
+            if (!_receiptStorage.IsValidName(fileName)) return NotFound();
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var isAdmin = User.IsInRole("Admin");
+            var url = $"/uploads/payments/{fileName}";
+            var order = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(db.Orders,
+                o => o.PaymentReceiptUrl == url && (o.UserId == userId || isAdmin));
+            if (order == null) return NotFound();
+            var path = Path.Combine(_receiptStorage.DirectoryPath, fileName);
+            // Read-only compatibility for receipts uploaded before private storage was introduced.
+            if (!System.IO.File.Exists(path)) path = Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), "uploads", "payments", fileName);
+            if (!System.IO.File.Exists(path)) return NotFound();
+            Response.Headers.CacheControl = "no-store";
+            var mime = Path.GetExtension(fileName).ToLowerInvariant() switch { ".pdf" => "application/pdf", ".png" => "image/png", ".webp" => "image/webp", _ => "image/jpeg" };
+            return PhysicalFile(path, mime, fileName);
         }
     }
 }

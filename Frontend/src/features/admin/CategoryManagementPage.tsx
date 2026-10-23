@@ -4,6 +4,7 @@ import { useCreateCategoryMutation, useDeleteCategoryMutation } from './adminApi
 import { toast } from 'react-toastify';
 import { Plus, Tags, X, Trash2, CornerDownRight } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
+import AdminLoadError from './AdminLoadError';
 
 const flattenCategories = (categories: Category[] = [], depth = 0): Array<Category & { depth: number }> =>
   categories.flatMap((category) => [
@@ -12,7 +13,7 @@ const flattenCategories = (categories: Category[] = [], depth = 0): Array<Catego
   ]);
 
 const CategoryManagementPage = () => {
-  const { data: categories, isLoading } = useGetCategoriesQuery();
+  const { data: categories, isLoading, isError, refetch } = useGetCategoriesQuery();
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   
@@ -102,6 +103,8 @@ const CategoryManagementPage = () => {
           <div className="grid place-items-center p-10">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#d7b46a] border-t-transparent" />
           </div>
+        ) : isError ? (
+          <AdminLoadError message="No se pudieron cargar las categorías. No se ha cambiado ninguna." onRetry={() => { void refetch(); }} />
         ) : (
           <>
             {/* Desktop table view */}

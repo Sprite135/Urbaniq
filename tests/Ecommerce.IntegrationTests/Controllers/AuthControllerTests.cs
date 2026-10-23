@@ -85,7 +85,9 @@ public class AuthControllerTests : IClassFixture<CustomWebAppFactory>
         var json = JsonSerializer.Deserialize<JsonElement>(content, _jsonOptions);
 
         json.GetProperty("accessToken").GetString().Should().NotBeNullOrEmpty();
-        json.GetProperty("refreshToken").GetString().Should().NotBeNullOrEmpty();
+        json.GetProperty("refreshToken").GetString().Should().BeEmpty("el refresh token solo debe viajar en una cookie HttpOnly");
+        loginResponse.Headers.TryGetValues("Set-Cookie", out var cookies).Should().BeTrue();
+        cookies!.Should().Contain(value => value.StartsWith("urbaniq.refresh=") && value.Contains("httponly", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

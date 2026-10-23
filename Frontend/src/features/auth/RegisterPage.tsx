@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+
 import { Eye, EyeOff, Loader2, Lock, Mail, User as UserIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { useRegisterMutation, useLoginMutation } from './authApiSlice';
-import { setCredentials } from './authSlice';
+import { useRegisterMutation } from './authApiSlice';
+
 
 const getApiError = (error: unknown, fallback: string) => {
   const apiError = error as {
@@ -28,11 +28,9 @@ const RegisterPage: React.FC = () => {
   const redirectTo = searchParams.get('redirectTo') || '/account';
 
   const [register, { isLoading: isRegistering }] = useRegisterMutation();
-  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const isLoading = isRegistering || isLoggingIn;
+  const isLoading = isRegistering;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -53,16 +51,8 @@ const RegisterPage: React.FC = () => {
 
     try {
       await register({ name, email, password }).unwrap();
-      const auth = await login({ email, password }).unwrap();
-      dispatch(
-        setCredentials({
-          user: auth.user,
-          accessToken: auth.accessToken,
-          refreshToken: auth.refreshToken,
-        })
-      );
-      toast.success('Cuenta creada. ¡Bienvenido a Urbaniq!');
-      navigate(redirectTo, { replace: true });
+      toast.success('Cuenta creada. Revisa tu correo y confirma el enlace antes de iniciar sesión.');
+      navigate('/login?redirectTo=' + encodeURIComponent(redirectTo), { replace: true });
     } catch (requestError) {
       setError(getApiError(requestError, 'No se pudo crear la cuenta.'));
     }

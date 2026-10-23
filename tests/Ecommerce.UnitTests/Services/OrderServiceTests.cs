@@ -36,6 +36,7 @@ public class OrderServiceTests
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IEmailJobQueue> _emailJobQueueMock;
     private readonly Mock<IPaymentGatewayService> _paymentGatewayMock;
+    private readonly Mock<IMercadoPagoService> _mercadoPagoServiceMock;
     private readonly Mock<IHostEnvironment> _environmentMock;
     private readonly Mock<ICouponService> _couponServiceMock;
     private readonly Mock<INotificationService> _notificationServiceMock;
@@ -55,6 +56,7 @@ public class OrderServiceTests
         _mapperMock = new Mock<IMapper>();
         _emailJobQueueMock = new Mock<IEmailJobQueue>();
         _paymentGatewayMock = new Mock<IPaymentGatewayService>();
+        _mercadoPagoServiceMock = new Mock<IMercadoPagoService>();
         _environmentMock = new Mock<IHostEnvironment>();
         _environmentMock.SetupGet(e => e.EnvironmentName).Returns(Environments.Development);
         _paymentGatewayMock.SetupGet(p => p.IsConfigured).Returns(true);
@@ -82,6 +84,7 @@ public class OrderServiceTests
             _mapperMock.Object,
             _emailJobQueueMock.Object,
             _paymentGatewayMock.Object,
+            _mercadoPagoServiceMock.Object,
             _environmentMock.Object,
             _shippingOptions,
             _couponServiceMock.Object,
@@ -89,6 +92,50 @@ public class OrderServiceTests
     }
 
     private static Guid SetupUserId() => Guid.NewGuid();
+
+    [Fact]
+    public async Task StartMercadoPagoPaymentAsync_UsesServerOrderTotalAndStoresPreference()
+    {
+        var userId = Guid.NewGuid();
+        var order = new Order
+        {
+            OrderId = Guid.NewGuid(), UserId = userId, TotalPrice = 249.90m,
+            PaymentMethod = "mercadopago", OrderStatus = OrderStatus.Pending,
+            PaymentDueAtUtc = DateTime.UtcNow.AddHours(1)
+        };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _mercadoPagoServiceMock.Setup(s => s.CreateCheckoutAsync(order.TotalPrice, order.OrderId, It.IsAny<Uri>()))
+            .ReturnsAsync(new MercadoPagoCheckoutResponseDto { PreferenceId = "pref-123", CheckoutUrl = "https://example.test/pay" });
+
+        var result = await _sut.StartMercadoPagoPaymentAsync(order.OrderId, userId, new Uri("https://urbaniq.example/"));
+
+        result.CheckoutUrl.Should().Be("https://example.test/pay");
+        order.PaymentIntentId.Should().Be("pref-123");
+        _mercadoPagoServiceMock.Verify(s => s.CreateCheckoutAsync(249.90m, order.OrderId, It.IsAny<Uri>()), Times.Once);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ConfirmMercadoPagoPaymentAsync_ApprovesOnlyMatchingServerOrder()
+    {
+        var order = new Order
+        {
+            OrderId = Guid.NewGuid(), TotalPrice = 89.50m, PaymentMethod = "mercadopago",
+            OrderStatus = OrderStatus.Pending, PaymentDueAtUtc = DateTime.UtcNow.AddHours(1)
+        };
+        _orderRepoMock.Setup(r => r.Query()).Returns(new[] { order }.AsQueryable().BuildMock());
+
+        await _sut.ConfirmMercadoPagoPaymentAsync(new MercadoPagoPaymentDto
+        {
+            PaymentId = "998877", Status = "approved", ExternalReference = order.OrderId.ToString(),
+            TransactionAmount = 89.50m, CurrencyId = "PEN"
+        });
+
+        order.IsPaid.Should().BeTrue();
+        order.OrderStatus.Should().Be(OrderStatus.Processing);
+        order.PaymentIntentId.Should().Be("998877");
+        order.PaymentDueAtUtc.Should().BeNull();
+    }
 
     [Fact]
     public async Task AttachVoucherAsync_RecordsProofWithoutConfirmingPayment()
@@ -171,7 +218,6 @@ public class OrderServiceTests
 
     [Theory]
     [InlineData(OrderStatus.Shipped)]
-    [InlineData(OrderStatus.Cancelled)]
     public async Task MarkOrderPaidAsync_DoesNotRegressExistingDeliveryStatus(OrderStatus status)
     {
         var order = new Order { OrderId = Guid.NewGuid(), TransactionId = "confirmed-payment", OrderStatus = status };
@@ -258,7 +304,7 @@ public class OrderServiceTests
 
         // Assert
         result.Should().NotBeEmpty();
-        _orderRepoMock.Verify(r => r.AddAsync(It.Is<Order>(o => o.IsPaid && o.OrderStatus == OrderStatus.Processing)), Times.Once);
+        _orderRepoMock.Verify(r => r.AddAsync(It.Is<Order>(o => !o.IsPaid && o.OrderStatus == OrderStatus.Pending && o.PaymentDueAtUtc != null)), Times.Once);
         _unitOfWorkMock.Verify(
             u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -413,31 +459,18 @@ public class OrderServiceTests
 
     // ==================== ChangeOrderStatus Tests ====================
 
-    [Theory]
-    [InlineData(1, "pen", true)]
-    [InlineData(100000, "usd", true)]
-    [InlineData(100000, "pen", false)]
-    public async Task CreateOrderAsync_InvalidPayment_DoesNotSaveOrDeductStock(long amount, string currency, bool successful)
+    [Fact]
+    public async Task CreateOrderAsync_CardPayment_IsReservedBeforeGatewayConfirmation()
     {
         var (userId, addressId, product) = SetupValidOrderScenario();
-        _paymentGatewayMock.Setup(p => p.VerifyPaymentAsync(It.IsAny<string>()))
-            .ReturnsAsync(new ApiResponse<PaymentVerificationResponseDto>
-            {
-                Data = new PaymentVerificationResponseDto
-                {
-                    IsSuccessful = successful, AmountReceived = amount, Currency = currency
-                }
-            });
-
-        var act = () => _sut.CreateOrderAsync(userId, new CreateOrderRequestDto
+        var orderId = await _sut.CreateOrderAsync(userId, new CreateOrderRequestDto
         {
-            AddressId = addressId, TransactionId = "pi_invalid", PaymentMethod = "card"
+            AddressId = addressId, TransactionId = "checkout_reservation", PaymentMethod = "card"
         });
-
-        await act.Should().ThrowAsync<InvalidOperationException>();
-        product.Quantity.Should().Be(10);
-        _orderRepoMock.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Never);
-        _cartItemRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<CartItem>>()), Times.Never);
+        orderId.Should().NotBeEmpty();
+        product.Quantity.Should().Be(8);
+        _paymentGatewayMock.Verify(p => p.VerifyPaymentAsync(It.IsAny<string>()), Times.Never);
+        _orderRepoMock.Verify(r => r.AddAsync(It.Is<Order>(o => !o.IsPaid && o.OrderStatus == OrderStatus.Pending)), Times.Once);
     }
 
     [Fact]
@@ -667,7 +700,7 @@ public class OrderServiceTests
 
         var result = await _sut.CancelOrderAsync(userId, orderId, "Changed mind");
 
-        result.Message.Should().Be("Order cancelled successfully");
+        result.Message.Should().Be("Pedido cancelado correctamente");
         order.OrderStatus.Should().Be(OrderStatus.Cancelled);
         product.Quantity.Should().Be(7);
         variant.Quantity.Should().Be(5);

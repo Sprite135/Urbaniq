@@ -1,9 +1,11 @@
+import { endBrowserSession } from '@/app/apiSlice';
+import BrandLogo from '@/components/BrandLogo';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUser } from '../auth/authSlice';
 import {
-  Bell,
   ChevronRight,
+  ExternalLink,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -14,6 +16,7 @@ import {
   X,
   Ticket,
   TrendingUp,
+  Activity,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,8 +26,9 @@ const navigation = [
   { name: 'Pedidos', href: '/admin/orders', icon: ShoppingCart, description: 'Flujo de envío' },
   { name: 'Categorías', href: '/admin/categories', icon: Tags, description: 'Árbol de comercialización' },
   { name: 'Cupones', href: '/admin/coupons', icon: Ticket, description: 'Códigos promocionales' },
-  { name: 'Analytics', href: '/admin/coupons/analytics', icon: TrendingUp, description: 'Estadísticas de cupones' },
+  { name: 'Análisis', href: '/admin/coupons/analytics', icon: TrendingUp, description: 'Estadísticas de cupones' },
   { name: 'Usuarios', href: '/admin/users', icon: Users, description: 'Controles de clientes' },
+  { name: 'Operaciones', href: '/admin/operations', icon: Activity, description: 'Auditoría y correos' },
 ];
 
 const AdminLayout = () => {
@@ -38,7 +42,8 @@ const AdminLayout = () => {
     navigation.find((item) => location.pathname === item.href || (item.href !== '/admin' && location.pathname.startsWith(item.href))) ||
     navigation[0];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await endBrowserSession();
     dispatch(logout());
     navigate('/admin-login');
   };
@@ -61,9 +66,7 @@ const AdminLayout = () => {
       >
         <div className="flex h-24 items-center justify-between border-b border-[#263044] px-6">
           <Link to="/admin" className="shrink-0 leading-none">
-            <div className="bg-white rounded-md p-1">
-              <img src="/logo.jpeg" alt="Urbaniq" className="h-12 w-auto object-contain" />
-            </div>
+            <BrandLogo light />
           </Link>
           <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden"            aria-label="Cerrar menú">
             <X className="h-5 w-5" />
@@ -131,10 +134,14 @@ const AdminLayout = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="relative grid h-10 w-10 place-items-center border border-[#d8cdbb] bg-white text-[#111827]" aria-label="Notifications">
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#d7b46a]" />
-              </button>
+              <Link
+                to="/"
+                className="inline-flex h-10 items-center justify-center gap-2 border border-[#d8cdbb] bg-white px-3 text-xs font-bold uppercase tracking-wide text-[#111827] hover:border-[#9d731e] hover:text-[#9d731e]"
+                aria-label="Abrir tienda"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span className="hidden sm:inline">Ver tienda</span>
+              </Link>
               <div className="hidden items-center gap-3 border border-[#d8cdbb] bg-white px-3 py-2 sm:flex">
                 <div className="grid h-8 w-8 place-items-center bg-[#111827] text-xs font-black uppercase text-[#d7b46a]">
                   {user?.name?.charAt(0).toUpperCase() || 'A'}

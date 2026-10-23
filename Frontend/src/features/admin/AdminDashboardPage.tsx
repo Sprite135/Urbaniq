@@ -3,6 +3,7 @@ import { useGetDashboardStatsQuery, useGetLowStockProductsQuery, useGetAllOrders
 import { Activity, ArrowUpRight, CheckCircle2, Package, ReceiptText, TrendingUp, Users, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductImage from '@/features/catalog/components/ProductImage';
+import AdminLoadError from './AdminLoadError';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -14,20 +15,16 @@ const formatCurrency = (amount: number) =>
 
 const AdminDashboardPage = () => {
   const [page, setPage] = useState(1);
-  const { data: statsData, isLoading: isStatsLoading, error: statsError } = useGetDashboardStatsQuery();
-  const { data: lowStockProducts, isLoading: isProductsLoading, error: productsError } = useGetLowStockProductsQuery();
-  const { data: ordersData, isLoading: isOrdersLoading, error: ordersError } = useGetAllOrdersQuery({ pageNumber: page, pageSize: 5 });
+  const { data: statsData, isLoading: isStatsLoading, error: statsError, refetch: refetchStats } = useGetDashboardStatsQuery();
+  const { data: lowStockProducts, isLoading: isProductsLoading, error: productsError, refetch: refetchProducts } = useGetLowStockProductsQuery();
+  const { data: ordersData, isLoading: isOrdersLoading, error: ordersError, refetch: refetchOrders } = useGetAllOrdersQuery({ pageNumber: page, pageSize: 5 });
 
-  const isError = statsError || productsError || ordersError;
-
-  if (isError) {
+  if (statsError || productsError || ordersError) {
     return (
-      <div className="border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">
-        <p>No se pudieron cargar las estadísticas del panel.</p>
-        {statsError && <p>Error de estadísticas: {JSON.stringify(statsError)}</p>}
-        {productsError && <p>Error de productos: {JSON.stringify(productsError)}</p>}
-        {ordersError && <p>Error de pedidos: {JSON.stringify(ordersError)}</p>}
-      </div>
+      <AdminLoadError
+        message="No se pudo cargar toda la información del panel. Revisa tu conexión e inténtalo de nuevo."
+        onRetry={() => { void Promise.all([refetchStats(), refetchProducts(), refetchOrders()]); }}
+      />
     );
   }
 
@@ -41,7 +38,7 @@ const AdminDashboardPage = () => {
     },
     {
       label: 'Artículos entregados',
-      value: (statsData?.totalItemsDelivered ?? 0).toLocaleString('en-IN'),
+      value: (statsData?.totalItemsDelivered ?? 0).toLocaleString('es-PE'),
       detail: 'Unidades entregadas con éxito',
       icon: Package,
       tone: 'emerald',
@@ -49,7 +46,7 @@ const AdminDashboardPage = () => {
     },
     {
       label: 'Artículos cancelados',
-      value: (statsData?.totalItemsCancelled ?? 0).toLocaleString('en-IN'),
+      value: (statsData?.totalItemsCancelled ?? 0).toLocaleString('es-PE'),
       detail: 'Unidades de pedidos cancelados',
       icon: Package,
       tone: 'red',
@@ -57,7 +54,7 @@ const AdminDashboardPage = () => {
     },
     {
       label: 'Pedidos en proceso',
-      value: (statsData?.totalProcessingOrders ?? 0).toLocaleString('en-IN'),
+      value: (statsData?.totalProcessingOrders ?? 0).toLocaleString('es-PE'),
       detail: 'Requieren revisión de envío',
       icon: ReceiptText,
       tone: 'amber',
@@ -65,7 +62,7 @@ const AdminDashboardPage = () => {
     },
     {
       label: 'Pedidos enviados',
-      value: (statsData?.totalShippedOrders ?? 0).toLocaleString('en-IN'),
+      value: (statsData?.totalShippedOrders ?? 0).toLocaleString('es-PE'),
       detail: 'En camino a los clientes',
       icon: Truck,
       tone: 'indigo',
@@ -73,7 +70,7 @@ const AdminDashboardPage = () => {
     },
     {
       label: 'Clientes',
-      value: (statsData?.totalCustomers ?? 0).toLocaleString('en-IN'),
+      value: (statsData?.totalCustomers ?? 0).toLocaleString('es-PE'),
       detail: 'Cuentas de clientes registradas',
       icon: Users,
       tone: 'green',
@@ -152,7 +149,7 @@ const AdminDashboardPage = () => {
         <div className="border border-[#e1d5c2] bg-white">
           <div className="flex items-center justify-between border-b border-[#eee6da] px-5 py-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#9d731e]">Fulfilment</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#9d731e]">Operaciones</p>
               <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Pedidos recientes</h3>
             </div>
             <ArrowUpRight className="h-5 w-5 text-[#9d731e]" />
@@ -205,8 +202,8 @@ const AdminDashboardPage = () => {
 
         <div className="border border-[#e1d5c2] bg-white">
           <div className="border-b border-[#eee6da] px-5 py-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#9d731e]">Inventory</p>
-            <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Lista de seguimiento de stock</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#9d731e]">Inventario</p>
+            <h3 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-[#111827]">Productos con poco stock</h3>
           </div>
           <div className="divide-y divide-[#eee6da]">
             {isProductsLoading ? (
@@ -222,7 +219,7 @@ const AdminDashboardPage = () => {
                   <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                     product.quantity <= 5 ? 'bg-red-50 text-red-700' : product.quantity <= 10 ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-700'
                   }`}>
-                    {product.quantity} left
+                    {product.quantity} disponibles
                   </span>
                 </Link>
               ))

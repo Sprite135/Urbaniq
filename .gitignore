@@ -369,6 +369,25 @@ MigrationBackup/
 # Frontend local secrets (repo tracks Frontend/ on feature branches)
 Frontend/.env
 Frontend/.env.*
+/.env.*
+!/.env.example
+Backend/Ecommerce.Api/App_Data/
+.tmp-test/
+Frontend/playwright-report/
+Frontend/test-results/
+/.artifact_tool_runtime/
+/.buildcheck/
+/.azure-deploy-*/
+/deliverables/
+/output/
+/outputs/
+/tmp/
+/publish-*/
+/publish-*.zip
+/Backend/publish*.zip
+/UsersspritDesktop*.sql
+Backend/Ecommerce.Api/wwwroot/assets/
+Backend/Ecommerce.Api/wwwroot/index.html
 # Production secrets
 *.pfx
 *.pem

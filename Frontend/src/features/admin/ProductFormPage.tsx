@@ -10,6 +10,7 @@ import { useCreateCategoryMutation } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Image as ImageIcon, Plus, Trash2, Upload, X } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
+import AdminLoadError from './AdminLoadError';
 
 type VariantDraft = {
   clientId: string;
@@ -41,7 +42,7 @@ const ProductFormPage = () => {
   const navigate = useNavigate();
 
   const { data: categories } = useGetCategoriesQuery();
-  const { data: productData, isLoading: isLoadingProduct } = useGetProductByIdQuery(id!, { skip: !isEditMode });
+  const { data: productData, isLoading: isLoadingProduct, isError: isProductError, refetch: refetchProduct } = useGetProductByIdQuery(id!, { skip: !isEditMode });
   const [addProduct, { isLoading: isAdding }] = useAddProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [createCategory, { isLoading: isCreatingCategory }] = useCreateCategoryMutation();
@@ -219,6 +220,19 @@ const ProductFormPage = () => {
   };
 
   const validateAdminFields = () => {
+    const price = Number(formData.price);
+    const discount = Number(formData.discount);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error('El precio debe ser mayor que cero');
+      return false;
+    }
+
+    if (!Number.isFinite(discount) || discount < 0 || discount > price) {
+      toast.error('El descuento debe estar entre cero y el precio del producto');
+      return false;
+    }
+
     const zoneValues = formData.deliverableZones.split(',').map((value) => value.trim()).filter(Boolean);
     const validVariants = variants
       .map((variant) => ({
@@ -332,6 +346,10 @@ const ProductFormPage = () => {
         <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#d7b46a] border-t-transparent" />
       </div>
     );
+  }
+
+  if (isEditMode && isProductError) {
+    return <AdminLoadError message="No se pudo cargar el producto para editarlo. No se guardó ningún cambio." onRetry={() => { void refetchProduct(); }} />;
   }
 
   return (

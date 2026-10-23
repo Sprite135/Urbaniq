@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Ecommerce.Application.DTOs.Orders;
 using Ecommerce.Domain.Enums;
 using Moq;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Ecommerce.IntegrationTests.Controllers;
 
@@ -112,7 +114,8 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
         cart.GetProperty("items").GetArrayLength().Should().Be(0);
 
         using var form = new MultipartFormDataContent();
-        form.Add(new ByteArrayContent(new byte[] { 1, 2, 3 }), "file", "test-receipt.pdf");
+        form.Add(new ByteArrayContent(System.Text.Encoding.ASCII.GetBytes("%PDF-1.4\n%%EOF")), "file", "test-receipt.pdf");
+        form.Add(new StringContent(orderId.ToString()), "orderId");
         var uploaded = await customer.PostAsync("/api/v1/Payment/upload-voucher", form);
         uploaded.StatusCode.Should().Be(HttpStatusCode.OK);
         var upload = await uploaded.Content.ReadFromJsonAsync<JsonElement>();
@@ -170,11 +173,33 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
         var token = await GetAuthTokenAsync();
         using var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var userId = Guid.Parse(new JwtSecurityTokenHandler().ReadJwtToken(token).Claims
+            .First(claim => claim.Type == ClaimTypes.NameIdentifier || claim.Type == "nameid").Value);
+        var orderId = Guid.NewGuid();
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var setupDb = setupScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var addressId = Guid.NewGuid();
+            setupDb.Addresses.Add(new Ecommerce.Domain.Entities.Address
+            {
+                AddressId = addressId, UserId = userId, FullName = "Prueba", PhoneNumber = "999999999",
+                Department = "Lima", Province = "Lima", District = "Lima", PostalCode = "15001",
+                HouseName = "Demo", Place = "Lima", Reference = "Demo", LandMark = "Demo"
+            });
+            setupDb.Orders.Add(new Ecommerce.Domain.Entities.Order
+            {
+                OrderId = orderId, UserId = userId, AddressId = addressId, OrderDate = DateTime.UtcNow,
+                TransactionId = $"VOUCHER_{Guid.NewGuid():N}", PaymentMethod = "yape", TotalPrice = 10,
+                AddressSnapshotJson = "{\"addressId\":\"00000000-0000-0000-0000-000000000000\",\"fullName\":\"Prueba\",\"phoneNumber\":\"999999999\",\"department\":\"Lima\",\"province\":\"Lima\",\"district\":\"Lima\",\"postalCode\":\"15001\",\"houseName\":\"Demo\",\"place\":\"Lima\",\"reference\":\"Demo\",\"landMark\":\"Demo\"}"
+            });
+            await setupDb.SaveChangesAsync();
+        }
         var bytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jBfQAAAAASUVORK5CYII=");
         using var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(bytes);
         file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         form.Add(file, "file", "receipt.png");
+        form.Add(new StringContent(orderId.ToString()), "orderId");
 
         var response = await client.PostAsync("/api/v1/Payment/upload-voucher", form);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -197,6 +222,7 @@ public class CartControllerTests : IClassFixture<CustomWebAppFactory>
         finally
         {
             File.Delete(path);
+            File.Delete(path + ".owner");
         }
     }
 

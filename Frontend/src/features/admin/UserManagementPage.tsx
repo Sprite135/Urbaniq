@@ -3,12 +3,13 @@ import { useGetAllUsersQuery, useToggleUserBlockStatusMutation } from './adminAp
 import { toast } from 'react-toastify';
 import { Search, ShieldAlert, ShieldCheck, UserRound } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
+import AdminLoadError from './AdminLoadError';
 
 const UserManagementPage = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
-  const { data, isLoading } = useGetAllUsersQuery({ pageNumber: page, pageSize: 10 });
+  const { data, isLoading, isError, refetch } = useGetAllUsersQuery({ pageNumber: page, pageSize: 10 });
   const [toggleBlock, { isLoading: isToggling }] = useToggleUserBlockStatusMutation();
 
   const filteredUsers =
@@ -42,7 +43,7 @@ const UserManagementPage = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8174]" />
             <input
               type="search"
-              placeholder="Buscar por nombre o correo..."
+              placeholder="Buscar en esta página por nombre o correo..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="h-11 w-full border border-[#d8cdbb] bg-white pl-10 pr-3 text-sm outline-none focus:border-[#9d731e]"
@@ -57,6 +58,8 @@ const UserManagementPage = () => {
           <div className="grid place-items-center p-10">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#d7b46a] border-t-transparent" />
           </div>
+        ) : isError ? (
+          <AdminLoadError message="No se pudieron cargar los usuarios. No se ha cambiado ningún acceso." onRetry={() => { void refetch(); }} />
         ) : (
           <>
             {/* Desktop table view */}

@@ -141,5 +141,37 @@ namespace Ecommerce.Infrastructure.Services
                 return new ApiResponse<PaymentVerificationResponseDto> { StatusCode = 500, Message = $"Verification error: {ex.Message}" };
             }
         }
+
+        public async Task<ApiResponse<PaymentIntentResponseDto>> CreateOrderPaymentIntentAsync(decimal amount, Guid orderId, Guid userId)
+        {
+            if (!IsConfigured) throw new InvalidOperationException("Los pagos con tarjeta no están configurados.");
+            var intent = await new PaymentIntentService().CreateAsync(new PaymentIntentCreateOptions
+            {
+                Amount = (long)decimal.Round(amount * 100, 0, MidpointRounding.AwayFromZero), Currency = "pen",
+                PaymentMethodTypes = new List<string> { "card" },
+                Metadata = new Dictionary<string, string> { ["order_id"] = orderId.ToString(), ["user_id"] = userId.ToString() }
+            }, new RequestOptions { IdempotencyKey = $"order-{orderId}" });
+            return new ApiResponse<PaymentIntentResponseDto> { StatusCode = 200,
+                Data = new PaymentIntentResponseDto { ClientSecret = intent.ClientSecret, PaymentIntentId = intent.Id } };
+        }
+
+        public async Task CancelPaymentAsync(string paymentIntentId)
+        {
+            var service = new PaymentIntentService();
+            var intent = await service.GetAsync(paymentIntentId);
+            if (intent.Status == "canceled") return;
+            if (intent.Status == "succeeded") throw new InvalidOperationException("El pago ya fue cobrado y debe reembolsarse.");
+            await service.CancelAsync(paymentIntentId, new PaymentIntentCancelOptions(),
+                new RequestOptions { IdempotencyKey = $"cancel-{paymentIntentId}" });
+        }
+
+        public async Task<string> RefundAsync(string paymentIntentId, decimal amount, string idempotencyKey)
+        {
+            var refund = await new RefundService().CreateAsync(new RefundCreateOptions
+            { PaymentIntent = paymentIntentId, Amount = (long)decimal.Round(amount * 100, 0, MidpointRounding.AwayFromZero) },
+                new RequestOptions { IdempotencyKey = idempotencyKey });
+            if (refund.Status != "succeeded") throw new InvalidOperationException("El reembolso está pendiente en la pasarela. Vuelve a consultar antes de confirmarlo.");
+            return refund.Id;
+        }
     }
 }

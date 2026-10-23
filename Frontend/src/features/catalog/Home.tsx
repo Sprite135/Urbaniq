@@ -152,7 +152,7 @@ const Home: React.FC = () => {
                 src={currentSlide.image}
                 alt={currentSlide.title}
                 fallbackLabel={currentSlide.title}
-                className="absolute inset-0 h-full w-full object-cover object-center md:left-1/3 md:w-2/3 md:object-contain md:object-right lg:left-1/2 lg:w-1/2 lg:pr-12"
+                className="absolute inset-0 h-full w-full object-cover object-center opacity-35 md:left-1/3 md:w-2/3 md:object-contain md:object-right md:opacity-100 lg:left-1/2 lg:w-1/2 lg:pr-12"
               />
             </>
           )}
@@ -162,7 +162,7 @@ const Home: React.FC = () => {
             <div className="absolute right-8 bottom-0 h-80 w-80 rounded-full bg-[#d7b46a]/30 opacity-50 blur-3xl dark:bg-[#9d731e] dark:opacity-20" />
             <div className="absolute right-1/3 top-1/4 h-60 w-60 rounded-full bg-[#94a3b8]/30 opacity-40 blur-3xl dark:bg-[#334155] dark:opacity-20" />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/20 md:to-transparent dark:from-[#0e0f12]/95 dark:via-[#0e0f12]/80 dark:to-[#0e0f12]/30 md:dark:to-transparent" />
+          <div className="absolute inset-0 bg-white/45 md:bg-gradient-to-r md:from-white/95 md:via-white/80 md:to-transparent dark:bg-[#0e0f12]/55 md:dark:from-[#0e0f12]/95 md:dark:via-[#0e0f12]/80 md:dark:to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white/95 to-transparent dark:from-[#0e0f12]/95" />
 
           <div className="container relative mx-auto flex min-h-[560px] items-center py-16 md:min-h-[680px]">

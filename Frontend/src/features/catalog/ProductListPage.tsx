@@ -193,7 +193,7 @@ const ProductListPage: React.FC = () => {
         </div>
       </section>
 
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 border-b border-[#e5e7eb] dark:border-[#26282e] pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-4">
             <button
@@ -219,9 +219,9 @@ const ProductListPage: React.FC = () => {
         <div className="grid gap-9 lg:grid-cols-[250px_1fr]">
           <aside className="hidden lg:block">{filterPanel}</aside>
 
-          <div>
+          <div className="min-w-0">
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-x-5 gap-y-10 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 9 }).map((_, index) => (
                   <div key={index} className="animate-pulse">
                     <div className="aspect-[3/4] bg-[#f3f4f6] dark:bg-[#1a1c21]" />
@@ -231,7 +231,7 @@ const ProductListPage: React.FC = () => {
                 ))}
               </div>
             ) : productData?.items.length ? (
-              <div className="grid grid-cols-2 gap-x-5 gap-y-10 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
                 {productData.items.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -251,7 +251,7 @@ const ProductListPage: React.FC = () => {
             )}
 
             {productData && productData.totalPages > 1 && (
-              <div className="mt-14 flex justify-center gap-2">
+              <div className="mt-14 flex flex-wrap justify-center gap-2">
                 {Array.from({ length: productData.totalPages }).map((_, index) => (
                   <button
                     key={index}

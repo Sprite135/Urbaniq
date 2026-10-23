@@ -6,7 +6,7 @@ namespace Ecommerce.Application.DTOs.Coupons
     {
         [Required]
         [StringLength(50)]
-        public string Code { get; set; }
+        public string Code { get; set; } = string.Empty;
 
         [Required]
         [Range(0.01, double.MaxValue)]

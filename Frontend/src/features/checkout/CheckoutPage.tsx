@@ -1,3 +1,5 @@
+import { useDispatch } from 'react-redux';
+import { apiSlice } from '@/app/apiSlice';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Package, CreditCard, Check, Edit2, Trash2 } from 'lucide-react';
@@ -28,6 +30,7 @@ const CheckoutPage: React.FC = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const dispatch = useDispatch();
   const [orderSuccess, setOrderSuccess] = useState<OrderSuccessDetails | null>(null);
 
   const { data: addresses, isLoading: addressesLoading, refetch: refetchAddresses } = useGetAddressesQuery(undefined);
@@ -277,7 +280,7 @@ const CheckoutPage: React.FC = () => {
             addressId={selectedAddress.addressId}
             address={selectedAddress}
             onBack={() => setCurrentStep('summary')}
-            onOrderSuccess={setOrderSuccess}
+            onOrderSuccess={details => { setOrderSuccess(details); dispatch(apiSlice.util.invalidateTags(['Cart', 'Order'])); }}
           />
         )}
       </div>

@@ -37,6 +37,7 @@ namespace Ecommerce.Api.Middleware
         {
             var (statusCode, message) = exception switch
             {
+                Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException => (HttpStatusCode.Conflict, "El pedido o el stock cambió. Actualiza y vuelve a intentarlo."),
                 ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
                 UnauthorizedAccessException => (HttpStatusCode.Unauthorized, exception.Message),
                 KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),

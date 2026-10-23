@@ -21,8 +21,10 @@ namespace Ecommerce.Infrastructure.Configurations
             builder.Property(oi => oi.SelectedColor).IsRequired().HasMaxLength(50);
 
             builder.HasOne(oi => oi.Order).WithMany(o => o.OrderItems).HasForeignKey(oi => oi.OrderId);
-            builder.HasOne(oi => oi.Product).WithMany().HasForeignKey(oi => oi.ProductId);
-            builder.HasOne(oi => oi.ProductVariant).WithMany(v => v.OrderItems).HasForeignKey(oi => oi.ProductVariantId).OnDelete(DeleteBehavior.NoAction);
+            // Product data is snapshotted on the line item. Keep the live relation optional
+            // so a soft-deleted product never hides historical order lines.
+            builder.HasOne(oi => oi.Product).WithMany().HasForeignKey(oi => oi.ProductId).IsRequired(false);
+            builder.HasOne(oi => oi.ProductVariant).WithMany(v => v.OrderItems).HasForeignKey(oi => oi.ProductVariantId).IsRequired(false).OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

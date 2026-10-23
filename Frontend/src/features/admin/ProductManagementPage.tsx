@@ -5,6 +5,7 @@ import { Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '@/app/apiError';
 import ProductImage from '@/features/catalog/components/ProductImage';
+import AdminLoadError from './AdminLoadError';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -19,13 +20,15 @@ const ProductManagementPage = () => {
   const [search, setSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [onlyDiscounted, setOnlyDiscounted] = useState(false);
 
-  const { data, isLoading } = useGetProductsQuery({
+  const { data, isLoading, isError, refetch } = useGetProductsQuery({
     pageNumber: page,
     pageSize: 10,
     search: search || undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    isSale: onlyDiscounted ? true : undefined,
   });
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
@@ -101,6 +104,14 @@ const ProductManagementPage = () => {
               className="h-11 w-24 border border-[#d8cdbb] bg-white px-3 text-sm outline-none focus:border-[#9d731e]"
             />
           </div>
+          <button
+            type="button"
+            aria-pressed={onlyDiscounted}
+            onClick={() => { setOnlyDiscounted((value) => !value); setPage(1); }}
+            className={`h-10 border px-3 text-[10px] font-black uppercase tracking-wide ${onlyDiscounted ? 'border-[#9d731e] bg-[#f3ecdf] text-[#70500f]' : 'border-[#d8cdbb] bg-white text-[#6f6659]'}`}
+          >
+            {onlyDiscounted ? 'Ver todos' : 'Revisar ofertas'}
+          </button>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7c7467]">
             {data?.totalCount || 0} productos
           </p>
@@ -110,6 +121,8 @@ const ProductManagementPage = () => {
           <div className="grid place-items-center p-10">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#d7b46a] border-t-transparent" />
           </div>
+        ) : isError ? (
+          <AdminLoadError message="No se pudo cargar el catálogo. Los productos no se han eliminado." onRetry={() => { void refetch(); }} />
         ) : (
           <>
             {/* Desktop table view */}
@@ -119,7 +132,7 @@ const ProductManagementPage = () => {
                   <tr>
                     <th className="px-5 py-4">Producto</th>
                     <th className="px-5 py-4">SKU</th>
-                    <th className="px-5 py-4">Precio</th>
+                    <th className="px-5 py-4">Precio y oferta</th>
                     <th className="px-5 py-4">Stock</th>
                     <th className="px-5 py-4 text-right">Acciones</th>
                   </tr>
@@ -147,7 +160,19 @@ const ProductManagementPage = () => {
                           </div>
                         </td>
                         <td className="px-5 py-4 font-mono text-xs text-[#514b43]">{product.sku}</td>
-                        <td className="px-5 py-4 text-sm font-black text-[#111827]">{formatCurrency(product.price - product.discount)}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-sm font-black text-[#111827]">{formatCurrency(product.price - product.discount)}</span>
+                            {product.discount > 0 ? (
+                              <>
+                                <span className="text-xs text-[#7c7467] line-through">Antes: {formatCurrency(product.price)}</span>
+                                <span className="bg-amber-50 px-2 py-0.5 text-[10px] font-black uppercase text-amber-800">Descuento: {formatCurrency(product.discount)}</span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-[#7c7467]">Sin descuento</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-4">
                           <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
                             product.quantity <= 0 ? 'bg-red-50 text-red-700' :
@@ -186,13 +211,11 @@ const ProductManagementPage = () => {
                   <div key={product.id} className="p-4">
                     <div className="flex gap-4">
                       <Link to={`/admin/products/${product.id}`} className="shrink-0">
-                        <img
+                        <ProductImage
                           src={product.image}
                           alt={product.productName}
+                          fallbackLabel={product.productName}
                           className="h-20 w-16 object-cover bg-[#efe7da]"
-                          onError={(event) => {
-                            event.currentTarget.src = 'https://placehold.co/96x128?text=No+Image';
-                          }}
                         />
                       </Link>
                       <div className="min-w-0 flex-1 space-y-2">
@@ -212,7 +235,17 @@ const ProductManagementPage = () => {
                           </button>
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <p className="text-sm font-black text-[#111827]">{formatCurrency(product.price - product.discount)}</p>
+                          <div>
+                            <p className="text-sm font-black text-[#111827]">{formatCurrency(product.price - product.discount)}</p>
+                            {product.discount > 0 ? (
+                              <p className="text-xs text-[#7c7467]">
+                                <span className="line-through">{formatCurrency(product.price)}</span>
+                                <span className="ml-2 font-semibold text-amber-800">−{formatCurrency(product.discount)}</span>
+                              </p>
+                            ) : (
+                              <p className="text-xs text-[#7c7467]">Sin descuento</p>
+                            )}
+                          </div>
                           <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ${
                             product.quantity <= 0 ? 'bg-red-50 text-red-700' :
                             product.quantity <= 10 ? 'bg-amber-50 text-amber-700' :

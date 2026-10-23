@@ -6,13 +6,26 @@ namespace Ecommerce.Domain.Entities
     {
         public Guid OrderId { get; set; }
         public Guid? UserId { get; set; }
-        public Guid AddressId { get; set; }
+        public Guid? AddressId { get; set; }
         public decimal TotalPrice { get; set; }
         public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
         public DateTime OrderDate { get; set; }
         public string TransactionId { get; set; } = null!;
         public string PaymentMethod { get; set; } = null!;
         public bool IsPaid { get; set; } = false;
+        public string? PaymentIntentId { get; set; }
+        public DateTime? PaymentDueAtUtc { get; set; }
+        public decimal RefundedAmount { get; set; }
+        public decimal? RefundTargetAmount { get; set; }
+        public OrderStatus? StatusBeforeRefund { get; set; }
+        public string? TrackingNumber { get; set; }
+        public string? InvoiceReference { get; set; }
+        public DateTime? ShippedAtUtc { get; set; }
+        public string? AddressSnapshotJson { get; set; }
+        public string? ReturnDecisionReason { get; set; }
+        public bool StockRestored { get; set; }
+        [System.ComponentModel.DataAnnotations.Timestamp]
+        public byte[]? RowVersion { get; set; }
 
         // Billing / SUNAT foundation
         public string InvoiceType { get; set; } = "Boleta"; // "Boleta" | "Factura"
@@ -46,6 +59,6 @@ namespace Ecommerce.Domain.Entities
         // Navigation Properties
         public List<OrderItem> OrderItems { get; set; } = new();
         public User? User { get; set; }
-        public Address Address { get; set; } = null!;
+        public Address? Address { get; set; }
     }
 }

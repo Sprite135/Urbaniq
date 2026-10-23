@@ -1,3 +1,4 @@
+import { endBrowserSession } from '@/app/apiSlice';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
@@ -7,6 +8,8 @@ import { selectCurrentUser, selectIsAuthenticated, logout } from '../features/au
 import VerifyEmailPromptModal from '../features/auth/VerifyEmailPromptModal';
 import Footer from './Footer';
 import CompareBar from '@/features/catalog/components/CompareBar';
+import SupportChat from '@/features/support/SupportChat';
+import BrandLogo from '@/components/BrandLogo';
 
 import { useGetMeQuery } from '../features/auth/authApiSlice';
 import { catalogApiSlice, useSearchSuggestionsQuery, useGetCategoriesQuery, type Category } from '../features/catalog/catalogApiSlice';
@@ -158,8 +161,9 @@ export default function MainLayout() {
     };
   }, [catMenuTimeout]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsMobileMenuOpen(false);
+    await endBrowserSession();
     dispatch(logout());
   };
 
@@ -181,7 +185,7 @@ export default function MainLayout() {
   return (
     <div className="grain-overlay min-h-dvh bg-white dark:bg-[#0e0f12] text-[#111827] dark:text-[#ece7dd]">
       <header className="sticky top-0 z-30 border-b border-[#e5e7eb] dark:border-[#26282e] bg-white/95 dark:bg-[#0e0f12]/95 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 lg:h-32 items-center justify-between gap-4 px-4 lg:gap-5 lg:px-8">
+        <div className="container mx-auto flex h-20 lg:h-24 items-center justify-between gap-2 px-4 sm:gap-4 lg:gap-5 lg:px-8">
           <div className="flex items-center gap-3 lg:hidden">
             <button
               type="button"
@@ -200,7 +204,7 @@ export default function MainLayout() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}>
-            <img src="/logo.jpeg" alt="Urbaniq" className="h-[70px] lg:h-[120px] w-auto object-contain dark:invert" />
+            <BrandLogo compact />
           </Link>
 
           <nav className="hidden items-center gap-6 lg:flex">
@@ -343,7 +347,7 @@ export default function MainLayout() {
              )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               className="grid lg:hidden h-10 w-10 place-items-center border border-[#d1d5db] dark:border-[#33363d] bg-white dark:bg-[#16181d] text-[#111827] dark:text-[#ece7dd] transition-colors hover:border-[#9d731e]"
@@ -467,6 +471,7 @@ export default function MainLayout() {
 
       <CompareBar />
       <Footer />
+      <SupportChat />
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
@@ -480,7 +485,7 @@ export default function MainLayout() {
             {/* Header with Logo and Close */}
               <div className="flex items-center justify-between border-b border-[#e5e7eb] px-6 py-6">
                <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-                 <img src="/logo.jpeg" alt="Urbaniq" className="h-8 w-auto object-contain dark:invert" />
+                 <BrandLogo />
               </Link>
               <button
                 type="button"

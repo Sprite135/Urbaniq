@@ -38,7 +38,7 @@ namespace Ecommerce.Api.Controllers.Cart
             
             if (!userId.HasValue && string.IsNullOrEmpty(Request.Cookies["guest_cart_id"]))
             {
-                Response.Cookies.Append("guest_cart_id", sessionId, new CookieOptions
+                Response.Cookies.Append("guest_cart_id", sessionId!, new CookieOptions
                 {
                     HttpOnly = true,
                     Secure = true,

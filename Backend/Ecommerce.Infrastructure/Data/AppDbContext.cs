@@ -27,6 +27,8 @@ namespace Ecommerce.Infrastructure.Data
         public DbSet<CouponExcludedProduct> CouponExcludedProducts { get; set; }
         public DbSet<AutoCouponRule> AutoCouponRules { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<OutboxEmail> OutboxEmails { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -36,6 +38,19 @@ namespace Ecommerce.Infrastructure.Data
 
             // Apply all IEntityTypeConfiguration classes from this assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+            modelBuilder.Entity<Product>().Property<byte[]>("RowVersion").IsRowVersion();
+            modelBuilder.Entity<ProductVariant>().Property<byte[]>("RowVersion").IsRowVersion();
+            modelBuilder.Entity<User>().Property<byte[]>("RowVersion").IsRowVersion();
+            modelBuilder.Entity<Order>().HasIndex(o => o.PaymentIntentId).IsUnique().HasFilter("[PaymentIntentId] IS NOT NULL");
+            modelBuilder.Entity<Order>().Property(o => o.PaymentIntentId).HasMaxLength(100);
+            modelBuilder.Entity<Order>().Property(o => o.RefundedAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Order>().Property(o => o.RefundTargetAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Order>().Property(o => o.CouponDiscount).HasPrecision(18, 2);
+            modelBuilder.Entity<Order>().HasIndex(o => new { o.OrderStatus, o.PaymentDueAtUtc });
+            modelBuilder.Entity<OutboxEmail>().HasIndex(e => new { e.SentAtUtc, e.NextAttemptAtUtc });
+            modelBuilder.Entity<OutboxEmail>().Property(e => e.Recipient).HasMaxLength(320);
+            modelBuilder.Entity<OutboxEmail>().Property(e => e.Subject).HasMaxLength(500);
+            modelBuilder.Entity<AuditLog>().HasIndex(e => new { e.EntityId, e.AtUtc });
 
             // Composite keys for many-to-many
             modelBuilder.Entity<CouponCategory>()
@@ -52,6 +67,24 @@ namespace Ecommerce.Infrastructure.Data
 
             modelBuilder.Entity<AutoCouponRule>()
                 .HasKey(ar => ar.RuleId);
+            modelBuilder.Entity<AutoCouponRule>().Property(ar => ar.DiscountValue).HasPrecision(18, 2);
+            modelBuilder.Entity<AutoCouponRule>().Property(ar => ar.MinOrderAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<AutoCouponRule>().Property(ar => ar.MinimumPurchaseAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Coupon>().Property(c => c.Value).HasPrecision(18, 2);
+            modelBuilder.Entity<Coupon>().Property(c => c.MinOrderAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<CouponUser>().Property(cu => cu.DiscountAmount).HasPrecision(18, 2);
+
+            // Dependents of a soft-deleted product must use the same visibility rule.
+            // Historical order lines are intentionally excluded because they store product
+            // snapshots and their live Product relation is optional.
+            modelBuilder.Entity<CartItem>().HasQueryFilter(ci => !ci.Product.IsDeleted);
+            modelBuilder.Entity<CouponExcludedProduct>().HasQueryFilter(cp => !cp.Product.IsDeleted);
+            modelBuilder.Entity<CouponProduct>().HasQueryFilter(cp => !cp.Product.IsDeleted);
+            modelBuilder.Entity<PcSpecification>().HasQueryFilter(ps => !ps.Product.IsDeleted);
+            modelBuilder.Entity<ProductImage>().HasQueryFilter(pi => !pi.Product.IsDeleted);
+            modelBuilder.Entity<ProductVariant>().HasQueryFilter(pv => !pv.Product.IsDeleted);
+            modelBuilder.Entity<Review>().HasQueryFilter(r => !r.IsDeleted && !r.Product.IsDeleted);
+            modelBuilder.Entity<WishList>().HasQueryFilter(w => !w.Product.IsDeleted);
 
             // Performance Indexes
             modelBuilder.Entity<Product>()
@@ -77,6 +110,18 @@ namespace Ecommerce.Infrastructure.Data
                     entry.Entity.DeletedAt = DateTime.UtcNow;
                 }
             }
+            ChangeTracker.DetectChanges();
+            var auditedFields = new HashSet<string> { "OrderStatus", "IsPaid", "RefundedAmount", "Quantity", "Price", "Discount", "IsBlocked", "TrackingNumber", "StockRestored", "ReturnDecisionReason" };
+            var audits = ChangeTracker.Entries().Where(e => e.State == EntityState.Modified &&
+                (e.Entity is Order or Product or ProductVariant or User)).Select(e => new AuditLog
+            {
+                Actor = Ecommerce.Domain.Common.AuditActor.Current.Value ?? "system",
+                Entity = e.Metadata.ClrType.Name,
+                EntityId = string.Join(",", e.Properties.Where(p => p.Metadata.IsPrimaryKey()).Select(p => p.CurrentValue)),
+                ChangesJson = System.Text.Json.JsonSerializer.Serialize(e.Properties.Where(p => p.IsModified && auditedFields.Contains(p.Metadata.Name))
+                    .ToDictionary(p => p.Metadata.Name, p => new { Before = p.OriginalValue, After = p.CurrentValue }))
+            }).Where(a => a.ChangesJson != "{}").ToList();
+            AuditLogs.AddRange(audits);
             return await base.SaveChangesAsync(cancellationToken);
         }
     }

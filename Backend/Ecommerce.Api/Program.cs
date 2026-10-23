@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using Asp.Versioning;
 using Ecommerce.Api.Mapping;
 using Ecommerce.Api.Middleware;
@@ -47,6 +49,7 @@ builder.Host.UseSerilog((context, config) =>
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.Configure<RazorPaySettings>(builder.Configuration.GetSection("RazorPaySettings"));
     builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+    builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
     builder.Services.Configure<ShippingSettings>(builder.Configuration.GetSection("ShippingSettings"));
     builder.Services.Configure<MerchantPaymentSettings>(builder.Configuration.GetSection("MerchantPaymentSettings"));
 
@@ -132,6 +135,18 @@ builder.Services.AddAuthentication(options =>
         throw new Exception("JWT Settings are missing or invalid in configuration.");
     }
 
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            if (!Guid.TryParse(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), out var id)) { context.Fail("Invalid user"); return; }
+            var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == id);
+            var version = context.Principal?.FindFirstValue("session_version") ?? "0";
+            if (user == null || user.IsBlocked || version != user.SessionVersion.ToString() ||
+                context.Principal?.FindFirstValue(ClaimTypes.Role) != user.Role.ToString()) context.Fail("Session revoked");
+        }
+    };
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -163,19 +178,17 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
+    // Keep the loopback trust boundary; configure additional trusted proxies explicitly.
+    foreach (var proxy in builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>())
+        if (System.Net.IPAddress.TryParse(proxy, out var ip)) options.KnownProxies.Add(ip);
 });
 
 // ===================== Rate Limiting =====================
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("LoginPolicy", opt =>
-    {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueLimit = 0;
-    });
+    options.AddPolicy("LoginPolicy", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 5, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
         var path = context.Request.Path.Value ?? "/";
@@ -248,7 +261,7 @@ builder.Services.AddSwaggerGen(options =>
         Contact = new OpenApiContact
         {
             Name = "Urbaniq Support",
-            Email = "support@urbaniq.com"
+            Email = "soporte@urbaniq.example"
         }
     });
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Ecommerce.Api.xml"));
@@ -275,16 +288,6 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-});
-
-// ===================== Forwarded Headers =====================
-builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
-                               Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
-    // Clear the restricted proxy list so it trusts the Docker Compose Nginx container's IP
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
 });
 
 var app = builder.Build();
@@ -322,7 +325,7 @@ if (!app.Environment.IsDevelopment())
         if (app.Environment.IsProduction())
         {
             var csp = "default-src 'self'; " +
-                      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://checkout.stripe.com; " +
+                      "script-src 'self' https://js.stripe.com https://checkout.stripe.com; " +
                       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
                       "img-src 'self' data: https: blob: https://res.cloudinary.com; " +
                       "font-src 'self' data:; " +
@@ -342,6 +345,11 @@ app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    Ecommerce.Domain.Common.AuditActor.Current.Value = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+    try { await next(); } finally { Ecommerce.Domain.Common.AuditActor.Current.Value = null; }
+});
 
 // ===================== API Routes (PRIORITY) =====================
 app.MapControllers();
@@ -362,18 +370,15 @@ Console.WriteLine($"HasFrontendDist: {hasFrontendDist}");
 // Serve uploads from wwwroot (product images, payment QRs, etc.) FIRST
 var receiptStorage = app.Services.GetRequiredService<Ecommerce.Api.Services.PaymentReceiptStorage>();
 Directory.CreateDirectory(receiptStorage.DirectoryPath);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(receiptStorage.DirectoryPath),
-    RequestPath = "/uploads/payments",
-    OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = "no-store"
-});
+
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-        ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-        ctx.Context.Response.Headers.Pragma = "no-cache";
+        var versionedAsset = ctx.Context.Request.Path.StartsWithSegments("/assets");
+        ctx.Context.Response.Headers.CacheControl = versionedAsset
+            ? "public, max-age=31536000, immutable" : "no-cache";
+        if (!versionedAsset) ctx.Context.Response.Headers.Pragma = "no-cache";
     }
 });
 
@@ -386,8 +391,10 @@ if (hasFrontendDist)
         RequestPath = "", // Serve from root
         OnPrepareResponse = ctx =>
         {
-            ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-            ctx.Context.Response.Headers.Pragma = "no-cache";
+            var versionedAsset = ctx.Context.Request.Path.StartsWithSegments("/assets");
+            ctx.Context.Response.Headers.CacheControl = versionedAsset
+                ? "public, max-age=31536000, immutable" : "no-cache";
+            if (!versionedAsset) ctx.Context.Response.Headers.Pragma = "no-cache";
         }
     });
 }
@@ -468,7 +475,8 @@ else
             : null,
         OnPrepareResponse = ctx =>
         {
-            ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+            ctx.Context.Response.Headers.CacheControl = ctx.Context.Request.Path.StartsWithSegments("/assets")
+            ? "public, max-age=31536000, immutable" : "no-cache";
             ctx.Context.Response.Headers.Pragma = "no-cache";
         }
     });
@@ -488,11 +496,37 @@ if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
     await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.MigrateAsync(db.Database);
 }
 
-await DbSeeder.SeedAdminAsync(app.Services);
+// Creating the initial administrator is an installation task. Avoid querying the
+// database before Kestrel starts in production, because a transient SQL outage
+// would otherwise prevent the App Service container from opening its port.
+var seedAdmin = !app.Environment.IsProduction()
+    || builder.Configuration.GetValue<bool>("Database:SeedAdmin");
 
-// Seed PC components - run in both development and production for Azure deployment
-// The seeder is idempotent and will not create duplicates
-await DbSeeder.SeedPcComponentsAsync(app.Services);
+if (seedAdmin)
+{
+    await DbSeeder.SeedAdminAsync(app.Services);
+}
+else
+{
+    app.Logger.LogInformation(
+        "Admin seeding skipped in Production. Enable Database:SeedAdmin only during initial provisioning.");
+}
+
+// Demo catalog seeding generates sample products, stock, and promotional discounts.
+// Never run it in production unless an operator explicitly opts in; the admin catalog
+// is the source of truth for a real shop's inventory and prices.
+var seedDemoCatalog = !app.Environment.IsProduction()
+    || builder.Configuration.GetValue<bool>("Database:SeedDemoCatalog");
+
+if (seedDemoCatalog)
+{
+    await DbSeeder.SeedPcComponentsAsync(app.Services);
+}
+else
+{
+    app.Logger.LogInformation(
+        "Demo catalog seeding skipped in Production. Manage real products, stock, and prices in the admin catalog.");
+}
 
 app.Run();
 

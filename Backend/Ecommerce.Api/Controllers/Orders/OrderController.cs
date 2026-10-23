@@ -63,7 +63,7 @@ namespace Ecommerce.Api.Controllers.Orders
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeOrderStatus(Guid orderId, [FromBody] ChangeOrderStatusRequestDto dto)
         {
-            var result = await _orderService.ChangeOrderStatusAsync(orderId, dto.Status);
+            var result = await _orderService.ChangeOrderStatusAsync(orderId, dto.Status, dto.Reason);
             return result.Message.Contains("updated successfully", StringComparison.OrdinalIgnoreCase)
                 ? Ok(result)
                 : BadRequest(new { message = result.Message });
@@ -74,15 +74,18 @@ namespace Ecommerce.Api.Controllers.Orders
         public async Task<IActionResult> CancelOrder(Guid orderId, [FromBody] OrderActionRequestDto dto)
         {
             var result = await _orderService.CancelOrderAsync(GetUserId()!.Value, orderId, dto.Reason);
-            return result.Message.Contains("successfully", StringComparison.OrdinalIgnoreCase)
+            return string.Equals(result.OrderStatus, "Cancelled", StringComparison.OrdinalIgnoreCase)
                 ? Ok(result)
                 : BadRequest(result);
         }
 
         [HttpPost("{orderId:guid}/voucher")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> AttachVoucher(Guid orderId, [FromBody] AttachVoucherRequestDto dto)
+        public async Task<IActionResult> AttachVoucher(Guid orderId, [FromBody] AttachVoucherRequestDto dto,
+            [FromServices] Ecommerce.Api.Services.PaymentReceiptStorage storage)
         {
+            if (!string.IsNullOrWhiteSpace(dto.Url) && !await storage.IsOwnedAsync(dto.Url, GetUserId()!.Value))
+                return BadRequest(new { message = "Sube tu comprobante desde este pedido." });
             try
             {
                 await _orderService.AttachVoucherAsync(orderId, GetUserId()!.Value, IsAdmin(), dto.Url, dto.ApprovalCode);
@@ -107,7 +110,7 @@ namespace Ecommerce.Api.Controllers.Orders
         public async Task<IActionResult> RequestReturn(Guid orderId, [FromBody] OrderActionRequestDto dto)
         {
             var result = await _orderService.RequestReturnAsync(GetUserId()!.Value, orderId, dto.Reason);
-            return result.Message.Contains("successfully", StringComparison.OrdinalIgnoreCase) ? Ok(result) : BadRequest(result);
+            return string.Equals(result.OrderStatus, "ReturnRequested", StringComparison.OrdinalIgnoreCase) ? Ok(result) : BadRequest(result);
         }
 
         [HttpPost("{orderId:guid}/mark-paid")]
@@ -132,5 +135,27 @@ namespace Ecommerce.Api.Controllers.Orders
         [HttpGet("revenue")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTotalRevenue() => Ok(await _orderService.GetRevenueAsync());
+
+        [HttpPost("{orderId:guid}/refund")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Refund(Guid orderId, RefundRequest request)
+        {
+            var order = await _orderService.GetOrderByIdAsync(orderId, GetUserId(), true);
+            if (order.PaymentMethod != "card" && !request.OfflineTransferConfirmed)
+                return BadRequest(new { message = "Confirma que ya realizaste la transferencia del reembolso." });
+            await _orderService.RefundOrderAsync(orderId, request.TotalRefundedAmount, request.Reason);
+            return Ok(new { message = "Reembolso registrado." });
+        }
+
+        [HttpPut("{orderId:guid}/fulfillment")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Fulfillment(Guid orderId, FulfillmentRequest request)
+        {
+            await _orderService.SetFulfillmentAsync(orderId, request.TrackingNumber, request.InvoiceReference);
+            return Ok(new { message = "Referencias guardadas." });
+        }
+
+        public sealed record RefundRequest(decimal TotalRefundedAmount, string Reason, bool OfflineTransferConfirmed);
+        public sealed record FulfillmentRequest(string? TrackingNumber, string? InvoiceReference);
     }
 }

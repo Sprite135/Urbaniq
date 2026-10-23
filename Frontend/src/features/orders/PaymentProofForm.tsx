@@ -36,6 +36,7 @@ export default function PaymentProofForm({ orderId }: { orderId: string }) {
       if (file && !url) {
         const body = new FormData();
         body.append('file', file);
+        body.append('orderId', orderId);
         url = (await upload(body).unwrap()).url;
         setUploadedUrl(url);
       }

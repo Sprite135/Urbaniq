@@ -14,12 +14,15 @@ namespace Ecommerce.Domain.Entities
         public bool IsBlocked { get; set; } = false;
         public bool IsPhoneNumberVerified { get; set; }
         public bool IsEmailVerified { get; set; }
+        public int SessionVersion { get; set; }
 
         // --- Password Reset ---
         /// <summary>SHA-256 hash of the one-time reset token. Never store the raw token.</summary>
         public string? PasswordResetTokenHash { get; set; }
         /// <summary>UTC expiry for the reset token (1 hour window).</summary>
         public DateTime? PasswordResetTokenExpiresUtc { get; set; }
+        public int PasswordResetFailedAttempts { get; set; }
+        public DateTime? PasswordResetLockedUntilUtc { get; set; }
 
         // --- Phone Sign-In ---
         public string? PhoneOtpHash { get; set; }

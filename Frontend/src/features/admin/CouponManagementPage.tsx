@@ -5,9 +5,10 @@ import { toast } from 'react-toastify';
 import { Plus, X, Trash2, Tag, Calendar, Percent, DollarSign, Users, Activity } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
 import type { Coupon } from './adminApiSlice';
+import AdminLoadError from './AdminLoadError';
 
 const CouponManagementPage = () => {
-  const { data: couponsData, isLoading, refetch } = useGetAllCouponsQuery({ pageNumber: 1, pageSize: 50 });
+  const { data: couponsData, isLoading, isError, refetch } = useGetAllCouponsQuery({ pageNumber: 1, pageSize: 50 });
   const { data: categories } = useGetCategoriesQuery();
   const [createCoupon, { isLoading: isCreating }] = useCreateCouponMutation();
   const [updateCoupon, { isLoading: isUpdating }] = useUpdateCouponMutation();
@@ -153,6 +154,8 @@ const CouponManagementPage = () => {
           <div className="grid place-items-center p-10">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#d7b46a] border-t-transparent" />
           </div>
+        ) : isError ? (
+          <AdminLoadError message="No se pudieron cargar los cupones. No se ha cambiado ninguna promoción." onRetry={() => { void refetch(); }} />
         ) : (
           <>
             <div className="hidden lg:block overflow-x-auto">

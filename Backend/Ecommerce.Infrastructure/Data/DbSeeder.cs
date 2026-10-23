@@ -61,15 +61,7 @@ namespace Ecommerce.Infrastructure.Data
 
             if (existingAdmin is not null)
             {
-                existingAdmin.Name = string.IsNullOrWhiteSpace(existingAdmin.Name) ? "Admin" : existingAdmin.Name;
-                existingAdmin.Email = adminEmail;
-                existingAdmin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword);
-                existingAdmin.Role = UserRole.Admin;
-                existingAdmin.IsBlocked = false;
-                existingAdmin.IsEmailVerified = true;
-
-                await context.SaveChangesAsync();
-                logger.LogInformation("Admin user refreshed successfully with email: {Email}", adminEmail);
+                logger.LogInformation("Admin seed skipped: configured account already exists.");
                 return;
             }
 

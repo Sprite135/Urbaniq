@@ -46,7 +46,7 @@ const loadAuthState = (): AuthState => {
     return {
       user: parsedState.user ?? null,
       token: parsedState.token ?? null,
-      refreshToken: parsedState.refreshToken ?? null,
+      refreshToken: null,
       isAuthenticated: Boolean(parsedState.token),
     };
   } catch {
@@ -74,7 +74,6 @@ export const persistAuthState = (state: AuthState) => {
     JSON.stringify({
       user: state.user,
       token: state.token,
-      refreshToken: state.refreshToken,
     })
   );
 };
@@ -89,10 +88,10 @@ const authSlice = createSlice({
       state,
       action: PayloadAction<{ user: User; accessToken: string; refreshToken: string }>
     ) => {
-      const { user, accessToken, refreshToken } = action.payload;
+      const { user, accessToken } = action.payload;
       state.user = user;
       state.token = accessToken;
-      state.refreshToken = refreshToken;
+      state.refreshToken = null;
       state.isAuthenticated = true;
       persistAuthState(state);
     },

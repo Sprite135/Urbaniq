@@ -90,7 +90,7 @@ namespace Ecommerce.Application.Services.Identity
 
             // Automatically mark email as verified on registration so users can log in immediately.
             var verificationToken = CreateUrlSafeToken();
-            user.IsEmailVerified = true;
+            user.IsEmailVerified = false;
             user.EmailVerificationTokenHash = ComputeSha256Hash(verificationToken);
             user.EmailVerificationTokenExpiresUtc = DateTime.UtcNow.AddHours(24);
 
@@ -275,12 +275,15 @@ namespace Ecommerce.Application.Services.Identity
             }
 
             // Generate a 6-digit numeric code
+            if (user.PasswordResetLockedUntilUtc > DateTime.UtcNow ||
+                user.PasswordResetTokenExpiresUtc > DateTime.UtcNow.AddMinutes(14)) return;
             var otpCode = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 
             // Store the SHA-256 hash of the 6-digit code
             var codeHash = ComputeSha256Hash(otpCode);
             user.PasswordResetTokenHash = codeHash;
             user.PasswordResetTokenExpiresUtc = DateTime.UtcNow.AddMinutes(15); // 15 mins for OTP
+            user.PasswordResetFailedAttempts = 0;
 
             _userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync();
@@ -302,11 +305,7 @@ namespace Ecommerce.Application.Services.Identity
 
             if (user == null || user.PasswordResetTokenHash == null) return false;
 
-            var incomingHash = ComputeSha256Hash(dto.Code);
-            var isValid = user.PasswordResetTokenHash == incomingHash && 
-                          user.PasswordResetTokenExpiresUtc > DateTime.UtcNow;
-
-            return isValid;
+            return await ValidateResetCodeAsync(user, dto.Code);
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -320,9 +319,7 @@ namespace Ecommerce.Application.Services.Identity
             if (user == null)
                 throw new ArgumentException("Invalid or expired verification code.");
 
-            // Verify the code hash matches
-            var incomingHash = ComputeSha256Hash(dto.Code);
-            if (user.PasswordResetTokenHash == null || user.PasswordResetTokenHash != incomingHash)
+            if (!await ValidateResetCodeAsync(user, dto.Code))
                 throw new ArgumentException("Invalid or expired verification code.");
 
             // Verify the code hasn't expired
@@ -335,6 +332,11 @@ namespace Ecommerce.Application.Services.Identity
             // Clear the OTP fields so it can't be reused
             user.PasswordResetTokenHash = null;
             user.PasswordResetTokenExpiresUtc = null;
+            user.SessionVersion++;
+            // Keep this query provider-agnostic: production uses EF Core while unit tests use
+            // an in-memory IQueryable. Revoking sessions is a bounded, account-scoped operation.
+            var sessions = _refreshTokenRepo.Query().Where(t => t.UserId == user.UserId && !t.IsRevoked).ToList();
+            foreach (var session in sessions) { session.IsRevoked = true; _refreshTokenRepo.Update(session); }
 
             _userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync();
@@ -350,6 +352,8 @@ namespace Ecommerce.Application.Services.Identity
 
             if (storedToken == null)
                 throw new UnauthorizedAccessException("Invalid refresh token");
+            if (storedToken.User.IsBlocked)
+                throw new UnauthorizedAccessException("Your account has been blocked.");
 
             // Reuse detection: if token was already revoked, an attacker is replaying a stolen token
             if (storedToken.IsRevoked)
@@ -492,6 +496,7 @@ namespace Ecommerce.Application.Services.Identity
                 catch (Exception ex)
                 {
                     // Log but don't fail the login if cart merge fails
+                    _logger.LogWarning(ex, "Could not merge guest cart for user {UserId}", user.UserId);
                 }
             }
 
@@ -504,6 +509,23 @@ namespace Ecommerce.Application.Services.Identity
             };
         }
 
+        private async Task<bool> ValidateResetCodeAsync(User user, string code)
+        {
+            if (user.PasswordResetLockedUntilUtc > DateTime.UtcNow || user.PasswordResetTokenExpiresUtc == null ||
+                user.PasswordResetTokenExpiresUtc <= DateTime.UtcNow ||
+                user.PasswordResetTokenHash == null) return false;
+            if (user.PasswordResetTokenHash == ComputeSha256Hash(code)) return true;
+            user.PasswordResetFailedAttempts++;
+            if (user.PasswordResetFailedAttempts >= 5)
+            {
+                user.PasswordResetLockedUntilUtc = DateTime.UtcNow.AddMinutes(15);
+                user.PasswordResetTokenHash = null;
+            }
+            _userRepo.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+            return false;
+        }
+
         private string CreateAccessToken(User user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
@@ -513,7 +535,8 @@ namespace Ecommerce.Application.Services.Identity
             {
                 new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new(ClaimTypes.Email, user.Email),
-                new(ClaimTypes.Role, user.Role.ToString())
+                new(ClaimTypes.Role, user.Role.ToString()),
+                new("session_version", user.SessionVersion.ToString())
             };
 
             var token = new JwtSecurityToken(

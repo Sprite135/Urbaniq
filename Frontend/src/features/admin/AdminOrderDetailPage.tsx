@@ -1,12 +1,12 @@
+import PaymentReceiptLink from '../orders/PaymentReceiptLink';
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useGetOrderByIdQuery, useMarkOrderPaidMutation } from '../orders/orderApiSlice';
+import { useGetOrderByIdQuery, useMarkOrderPaidMutation, useRefundOrderMutation, useSetFulfillmentMutation } from '../orders/orderApiSlice';
 import { useChangeOrderStatusMutation } from './adminApiSlice';
 import { toast } from 'react-toastify';
 import { CheckCircle, Clock, Package, Truck, XCircle, ArrowLeft, MapPin, User, Phone, Calendar } from 'lucide-react';
 import { getApiErrorMessage } from '@/app/apiError';
 import ProductImage from '@/features/catalog/components/ProductImage';
-import { getPaymentReceiptUrl } from '../orders/paymentReceiptUrl';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-PE', {
@@ -37,6 +37,7 @@ const getAvailableStatuses = (currentStatus: string) => {
   if (normalized === 'pending') return ['Pending', 'Processing'];
   if (normalized === 'processing') return ['Processing', 'Shipped'];
   if (normalized === 'shipped') return ['Shipped', 'Delivered'];
+  if (normalized === 'returnrequested') return ['ReturnRequested', 'Returned', 'Delivered'];
   return [currentStatus]; // Delivered and Cancelled are terminal
 };
 
@@ -45,7 +46,15 @@ const AdminOrderDetailPage: React.FC = () => {
   const { data: order, isLoading, isError } = useGetOrderByIdQuery(orderId!);
   const [changeStatus, { isLoading: isUpdating }] = useChangeOrderStatusMutation();
   const [markPaid, { isLoading: isMarkingPaid }] = useMarkOrderPaidMutation();
+  const [refundOrder, { isLoading: isRefunding }] = useRefundOrderMutation();
+  const [setFulfillment, { isLoading: isSavingFulfillment }] = useSetFulfillmentMutation();
   const [verifiedOrderId, setVerifiedOrderId] = useState<string | null>(null);
+  const [decisionReason, setDecisionReason] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [invoiceReference, setInvoiceReference] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [offlineRefundConfirmed, setOfflineRefundConfirmed] = useState(false);
   const paymentVerified = verifiedOrderId === orderId;
 
   const handleMarkPaid = async () => {
@@ -83,10 +92,12 @@ const AdminOrderDetailPage: React.FC = () => {
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      await changeStatus({ orderId: order.orderId, status: newStatus }).unwrap();
-      toast.success('Order status updated');
+      const needsReason = normalizedStatus === 'returnrequested' && ['Returned', 'Delivered'].includes(newStatus);
+      if (needsReason && !decisionReason.trim()) { toast.error('Indica el motivo de la decisión.'); return; }
+      await changeStatus({ orderId: order.orderId, status: newStatus, reason: needsReason ? decisionReason.trim() : undefined }).unwrap();
+      toast.success('Estado actualizado');
     } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Failed to update order status'));
+      toast.error(getApiErrorMessage(err, 'No se pudo actualizar el estado'));
     }
   };
 
@@ -175,6 +186,7 @@ const AdminOrderDetailPage: React.FC = () => {
                   <option key={status} value={status}>{status}</option>
                 ))}
               </select>
+              {normalizedStatus === 'returnrequested' && <textarea value={decisionReason} onChange={(event) => setDecisionReason(event.target.value)} maxLength={1000} rows={3} placeholder="Motivo de aprobación o rechazo" className="mt-3 w-full border border-[#d8cdbb] p-3 text-sm" />}
               {(normalizedStatus === 'delivered' || normalizedStatus === 'cancelled') && (
                  <p className="mt-2 text-xs text-red-600 font-medium">Las actualizaciones de estado están deshabilitadas para estados terminales.</p>
               )}
@@ -200,20 +212,8 @@ const AdminOrderDetailPage: React.FC = () => {
                   <p className="mt-1 text-xs text-[#7c7467]">Valídalo en tu app Yape/Plin (Validar operación).</p>
                 </div>
               )}
-              {getPaymentReceiptUrl(order.paymentReceiptUrl) && (
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#7c7467]">Voucher</span>
-                  <a
-                    href={getPaymentReceiptUrl(order.paymentReceiptUrl)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1 block text-sm font-semibold text-[#9d731e] underline hover:text-[#7c5d12]"
-                  >
-                    Ver comprobante adjunto
-                  </a>
-                </div>
-              )}
-              {!order.isPaid && !['cancelled', 'returned', 'refundinitiated', 'refunded'].includes(order.orderStatus.toLowerCase()) && (
+              <PaymentReceiptLink path={order.paymentReceiptUrl} />
+              {!order.isPaid && order.paymentMethod !== 'card' && !['cancelled', 'returned', 'refundinitiated', 'refunded'].includes(order.orderStatus.toLowerCase()) && (
                 <>
                 <label className="flex items-start gap-2 text-sm text-[#514b43]">
                   <input type="checkbox" checked={paymentVerified} onChange={(event) => setVerifiedOrderId(event.target.checked ? orderId ?? null : null)} disabled={isMarkingPaid} className="mt-1" />
@@ -231,6 +231,26 @@ const AdminOrderDetailPage: React.FC = () => {
               )}
             </div>
           </section>
+
+          <section className="border border-[#e1d5c2] bg-white">
+            <div className="border-b border-[#eee6da] bg-[#fbfaf7] p-5"><h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Despacho y comprobante</h3></div>
+            <div className="space-y-3 p-5">
+              <input value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} maxLength={200} placeholder={order.trackingNumber || 'Número de seguimiento'} className="w-full border border-[#d8cdbb] p-3 text-sm" />
+              <input value={invoiceReference} onChange={(event) => setInvoiceReference(event.target.value)} maxLength={200} placeholder={order.invoiceReference || 'Referencia de boleta/factura demo'} className="w-full border border-[#d8cdbb] p-3 text-sm" />
+              <button type="button" disabled={isSavingFulfillment} onClick={async () => { try { await setFulfillment({ orderId: order.orderId, trackingNumber: trackingNumber.trim() || order.trackingNumber, invoiceReference: invoiceReference.trim() || order.invoiceReference }).unwrap(); toast.success('Referencias guardadas'); } catch (error) { toast.error(getApiErrorMessage(error, 'No se pudieron guardar las referencias')); } }} className="w-full bg-[#111827] py-2.5 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50">{isSavingFulfillment ? 'Guardando…' : 'Guardar referencias'}</button>
+              <p className="text-xs text-[#7c7467]">La referencia fiscal es solo de demostración y no representa un comprobante SUNAT.</p>
+            </div>
+          </section>
+
+          {order.isPaid && !['refunded', 'refundinitiated'].includes(normalizedStatus) && <section className="border border-[#e1d5c2] bg-white">
+            <div className="border-b border-[#eee6da] bg-[#fbfaf7] p-5"><h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#514b43]">Registrar reembolso</h3></div>
+            <div className="space-y-3 p-5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#7c7467]">Total acumulado reembolsado<input type="number" min={0.01} max={order.totalPrice} step="0.01" value={refundAmount} onChange={(event) => setRefundAmount(event.target.value)} className="mt-1 w-full border border-[#d8cdbb] p-3 text-sm" /></label>
+              <textarea value={refundReason} onChange={(event) => setRefundReason(event.target.value)} maxLength={1000} rows={3} placeholder="Motivo del reembolso" className="w-full border border-[#d8cdbb] p-3 text-sm" />
+              {order.paymentMethod !== 'card' && <label className="flex gap-2 text-sm"><input type="checkbox" checked={offlineRefundConfirmed} onChange={(event) => setOfflineRefundConfirmed(event.target.checked)} /> Confirmo que la transferencia de devolución ya se realizó.</label>}
+              <button type="button" disabled={isRefunding} onClick={async () => { const amount = Number(refundAmount); if (!Number.isFinite(amount) || amount <= (order.refundedAmount || 0) || !refundReason.trim()) { toast.error('Indica un total acumulado válido y el motivo.'); return; } try { await refundOrder({ orderId: order.orderId, totalRefundedAmount: amount, reason: refundReason.trim(), offlineTransferConfirmed: offlineRefundConfirmed }).unwrap(); toast.success('Reembolso registrado'); } catch (error) { toast.error(getApiErrorMessage(error, 'No se pudo registrar el reembolso')); } }} className="w-full bg-red-700 py-2.5 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50">{isRefunding ? 'Procesando…' : 'Registrar reembolso'}</button>
+            </div>
+          </section>}
 
           {/* Customer Details */}
           <section className="border border-[#e1d5c2] bg-white">

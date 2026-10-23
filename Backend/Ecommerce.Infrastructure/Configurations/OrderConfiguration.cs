@@ -22,12 +22,14 @@ namespace Ecommerce.Infrastructure.Configurations
 
             builder.Property(o => o.TransactionId).IsRequired().HasMaxLength(100);
             builder.Property(o => o.PaymentMethod).IsRequired().HasMaxLength(30);
-            builder.Property(o => o.CancellationReason).HasMaxLength(500);
-            builder.Property(o => o.ReturnReason).HasMaxLength(500);
-            builder.Property(o => o.ReplacementReason).HasMaxLength(500);
+            builder.Property(o => o.CancellationReason).HasMaxLength(1000);
+            builder.Property(o => o.ReturnReason).HasMaxLength(1000);
+            builder.Property(o => o.ReplacementReason).HasMaxLength(1000);
             builder.HasIndex(o => o.TransactionId).IsUnique();
             builder.HasOne(o => o.User).WithMany(u => u.Orders).HasForeignKey(o => o.UserId).OnDelete(DeleteBehavior.Restrict);
-            builder.HasOne(o => o.Address).WithMany(a => a.Orders).HasForeignKey(o => o.AddressId).OnDelete(DeleteBehavior.Restrict);
+            // Orders retain an address snapshot. The live address relation is optional so
+            // historical orders remain visible after a customer soft-deletes an address.
+            builder.HasOne(o => o.Address).WithMany(a => a.Orders).HasForeignKey(o => o.AddressId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

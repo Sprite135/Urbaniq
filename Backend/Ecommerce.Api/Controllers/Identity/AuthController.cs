@@ -16,6 +16,25 @@ namespace Ecommerce.Api.Controllers.Identity
         private readonly IAuthService _authService;
         public AuthController(IAuthService authService) => _authService = authService;
 
+        private bool IsTrustedSessionOrigin()
+        {
+            var origin = Request.Headers.Origin.ToString();
+            var configured = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+            return origin == $"{Request.Scheme}://{Request.Host}" || configured.Contains(origin, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private IActionResult BrowserSession(AuthResponseDto auth)
+        {
+            Response.Cookies.Append("urbaniq.refresh", auth.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true, Secure = Request.IsHttps, Path = "/api",
+                SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            });
+            auth.RefreshToken = ""; // Refresh credentials must never be accessible to browser JavaScript.
+            return Ok(auth);
+        }
+
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
@@ -33,7 +52,7 @@ namespace Ecommerce.Api.Controllers.Identity
             if (dto == null) return BadRequest(new { message = "Invalid login data." });
             var sessionId = Request.Cookies["guest_cart_id"] ?? Request.Headers["X-Guest-Cart-Id"].FirstOrDefault();
             var auth = await _authService.LoginAsync(dto, sessionId);
-            return Ok(auth);
+            return BrowserSession(auth);
         }
 
         [EnableRateLimiting("LoginPolicy")]
@@ -54,7 +73,7 @@ namespace Ecommerce.Api.Controllers.Identity
             if (dto == null) return BadRequest(new { message = "Invalid OTP data." });
             var sessionId = Request.Cookies["guest_cart_id"] ?? Request.Headers["X-Guest-Cart-Id"].FirstOrDefault();
             var auth = await _authService.VerifyPhoneOtpAsync(dto, sessionId);
-            return Ok(auth);
+            return BrowserSession(auth);
         }
 
         [EnableRateLimiting("LoginPolicy")]
@@ -94,16 +113,22 @@ namespace Ecommerce.Api.Controllers.Identity
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
         {
             if (dto == null) return BadRequest(new { message = "Refresh token is required." });
-            var auth = await _authService.RefreshTokenAsync(dto.RefreshToken);
-            return Ok(auth);
+            if (!IsTrustedSessionOrigin()) return StatusCode(403);
+            var token = Request.Cookies["urbaniq.refresh"];
+            if (string.IsNullOrWhiteSpace(token)) return Unauthorized();
+            var auth = await _authService.RefreshTokenAsync(token);
+            return BrowserSession(auth);
         }
 
         [HttpPost("revoke-token")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequestDto dto)
         {
             if (dto == null) return BadRequest(new { message = "Refresh token is required." });
-            await _authService.RevokeRefreshTokenAsync(dto.RefreshToken);
+            if (!IsTrustedSessionOrigin()) return StatusCode(403);
+            var token = Request.Cookies["urbaniq.refresh"];
+            if (!string.IsNullOrWhiteSpace(token)) await _authService.RevokeRefreshTokenAsync(token);
+            Response.Cookies.Delete("urbaniq.refresh", new CookieOptions { Path = "/api", Secure = Request.IsHttps, SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax });
             return Ok(new { message = "Token revoked successfully." });
         }
 
@@ -141,6 +166,7 @@ namespace Ecommerce.Api.Controllers.Identity
         /// Validates the 6-digit code and updates the user's password.
         /// </summary>
         [HttpPost("reset-password")]
+        [EnableRateLimiting("LoginPolicy")]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
         {
