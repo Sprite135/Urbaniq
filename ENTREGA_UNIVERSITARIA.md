@@ -1,6 +1,6 @@
 # Entrega universitaria de Urbaniq
 
-Estado verificado: 23 de octubre de 2026.
+Estado verificado: 24 de octubre de 2026.
 
 ## Identidad ficticia
 
@@ -24,8 +24,22 @@ Estado verificado: 23 de octubre de 2026.
 - Los correos usan una outbox persistente con reintentos. El panel **Operaciones** permite revisar la cola y la bitácora.
 - Se añadieron SEO compatible con React 19, página 404, recuperación ante errores de render y páginas de términos, privacidad y reclamaciones demo.
 - Se añadió Yape sandbox automático mediante MercadoPago.js y validación del pago en el servidor; las credenciales de prueba se guardan fuera de Git.
+- El checkout identifica claramente los métodos Sandbox, muestra únicamente datos oficiales de prueba y advierte que no se mueve dinero real.
 - El pipeline principal usa Node 24, compila la solución oficial, ejecuta todas las pruebas y publica el backend con `dotnet publish`.
 - La caché admite invalidación distribuida por prefijo mediante generaciones compartidas.
+
+## Evidencia visual del pago Sandbox
+
+La siguiente captura muestra el paso de pago de Urbaniq en ambiente local de demostración. Incluye Yape de prueba, tarjetas oficiales de Mercado Pago Sandbox y pago contra entrega. Los números visibles son datos públicos de prueba y no corresponden a tarjetas reales.
+
+![Checkout Sandbox de Urbaniq](docs/screenshots/urbaniq-checkout-sandbox.png)
+
+La captura permite comprobar que el usuario recibe estas indicaciones antes de continuar:
+
+- El método seleccionado está marcado como **sin dinero real**.
+- Se presentan tarjetas Mastercard y Visa ficticias para aprobar la demostración.
+- Se informa el titular, documento, vencimiento y CVV requeridos por el entorno de prueba.
+- El importe, el comprobante y el método elegido permanecen visibles antes de salir al checkout de Mercado Pago.
 
 ## Validación automatizada
 
