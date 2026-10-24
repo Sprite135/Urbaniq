@@ -113,7 +113,7 @@ public class AuthControllerTests : IClassFixture<CustomWebAppFactory>
     // ==================== Authorization Tests ====================
 
     [Fact]
-    public async Task Login_UnverifiedEmail_Returns401()
+    public async Task Login_UnverifiedEmail_Returns200AndAllowsImmediateAccess()
     {
         var email = $"unverified_{Guid.NewGuid():N}@gmail.com";
         await _client.PostAsJsonAsync("/api/v1/Auth/register", new
@@ -124,7 +124,10 @@ public class AuthControllerTests : IClassFixture<CustomWebAppFactory>
         {
             email, password = "Password123!"
         });
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var content = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "email verification is optional and must not block a new account");
+        using var json = JsonDocument.Parse(content);
+        json.RootElement.GetProperty("accessToken").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]

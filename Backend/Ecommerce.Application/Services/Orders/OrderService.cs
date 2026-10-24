@@ -35,6 +35,7 @@ namespace Ecommerce.Application.Services.Orders
         private readonly IPaymentGatewayService _paymentGateway;
         private readonly IMercadoPagoService _mercadoPagoService;
         private readonly IHostEnvironment _environment;
+        private readonly EmailSettings _emailSettings;
         private readonly ShippingSettings _shippingSettings;
         private readonly ICouponService _couponService;
         private readonly INotificationService _notificationService;
@@ -53,6 +54,7 @@ namespace Ecommerce.Application.Services.Orders
             IPaymentGatewayService paymentGateway,
             IMercadoPagoService mercadoPagoService,
             IHostEnvironment environment,
+            IOptions<EmailSettings> emailSettings,
             IOptions<ShippingSettings> shippingSettings,
             ICouponService couponService,
             INotificationService notificationService)
@@ -70,6 +72,7 @@ namespace Ecommerce.Application.Services.Orders
             _paymentGateway = paymentGateway;
             _mercadoPagoService = mercadoPagoService;
             _environment = environment;
+            _emailSettings = emailSettings.Value;
             _shippingSettings = shippingSettings.Value;
             _couponService = couponService;
             _notificationService = notificationService;
@@ -184,8 +187,8 @@ public async Task<Guid> CreateOrderAsync(Guid? userId, CreateOrderRequestDto dto
                 throw new ArgumentException("An order with this transaction ID already exists.");
             }
 
-            // Enforce email verification in production (permissive in Development so local testing is not blocked).
-            if (!_environment.IsDevelopment())
+            // Keep this policy configurable so university/demo deployments can allow immediate access.
+            if (_emailSettings.RequireVerificationForAccess && !_environment.IsDevelopment())
             {
                 if (userId.HasValue)
                 {

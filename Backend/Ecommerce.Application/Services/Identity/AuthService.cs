@@ -88,7 +88,7 @@ namespace Ecommerce.Application.Services.Identity
             user.UserId = Guid.NewGuid();
             user.Role = parsedRole;
 
-            // Automatically mark email as verified on registration so users can log in immediately.
+            // Keep verification available as an optional trust signal without blocking registration.
             var verificationToken = CreateUrlSafeToken();
             user.IsEmailVerified = false;
             user.EmailVerificationTokenHash = ComputeSha256Hash(verificationToken);
@@ -124,8 +124,8 @@ namespace Ecommerce.Application.Services.Identity
             if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                 throw new ArgumentException("Invalid email or password");
 
-            // Enforce email verification in production (kept permissive in Development so local testing is not blocked).
-            if (!_environment.IsDevelopment() && !user.IsEmailVerified)
+            // Projects that require verified ownership can re-enable this policy through configuration.
+            if (_emailSettings.RequireVerificationForAccess && !_environment.IsDevelopment() && !user.IsEmailVerified)
                 throw new UnauthorizedAccessException("Please verify your email address before logging in.");
 
             return await GenerateAuthResponseAsync(user, sessionId: sessionId);

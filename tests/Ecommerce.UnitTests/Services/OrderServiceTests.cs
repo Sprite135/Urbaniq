@@ -86,6 +86,7 @@ public class OrderServiceTests
             _paymentGatewayMock.Object,
             _mercadoPagoServiceMock.Object,
             _environmentMock.Object,
+            Options.Create(new EmailSettings { RequireVerificationForAccess = false }),
             _shippingOptions,
             _couponServiceMock.Object,
             _notificationServiceMock.Object);

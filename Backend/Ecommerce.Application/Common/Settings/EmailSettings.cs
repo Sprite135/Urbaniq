@@ -14,5 +14,10 @@ namespace Ecommerce.Application.Common.Settings
         public string FromName { get; set; } = "Urbaniq";
         /// <summary>Base URL of the React frontend (e.g. http://localhost:3000).</summary>
         public string FrontendUrl { get; set; } = "http://localhost:3000";
+        /// <summary>
+        /// When enabled, unverified accounts cannot sign in or place orders outside Development.
+        /// Verification emails can still be sent when this access requirement is disabled.
+        /// </summary>
+        public bool RequireVerificationForAccess { get; set; } = true;
     }
 }
