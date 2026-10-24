@@ -49,14 +49,16 @@ const AccountPage: React.FC = () => {
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Lista de deseos</h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-[#9a9388]">Productos guardados para comprar más tarde.</p>
           </Link>
-          <div
+          <button
+            type="button"
             onClick={() => setShowCouponHistory(true)}
-            className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5 cursor-pointer hover:border-[#9d731e]/50"
+            aria-haspopup="dialog"
+            className="w-full border border-gray-100 bg-white p-5 text-left hover:border-[#9d731e]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9d731e] dark:border-[#26282e] dark:bg-[#16181d]"
           >
             <Ticket className="mb-4 h-5 w-5 text-[#9d731e]" />
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Cupones</h2>
             <p className="mt-2 text-sm text-gray-500 dark:text-[#9a9388]">Ver historial de cupones usados.</p>
-          </div>
+          </button>
           <div className="border border-gray-100 dark:border-[#26282e] bg-white dark:bg-[#16181d] p-5">
             <Users className="mb-4 h-5 w-5 text-[#9d731e]" />
             <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-[#ece7dd]">Referidos</h2>
@@ -74,16 +76,17 @@ const AccountPage: React.FC = () => {
       {/* Coupon History Modal */}
       {showCouponHistory && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-[#111827]/60 p-4">
-          <div className="w-full max-w-lg border border-[#e1d5c2] bg-white shadow-2xl">
+          <div role="dialog" aria-modal="true" aria-labelledby="coupon-history-title" className="w-full max-w-lg border border-[#e1d5c2] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#eee6da] px-5 py-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#9d731e]">Historial</p>
-                <h3 className="mt-1 text-xl font-black uppercase tracking-[0.08em] text-[#111827]">Mis cupones usados</h3>
+                <h3 id="coupon-history-title" className="mt-1 text-xl font-black uppercase tracking-[0.08em] text-[#111827]">Mis cupones usados</h3>
               </div>
               <button 
                 type="button" 
                 onClick={() => setShowCouponHistory(false)} 
                 className="grid h-9 w-9 place-items-center border border-[#d8cdbb]"
+                aria-label="Cerrar historial de cupones"
               >
                 <X className="h-4 w-4" />
               </button>

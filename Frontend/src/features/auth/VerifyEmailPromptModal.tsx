@@ -40,6 +40,10 @@ const VerifyEmailPromptModal: React.FC = () => {
     }
   }, [isAuthenticated, location.pathname, user?.isEmailVerified, user?.userId]);
 
+  useEffect(() => {
+    if (user?.email) setEmail(user.email);
+  }, [user?.email]);
+
   const handleClose = () => {
     if (user) {
       sessionStorage.setItem(`verify_prompt_dismissed_${user.userId}`, 'true');
@@ -77,34 +81,35 @@ const VerifyEmailPromptModal: React.FC = () => {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/55 px-4 py-8 backdrop-blur-[2px]">
       <div className="mx-auto flex min-h-full max-w-2xl items-center justify-center">
         <div
-          className="relative w-full max-w-[560px] overflow-hidden rounded-[18px] bg-white dark:bg-[#16181d] px-8 pb-8 pt-12 shadow-2xl shadow-black/35 sm:px-12"
+          className="relative w-full max-w-[560px] overflow-hidden rounded-[18px] border border-stone-200 bg-white px-8 pb-8 pt-12 text-stone-900 shadow-2xl shadow-black/35 dark:border-[#30323a] dark:bg-[#16181d] dark:text-[#ece7dd] sm:px-12"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="verify-email-title"
         >
           <button
             type="button"
             onClick={handleClose}
-            className="absolute right-4 top-4 grid h-8 w-8 place-items-center text-black transition hover:bg-stone-100 rounded-full"
+            className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-stone-700 transition hover:bg-stone-100 dark:text-[#d8d2c8] dark:hover:bg-white/10"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
           </button>
 
           <form onSubmit={handleSendEmailLink} className="mx-auto max-w-[560px]">
-            <h1 className="font-heading text-2xl font-semibold text-black">Verifica tu dirección de correo</h1>
-            <div className="mt-4 border-t border-stone-200 pt-4">
-              <p className="text-[15px] leading-6 text-stone-600">
+            <h1 id="verify-email-title" className="font-heading text-2xl font-semibold text-stone-950 dark:text-[#f4efe6]">Verifica tu dirección de correo</h1>
+            <div className="mt-4 border-t border-stone-200 pt-4 dark:border-[#30323a]">
+              <p className="text-[15px] leading-6 text-stone-600 dark:text-[#b8b0a5]">
                 Verifica tu correo para una experiencia de compra sin interrupciones. Ingresa tu correo y haz clic en verificar.
               </p>
-              <div className="mt-5 flex h-[56px] items-center border border-stone-400 px-4 focus-within:border-black">
-                <Mail className="mr-3 h-5 w-5 text-stone-500" />
+              <div className="mt-5 flex h-[56px] items-center border border-stone-400 bg-white px-4 focus-within:border-[#9d731e] focus-within:ring-2 focus-within:ring-[#9d731e]/20 dark:border-[#4a4d56] dark:bg-[#0e0f12]">
+                <Mail className="mr-3 h-5 w-5 text-stone-500 dark:text-[#9a9388]" />
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
                   autoComplete="email"
                   placeholder="name@example.com"
-                  className="h-full min-w-0 flex-1 border-0 outline-none placeholder:text-stone-400"
+                  className="h-full min-w-0 flex-1 border-0 bg-transparent text-stone-900 outline-none placeholder:text-stone-400 dark:text-[#ece7dd] dark:placeholder:text-[#777168]"
                 />
               </div>
             </div>
@@ -116,14 +121,14 @@ const VerifyEmailPromptModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSendingEmail}
-                className="h-[52px] bg-black font-bold uppercase text-[#d4a72c] transition hover:bg-stone-900 disabled:bg-stone-300 disabled:text-white"
+                className="h-[52px] bg-[#111827] font-bold uppercase text-[#e2c77f] transition hover:bg-[#263044] disabled:bg-stone-300 disabled:text-white dark:bg-[#d7b46a] dark:text-[#111827] dark:hover:bg-[#e2c77f] dark:disabled:bg-[#4a4d56] dark:disabled:text-[#9a9388]"
               >
                 {isSendingEmail ? 'Enviando...' : 'Verificar'}
               </button>
               <button
                 type="button"
                 onClick={handleClose}
-                className="h-[52px] border border-stone-300 bg-white dark:bg-[#16181d] font-bold uppercase text-stone-700 transition hover:bg-stone-50"
+                className="h-[52px] border border-stone-300 bg-white font-bold uppercase text-stone-700 transition hover:bg-stone-50 dark:border-[#4a4d56] dark:bg-[#16181d] dark:text-[#d8d2c8] dark:hover:bg-white/10"
               >
                 Cancelar
               </button>

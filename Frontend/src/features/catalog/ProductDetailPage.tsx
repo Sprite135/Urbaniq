@@ -283,7 +283,7 @@ const ProductDetailPage: React.FC = () => {
                 </button>
               ))}
             </div>
-            <div className="relative aspect-square overflow-hidden bg-white">
+            <div className="relative aspect-[4/3] overflow-hidden bg-white sm:aspect-square">
               <ProductImage
                 src={selectedGalleryImage}
                 alt={product.productName}

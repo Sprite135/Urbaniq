@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowUp, MessageCircle, Sparkles, X } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/app/store';
@@ -12,6 +12,7 @@ const topics = ['Elegir un producto', 'Envíos y entregas', 'Métodos de pago', 
 const welcome: Message = { id: 0, from: 'assistant', text: '¡Hola! Soy el asistente de Urbaniq. Te ayudo a dar el siguiente paso con tu compra. ¿Qué necesitas hoy?' };
 
 export default function SupportChat() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState<Message[]>([welcome]);
@@ -20,6 +21,7 @@ export default function SupportChat() {
   const launcher = useRef<HTMLButtonElement>(null);
   const conversation = useRef<HTMLDivElement>(null);
   const hasComparison = useSelector((state: RootState) => state.compare.ids.length > 0);
+  const isAuthRoute = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].some(path => location.pathname.startsWith(path));
   const { data: shipping } = useGetShippingConfigQuery(undefined, { skip: !open });
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function SupportChat() {
   };
 
   return (
-    <div className={`fixed right-4 z-30 sm:right-6 ${hasComparison ? 'bottom-24' : 'bottom-6'}`}>
+    <div className={`fixed right-3 z-30 sm:right-6 ${isAuthRoute ? 'hidden sm:block' : ''} ${hasComparison ? 'bottom-24' : 'bottom-4 sm:bottom-6'}`}>
       {open && (
         <section
           id="urbaniq-support-chat"
@@ -93,9 +95,9 @@ export default function SupportChat() {
       )}
 
       <div className="flex items-center justify-end gap-2">
-        <a href={whatsappSupportUrl} target="_blank" rel="noopener noreferrer" aria-label="Atención al cliente por WhatsApp (abre en otra pestaña)" title="Atención por WhatsApp" className="grid h-12 w-12 place-items-center rounded-full bg-[#166534] text-white shadow-lg transition-colors hover:bg-[#14532d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#166534]"><MessageCircle size={22} aria-hidden="true" /></a>
-        <button ref={launcher} type="button" onClick={() => open ? close() : setOpen(true)} aria-label={open ? 'Cerrar asistente de Urbaniq' : 'Abrir asistente de Urbaniq'} aria-expanded={open} aria-controls="urbaniq-support-chat" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#d7b46a]/60 bg-[#17191e] px-5 py-3 text-sm font-bold text-[#e2c77f] shadow-lg transition-colors hover:bg-[#30291d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9d731e]">
-          {open ? <X size={19} aria-hidden="true" /> : <Sparkles size={19} aria-hidden="true" />}<span>¿Te ayudo?</span>
+        <a href={whatsappSupportUrl} target="_blank" rel="noopener noreferrer" aria-label="Atención al cliente por WhatsApp (abre en otra pestaña)" title="Atención por WhatsApp" className="hidden h-12 w-12 place-items-center rounded-full bg-[#166534] text-white shadow-lg transition-colors hover:bg-[#14532d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#166534] sm:grid"><MessageCircle size={22} aria-hidden="true" /></a>
+        <button ref={launcher} type="button" onClick={() => open ? close() : setOpen(true)} aria-label={open ? 'Cerrar asistente de Urbaniq' : 'Abrir asistente de Urbaniq'} aria-expanded={open} aria-controls="urbaniq-support-chat" className="inline-flex h-12 w-12 items-center justify-center gap-2 rounded-full border border-[#d7b46a]/60 bg-[#17191e] p-0 text-sm font-bold text-[#e2c77f] shadow-lg transition-colors hover:bg-[#30291d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9d731e] sm:w-auto sm:px-5 sm:py-3">
+          {open ? <X size={19} aria-hidden="true" /> : <Sparkles size={19} aria-hidden="true" />}<span className="hidden sm:inline">¿Te ayudo?</span>
         </button>
       </div>
     </div>

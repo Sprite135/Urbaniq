@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0e0f12] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center bg-gray-50 px-4 py-8 dark:bg-[#0e0f12] sm:px-6 sm:py-12 lg:px-8">
       <div className="mb-8 text-center">
         <Link to="/" className="text-4xl font-extrabold text-gray-900 dark:text-[#ece7dd] tracking-tight">
           Urbaniq<span className="text-primary">.</span>
@@ -84,7 +84,7 @@ const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-[#d8d2c8]">
               Correo electrónico
             </label>
             <div className="relative">
@@ -96,7 +96,7 @@ const LoginPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="block w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 text-gray-900 dark:text-[#ece7dd] shadow-sm focus:border-primary focus:ring-primary"
+                className="block w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-gray-900 shadow-sm focus:border-primary focus:ring-primary dark:border-[#3a3d45] dark:bg-[#0e0f12] dark:text-[#ece7dd]"
                 placeholder="tu@correo.com"
               />
             </div>
@@ -104,7 +104,7 @@ const LoginPage: React.FC = () => {
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-[#d8d2c8]">
                 Contraseña
               </label>
               <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
@@ -120,7 +120,7 @@ const LoginPage: React.FC = () => {
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="block w-full rounded-lg border border-gray-300 py-3 pl-10 pr-12 text-gray-900 dark:text-[#ece7dd] shadow-sm focus:border-primary focus:ring-primary"
+                className="block w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-12 text-gray-900 shadow-sm focus:border-primary focus:ring-primary dark:border-[#3a3d45] dark:bg-[#0e0f12] dark:text-[#ece7dd]"
                 placeholder="••••••••"
               />
               <button
